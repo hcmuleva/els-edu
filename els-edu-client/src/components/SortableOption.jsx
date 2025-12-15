@@ -63,10 +63,10 @@ export const SortableOption = ({
             {/* Option Text Input */}
             <input
                 type="text"
-                value={option.text}
+                value={option.option || option.text || ''}
                 onChange={(e) => {
                     e.stopPropagation();
-                    onUpdateOption(option.id, 'text', e.target.value);
+                    onUpdateOption(option.id, 'option', e.target.value);
                 }}
                 onClick={(e) => e.stopPropagation()}
                 placeholder="Type answer here..."

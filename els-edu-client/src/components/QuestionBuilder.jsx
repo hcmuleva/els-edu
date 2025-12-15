@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
+import { useDataProvider } from 'react-admin';
+import { CustomSelect } from './CustomSelect';
+import { CustomAsyncSelect } from './CustomAsyncSelect';
 import {
     DndContext,
     closestCenter,
     KeyboardSensor,
     PointerSensor,
-    useSensor,
+    useSensor,  
     useSensors,
-} from '@dnd-kit/core';
+} from '@dnd-kit/core';                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 import {
-    arrayMove,
+    arrayMove,                                                                                                                          
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
@@ -27,6 +30,8 @@ const QUESTION_TYPES = [
     { id: 'Hotspot', name: 'File Upload' },
 ];
 
+
+
 export const QuestionBuilder = ({ 
     question, 
     index, 
@@ -40,13 +45,6 @@ export const QuestionBuilder = ({
     showHeader = true
 }) => {
     const [showMediaUpload, setShowMediaUpload] = useState(false);
-    const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-    const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
-
-    const handleTypeChange = (newType) => {
-        onChange(index, { ...question, questionType: newType, options: [] });
-        setShowTypeDropdown(false);
-    };
 
     const handleQuestionTextChange = (e) => {
         onChange(index, { ...question, questionText: e.target.value });
@@ -59,8 +57,9 @@ export const QuestionBuilder = ({
     const addOption = () => {
         const newOption = {
             id: Date.now(),
-            text: '',
+            option: '',
             isCorrect: false,
+            multimediaId: null,
             label: String.fromCharCode(65 + (question.options?.length || 0))
         };
         onChange(index, { 
@@ -114,6 +113,19 @@ export const QuestionBuilder = ({
         }
     };
 
+    // Initialize True/False options if needed
+    React.useEffect(() => {
+        if (question.questionType === 'TF' && (!question.options || question.options.length === 0)) {
+            onChange(index, {
+                ...question,
+                options: [
+                    { id: 1, option: 'Yes', isCorrect: false, multimediaId: null },
+                    { id: 2, option: 'No', isCorrect: false, multimediaId: null }
+                ]
+            });
+        }
+    }, [question.questionType]);
+
     const needsOptions = ['SC', 'MCQ', 'Match', 'DragDrop'].includes(question.questionType);
     const needsYesNo = question.questionType === 'TF';
 
@@ -129,71 +141,28 @@ export const QuestionBuilder = ({
                             {index + 1}
                         </span>
                         <span className="text-sm font-bold text-foreground">Question {index + 1}</span>
-                        
-                        {/* Type Selector */}
-                        <div className="relative z-20">
-                            <button
-                                type="button"
-                                onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors"
-                            >
-                                <span>{selectedType?.name}</span>
-                                <span className="text-xs">▼</span>
-                            </button>
-                            
-                            {showTypeDropdown && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border border-border/50 py-2 min-w-[200px] z-50">
-                                    {QUESTION_TYPES.map(type => (
-                                        <button
-                                            key={type.id}
-                                            type="button"
-                                            onClick={() => handleTypeChange(type.id)}
-                                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
-                                        >
-                                            {type.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
 
-                        {/* Difficulty Selector */}
-                        <div className="relative z-20">
-                            <button
-                                type="button"
-                                onClick={() => setShowDifficultyDropdown(!showDifficultyDropdown)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
-                            >
-                                <span>{(question.difficulty || 'medium').charAt(0).toUpperCase() + (question.difficulty || 'medium').slice(1)}</span>
-                                <span className="text-xs">▼</span>
-                            </button>
-                            
-                            {showDifficultyDropdown && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border border-border/50 py-2 min-w-[140px] z-50">
-                                    <button
-                                        type="button"
-                                        onClick={() => { onChange(index, { ...question, difficulty: 'easy' }); setShowDifficultyDropdown(false); }}
-                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
-                                    >
-                                        Easy
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { onChange(index, { ...question, difficulty: 'medium' }); setShowDifficultyDropdown(false); }}
-                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
-                                    >
-                                        Medium
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { onChange(index, { ...question, difficulty: 'hard' }); setShowDifficultyDropdown(false); }}
-                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
-                                    >
-                                        Hard
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                        {/* Question Type - Blue Theme */}
+                        <CustomSelect
+                            value={question.questionType}
+                            onChange={(value) => onChange(index, { ...question, questionType: value, options: [] })}
+                            options={QUESTION_TYPES}
+                            color="blue"
+                            className="z-30 min-w-[140px]"
+                        />
+
+                        {/* Difficulty - Orange Theme */}
+                        <CustomSelect
+                            value={question.difficulty || 'medium'}
+                            onChange={(value) => onChange(index, { ...question, difficulty: value })}
+                            options={[
+                                { id: 'easy', name: 'Easy' },
+                                { id: 'medium', name: 'Medium' },
+                                { id: 'hard', name: 'Hard' },
+                            ]}
+                            color="orange"
+                            className="z-20 min-w-[120px]"
+                        />
 
                         {/* Points Input */}
                         <div className="flex items-center gap-1.5">
@@ -270,6 +239,20 @@ export const QuestionBuilder = ({
                     placeholder="Add explanation or hints for this question..."
                     className="w-full px-4 py-3 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                     rows={2}
+                />
+            </div>
+
+            {/* Topic Reference - Body Grid */}
+            <div className="mb-4">
+                <CustomAsyncSelect
+                    label="Topic Reference"
+                    value={question.topicRef}
+                    onChange={(topicId) => onChange(index, { ...question, topicRef: topicId })}
+                    resource="topics"
+                    optionText="name"
+                    placeholder="Select topic to categorize..."
+                    allowEmpty
+                    helperText="Optional categorization"
                 />
             </div>
 
@@ -351,20 +334,52 @@ export const QuestionBuilder = ({
             )}
 
             {/* Yes/No */}
-            {needsYesNo && (
-                <div className="flex gap-3 mt-4">
-                    <button
-                        type="button"
-                        className="flex-1 py-2 text-sm rounded-lg border-2 border-primary bg-primary/5 text-primary font-medium"
-                    >
-                        Y Yes
-                    </button>
-                    <button
-                        type="button"
-                        className="flex-1 py-2 text-sm rounded-lg border-2 border-gray-200 text-foreground font-medium"
-                    >
-                        N No
-                    </button>
+            {needsYesNo && question.options && question.options.length >= 2 && (
+                <div className="mt-4">
+                    <label className="block text-sm font-semibold text-foreground mb-3">Select Correct Answer</label>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const updatedOptions = question.options.map((opt, idx) => ({
+                                    ...opt,
+                                    isCorrect: idx === 0 // First option (Yes) is correct
+                                }));
+                                onChange(index, { ...question, options: updatedOptions });
+                            }}
+                            className={`flex-1 py-3 text-sm rounded-lg border-2 font-medium transition-all ${
+                                question.options[0]?.isCorrect
+                                    ? 'border-green-500 bg-green-50 text-green-700 shadow-sm' 
+                                    : 'border-gray-200 text-foreground hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                            <span className="text-lg mr-2">✓</span> {question.options[0]?.option || 'Yes'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const updatedOptions = question.options.map((opt, idx) => ({
+                                    ...opt,
+                                    isCorrect: idx === 1 // Second option (No) is correct
+                                }));
+                                onChange(index, { ...question, options: updatedOptions });
+                            }}
+                            className={`flex-1 py-3 text-sm rounded-lg border-2 font-medium transition-all ${
+                                question.options[1]?.isCorrect
+                                    ? 'border-red-500 bg-red-50 text-red-700 shadow-sm' 
+                                    : 'border-gray-200 text-foreground hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                            <span className="text-lg mr-2">✗</span> {question.options[1]?.option || 'No'}
+                        </button>
+                    </div>
+                    {(question.options[0]?.isCorrect || question.options[1]?.isCorrect) && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Correct answer: <span className="font-semibold">
+                                {question.options[0]?.isCorrect ? question.options[0]?.option : question.options[1]?.option}
+                            </span>
+                        </p>
+                    )}
                 </div>
             )}
         </div>

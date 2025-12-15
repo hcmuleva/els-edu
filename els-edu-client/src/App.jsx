@@ -11,6 +11,8 @@ import { UserList } from "./users/UserList";
 import MyContents from "./contents/MyContents";
 import { QuestionList } from "./questions/QuestionList";
 import { QuestionCreate } from "./questions/QuestionCreate";
+import { QuestionShow } from "./questions/QuestionShow";
+import { QuestionEdit } from "./questions/QuestionEdit";
 import { QuizList } from "./quizzes/QuizList";
 import { QuizCreate } from "./quizzes/QuizCreate";
 import { CourseList } from "./courses/CourseList";
@@ -35,9 +37,18 @@ const App = () => (
         <Resource name="users" list={UserList} />
         
         {/* Educational Resources */}
-        <Resource name="questions" list={QuestionList} create={QuestionCreate} />
+        <Resource 
+            name="questions" 
+            list={QuestionList} 
+            create={QuestionCreate}
+            show={QuestionShow}
+            edit={QuestionEdit}
+        />
         <Resource name="quizzes" list={QuizList} create={QuizCreate} />
         <Resource name="courses" list={CourseList} create={CourseCreate} />
+        
+        {/* Supporting Resources (for ReferenceInput) */}
+        <Resource name="topics" />
     </Admin>
 );
 

@@ -32,6 +32,11 @@ export const strapiDataProvider = {
             limit: perPage,
         };
 
+        // Add population for specific resources
+        if (resource === 'questions') {
+            query['populate'] = 'topicRef';  // Populate the topic reference
+        }
+
         // Filter Handling - only add valid filters
         if (params.filter && Object.keys(params.filter).length > 0) {
             Object.keys(params.filter).forEach(key => {
@@ -96,7 +101,12 @@ export const strapiDataProvider = {
     },
 
     getOne: async (resource, params) => {
-        const { json } = await httpClient(`${apiUrl}/${resource}/${params.id}`);
+        const query = {};
+        if (resource === 'questions') {
+            query['populate'] = 'topicRef';
+        }
+        const url = `${apiUrl}/${resource}/${params.id}?${queryString.stringify(query)}`;
+        const { json } = await httpClient(url);
         const data = json.data || json;
         return { data: { ...data, id: data.id } };
     },

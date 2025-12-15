@@ -118,13 +118,12 @@
       }
     },
     "hints": {
-      "type": "json"
+      "type": "json",
+      "description": "Array of hint strings for the question"
     },
     "options": {
-      "type": "json"
-    },
-    "correctAnswers": {
-      "type": "json"
+      "type": "json",
+      "description": "Array of options: [{ option: 'text', isCorrect: boolean, multimediaId: number }]. Works for SC, MCQ, TF (Yes/No) questions."
     },
     "partialCredit": {
       "type": "boolean",
