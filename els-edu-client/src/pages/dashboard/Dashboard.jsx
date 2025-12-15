@@ -1,5 +1,5 @@
 import { Title } from 'react-admin';
-import { cn } from '../lib/utils';
+import { cn } from '../../lib/utils';
 import { Users, BookOpen, Trophy, Sparkles, ArrowRight } from 'lucide-react';
 
 const Card = ({ className, children }) => (

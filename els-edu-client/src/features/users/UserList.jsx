@@ -10,8 +10,8 @@ import {
     useListContext,
     FunctionField 
 } from 'react-admin';
-import UserCharts from './UserCharts';
-import { cn } from '../lib/utils';
+import UserCharts from "./UserCharts";
+import { cn } from "../../lib/utils";
 
 const UserListContent = () => {
     const { data } = useListContext();

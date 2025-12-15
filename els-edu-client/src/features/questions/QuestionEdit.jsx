@@ -9,7 +9,7 @@ import {
 } from 'react-admin';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { QuestionBuilder } from '../components/QuestionBuilder';
+import { QuestionBuilder } from './components/QuestionBuilder';
 
 export const QuestionEdit = () => {
     const { id: documentId } = useParams();

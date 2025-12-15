@@ -1,12 +1,12 @@
 import React from 'react';
 import { Notification } from 'react-admin';
-import MyMenu from './MyMenu';
+import Menu from './Menu';
 
-const MyLayout = ({ children }) => (
+const AppLayout = ({ children }) => (
     <div className="flex h-screen w-full bg-background overflow-hidden relative">
         {/* Sidebar Area - MyMenu handles its own width/collapse state */}
         <aside className="flex-shrink-0 h-full z-30 border-r border-border bg-card">
-            <MyMenu />
+            <Menu />
         </aside>
 
         {/* Main Content Area */}
@@ -21,4 +21,4 @@ const MyLayout = ({ children }) => (
     </div>
 );
 
-export default MyLayout;
+export default AppLayout;

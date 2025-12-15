@@ -3,7 +3,7 @@ import { useListContext } from 'react-admin';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { Users, UserCheck, UserX, Shield } from 'lucide-react';
-import { getUserStats } from '../services/user';
+import { getUserStats } from '../../services/user';
 
 const StatCard = ({ title, value, subValue, subLabel, icon: Icon, colorClass, bgClass }) => (
     <div className="bg-white p-6 rounded-3xl border border-border/50 shadow-sm flex flex-col justify-between h-full hover:shadow-md transition-shadow">

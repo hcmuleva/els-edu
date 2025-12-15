@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useDataProvider } from 'react-admin';
-import { CustomSelect } from './CustomSelect';
-import { CustomAsyncSelect } from './CustomAsyncSelect';
+import { CustomSelect } from '../../../components/common/CustomSelect';
+import { CustomAsyncSelect } from '../../../components/common/CustomAsyncSelect';
 import {
     DndContext,
     closestCenter,
@@ -17,7 +17,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { SortableOption } from './SortableOption';
+import { SortableOption } from '../../../components/common/SortableOption';
 
 const QUESTION_TYPES = [
     { id: 'SC', name: 'Single Choice' },

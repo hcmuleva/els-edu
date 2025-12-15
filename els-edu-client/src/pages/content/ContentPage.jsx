@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRedirect, usePermissions, Title, useGetList, useGetIdentity, Loading, useDelete, useNotify, ReferenceField, TextField } from 'react-admin';
 import { PlusCircle, FileQuestion, BookOpen, GraduationCap, Calendar, Eye, Edit2, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, X, CheckCircle, XCircle, Info, RotateCcw } from 'lucide-react';
-import { CustomSelect } from '../components/CustomSelect';
-import { CustomAsyncSelect } from '../components/CustomAsyncSelect';
+import { CustomSelect } from '../../components/common/CustomSelect';
+import { CustomAsyncSelect } from '../../components/common/CustomAsyncSelect';
 const ActionButton = ({ icon: Icon, title, description, onClick, colorClass, bgClass }) => (
     <button 
         onClick={onClick}
@@ -68,38 +68,36 @@ const QuestionViewModal = ({ question, onClose }) => {
                     {/* Question Card */}
                     <div className="space-y-3">
                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Question Text</span>
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Question</span>
                         </div>
-                        <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-2xl"></div>
-                            <p className="text-xl font-bold text-gray-800 leading-relaxed font-heading relative z-10">
+                        <div>
+                            <p className="text-lg font-bold text-gray-800 leading-relaxed">
                                 {question.questionText}
                             </p>
-                             <div className="absolute top-0 right-0 p-10 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                         </div>
                     </div>
 
                     {/* Metadata Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-white p-4 rounded-2xl border border-border/50 shadow-sm flex flex-col items-center text-center gap-2 hover:border-blue-200 transition-colors">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Type</span>
-                            <span className="px-3 py-1 bg-blue-50 text-blue-700 text-sm font-bold rounded-lg border border-blue-100">
+                    <div className="flex flex-wrap gap-8 py-2">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</span>
+                            <span className="font-bold text-gray-900">
                                 {getTypeLabel(question.questionType)}
                             </span>
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-border/50 shadow-sm flex flex-col items-center text-center gap-2 hover:border-orange-200 transition-colors">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Difficulty</span>
-                            <span className={`px-3 py-1 text-sm font-bold rounded-lg border ${getDifficultyColor(question.difficulty)}`}>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Difficulty</span>
+                            <span className="font-bold text-gray-900 capitalize">
                                 {question.difficulty || 'medium'}
                             </span>
                         </div>
-                         <div className="bg-white p-4 rounded-2xl border border-border/50 shadow-sm flex flex-col items-center text-center gap-1 hover:border-violet-200 transition-colors">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Points</span>
-                            <span className="text-2xl font-black text-gray-800">{question.points || 1}</span>
+                         <div className="flex flex-col gap-1">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Points</span>
+                            <span className="font-bold text-gray-900">{question.points || 1}</span>
                         </div>
-                         <div className="bg-white p-4 rounded-2xl border border-border/50 shadow-sm flex flex-col items-center text-center gap-2 hover:border-emerald-200 transition-colors">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Topic</span>
-                            <div className="text-sm font-bold text-gray-700 truncate max-w-full">
+                         <div className="flex flex-col gap-1">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Topic</span>
+                            <div className="font-bold text-gray-900">
                                 <ReferenceField record={question} source="topicRef.id" reference="topics" link={false}>
                                     <TextField source="name" />
                                 </ReferenceField>
@@ -485,11 +483,11 @@ const MyContents = () => {
                                         <div className="flex items-center gap-2">ID<SortIcon field="id" /></div>
                                     </th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Question</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('questionType')}>
-                                        <div className="flex items-center gap-2">Type<SortIcon field="questionType" /></div>
+                                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('questionType')}>
+                                        <div className="flex items-center justify-center gap-2">Type<SortIcon field="questionType" /></div>
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('difficulty')}>
-                                        <div className="flex items-center gap-2">Difficulty<SortIcon field="difficulty" /></div>
+                                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('difficulty')}>
+                                        <div className="flex items-center justify-center gap-2">Difficulty<SortIcon field="difficulty" /></div>
                                     </th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Correct Answer</th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Topic</th>
@@ -508,45 +506,49 @@ const MyContents = () => {
                                     
                                     return (
                                         <tr key={itemId} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 align-middle">
                                                 <div className="text-sm font-bold text-gray-700">{index + 1}</div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 align-middle">
                                                 <div className="max-w-md">
                                                     <p className="text-sm font-semibold text-gray-900 truncate" title={item.questionText}>
                                                         {item.questionText || 'Untitled Question'}
                                                     </p>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getTypeColor(item.questionType)}`}>
-                                                    {getTypeName(item.questionType)}
-                                                </span>
+                                            <td className="px-6 py-4 align-middle">
+                                                <div className="flex justify-center">
+                                                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap text-center ${getTypeColor(item.questionType)}`}>
+                                                        {getTypeName(item.questionType)}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${getDifficultyColor(item.difficulty)}`}>
-                                                    {item.difficulty || 'medium'}
-                                                </span>
+                                            <td className="px-6 py-4 align-middle">
+                                                <div className="flex justify-center">
+                                                    <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap text-center ${getDifficultyColor(item.difficulty)}`}>
+                                                        {item.difficulty || 'medium'}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 align-middle">
                                                 <div className="text-sm text-gray-700 max-w-xs truncate" title={getCorrectAnswers(item)}>
                                                     {getCorrectAnswers(item)}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 align-middle">
                                                 <span className="text-sm text-gray-500">
                                                     <ReferenceField record={item} source="topicRef.id" reference="topics" link={false}>
                                                         <TextField source="name" />
                                                     </ReferenceField>
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 align-middle">
                                                 <div className="flex items-center gap-1 text-xs text-gray-500">
                                                     <Calendar className="w-3 h-3" />
                                                     {new Date(item.createdAt).toLocaleDateString()}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 align-middle">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button
                                                         onClick={() => setViewingQuestion(item)}

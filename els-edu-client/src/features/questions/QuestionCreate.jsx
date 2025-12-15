@@ -7,7 +7,7 @@ import {
     useGetIdentity
 } from 'react-admin';
 import { Plus, ArrowLeft } from 'lucide-react';
-import { QuestionBuilder } from '../components/QuestionBuilder';
+import { QuestionBuilder } from './components/QuestionBuilder';
 
 export const QuestionCreate = () => {
     const notify = useNotify();
