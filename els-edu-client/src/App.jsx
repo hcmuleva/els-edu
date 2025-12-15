@@ -1,38 +1,31 @@
-import { Admin, Resource, CustomRoutes } from "react-admin";
-import { Route } from "react-router-dom";
-import { strapiDataProvider } from "./providers/strapiProvider";
-import { authProvider } from "./providers/authProvider";
-import { theme } from "./theme";
-import MyLayout from "./layout/MyLayout";
-import Dashboard from "./dashboard/Dashboard";
-import MyLoginPage from "./auth/MyLoginPage";
-import RegisterPage from "./auth/RegisterPage";
-import { UserList } from "./users/UserList";
-import MyContents from "./contents/MyContents";
-import { QuestionList } from "./questions/QuestionList";
-import { QuestionCreate } from "./questions/QuestionCreate";
-import { QuestionShow } from "./questions/QuestionShow";
-import { QuestionEdit } from "./questions/QuestionEdit";
-import { QuizList } from "./quizzes/QuizList";
-import { QuizCreate } from "./quizzes/QuizCreate";
-import { CourseList } from "./courses/CourseList";
-import { CourseCreate } from "./courses/CourseCreate";
+import { Admin, Resource } from "react-admin";
+import { strapiDataProvider } from "./api/dataProvider";
+import { authProvider } from "./api/authProvider";
+import { theme } from "./config/theme";
+import AppLayout from "./layouts/AppLayout";
+import Dashboard from "./pages/dashboard/Dashboard";
+import LoginPage from "./pages/auth/LoginPage";
+import { UserList } from "./features/users/UserList";
+import { QuestionList } from "./features/questions/QuestionList";
+import { QuestionCreate } from "./features/questions/QuestionCreate";
+import { QuestionShow } from "./features/questions/QuestionShow";
+import { QuestionEdit } from "./features/questions/QuestionEdit";
+import { QuizList } from "./features/quizzes/QuizList";
+import { QuizCreate } from "./features/quizzes/QuizCreate";
+import { CourseList } from "./features/courses/CourseList";
+import { CourseCreate } from "./features/courses/CourseCreate";
+import AppRoutes from "./routes/AppRoutes";
 
 const App = () => (
     <Admin 
         theme={theme} 
         authProvider={authProvider}
         dataProvider={strapiDataProvider}
-        layout={MyLayout}
+        layout={AppLayout}
         dashboard={Dashboard}
-        loginPage={MyLoginPage}
+        loginPage={LoginPage}
     >
-        <CustomRoutes noLayout>
-            <Route path="/register" element={<RegisterPage />} />
-        </CustomRoutes>
-        <CustomRoutes>
-            <Route path="/my-contents" element={<MyContents />} />
-        </CustomRoutes>
+        {AppRoutes()}
         
         <Resource name="users" list={UserList} />
         

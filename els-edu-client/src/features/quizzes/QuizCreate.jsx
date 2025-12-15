@@ -11,8 +11,8 @@ import {
     Title
 } from 'react-admin';
 import { Plus, FileQuestion } from 'lucide-react';
-import { QuestionBuilder } from '../components/QuestionBuilder';
-import { QuestionSelector } from '../components/QuestionSelector';
+import { QuestionBuilder } from '../questions/components/QuestionBuilder';
+import { QuestionSelector } from '../../components/common/QuestionSelector';
 
 export const QuizCreate = () => {
     const [questions, setQuestions] = useState([]);

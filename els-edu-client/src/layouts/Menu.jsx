@@ -231,7 +231,7 @@ const SectionHeader = ({ title, isOpen }) => {
     );
 };
 
-const MyMenu = (props) => {
+const AppMenu = (props) => {
     const { permissions } = usePermissions();
     const { data: identity, isLoading } = useGetIdentity();
     const notify = useNotify();
@@ -465,4 +465,4 @@ const MyMenu = (props) => {
     );
 };
 
-export default MyMenu;
+export default AppMenu;
