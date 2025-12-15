@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tag_exams",
+  "info": {
+    "singularName": "tag-exam",
+    "pluralName": "tag-exams",
+    "displayName": "tag_exam"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "tag_exam": {
+      "type": "string"
+    },
+    "questions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::question.question",
+      "mappedBy": "tag_exams"
+    }
+  }
+}

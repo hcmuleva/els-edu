@@ -1,0 +1,125 @@
+############################
+# Node.js & Dependencies
+############################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnp
+.pnp.js
+
+############################
+# Client (Vite/React) Build
+############################
+dist/
+dist-ssr/
+build/
+*.local
+
+############################
+# Server (Strapi) Files
+############################
+# Database
+*.db
+*.sqlite
+*.sqlite3
+.tmp/
+data.db
+
+# Strapi generated files
+.cache/
+.strapi/
+.strapi-updater.json
+exports/
+*.cache
+build/
+.strapi-cloud.json
+
+# Strapi uploads (optional - uncomment if you don't want to track uploads)
+# public/uploads/*
+
+############################
+# Environment Variables
+############################
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+
+############################
+# Logs
+############################
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+############################
+# IDE & Editors
+############################
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+############################
+# Mac OS X System Files
+############################
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.Apdisk
+
+############################
+# Windows System Files
+############################
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+############################
+# Database Dumps
+############################
+*.sql
+*.dump
+package-lock.json
+
+############################
+# SSL & Certificates
+############################
+*.pem
+*.p12
+*.key
+*.cert
+*.crt
+
+############################
+# Old/Backup Directories
+############################
+elsclient_copy/
+elsserver/
+elsclient/
+elsserver_copy/
+strapi-app/

@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "resources",
+  "info": {
+    "singularName": "resource",
+    "pluralName": "resources",
+    "displayName": "resource"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "resource_url": {
+      "type": "string"
+    },
+    "resource_packages": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "resource_type": {
+      "type": "enumeration",
+      "enum": [
+        "PDF",
+        "VIDEO",
+        "CODE",
+        "FILE"
+      ]
+    },
+    "kit": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kit.kit",
+      "inversedBy": "resources"
+    },
+    "lesson": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::lesson.lesson",
+      "inversedBy": "resources"
+    },
+    "kitlevel": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kitlevel.kitlevel",
+      "inversedBy": "resources"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+const Ably = require("ably");
+
+let ablyClient = null;
+
+const getAblyClient = () => {
+  if (!ablyClient) {
+    const apiKey = process.env.ABLY_API_KEY;
+    if (!apiKey) {
+      console.error("❌ ABLY_API_KEY not found in environment variables");
+      return null;
+    }
+    ablyClient = new Ably.Realtime(apiKey);
+    console.log("✅ Ably client initialized");
+  }
+  return ablyClient;
+};
+
+const publishToAbly = async (channelName, eventName, data) => {
+  try {
+    const client = getAblyClient();
+    if (!client) return;
+
+    const channel = client.channels.get(channelName);
+    await channel.publish(eventName, data);
+    console.log(`📡 Published to Ably: ${channelName}/${eventName}`, {
+      userId: data.userId,
+      type: data.type,
+    });
+  } catch (error) {
+    console.error("❌ Ably publish error:", error);
+  }
+};
+
+module.exports = {
+  getAblyClient,
+  publishToAbly,
+};

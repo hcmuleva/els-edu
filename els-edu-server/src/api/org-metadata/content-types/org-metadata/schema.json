@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "org_metadatas",
+  "info": {
+    "singularName": "org-metadata",
+    "pluralName": "org-metadatas",
+    "displayName": "org-metadata"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "github_username": {
+      "type": "string"
+    },
+    "github_token": {
+      "type": "text"
+    },
+    "docker_username": {
+      "type": "string"
+    },
+    "docker_token": {
+      "type": "text"
+    },
+    "vercel_token": {
+      "type": "text"
+    },
+    "org": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::org.org",
+      "mappedBy": "org_metadatum"
+    }
+  }
+}

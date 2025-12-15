@@ -1,0 +1,123 @@
+{
+  "kind": "collectionType",
+  "collectionName": "orgs",
+  "info": {
+    "singularName": "org",
+    "pluralName": "orgs",
+    "displayName": "org"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "org_name": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "email"
+    },
+    "contact_phone": {
+      "type": "biginteger"
+    },
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "org_status": {
+      "type": "enumeration",
+      "default": "ACTIVE",
+      "enum": [
+        "ACTIVE",
+        "INACTIVE"
+      ]
+    },
+    "description": {
+      "type": "blocks"
+    },
+    "users": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "org"
+    },
+    "kits": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::kit.kit",
+      "mappedBy": "orgs"
+    },
+    "pricings": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::pricing.pricing",
+      "mappedBy": "orgs"
+    },
+    "kitsubscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::kitsubscription.kitsubscription",
+      "mappedBy": "org"
+    },
+    "kitlevels": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::kitlevel.kitlevel",
+      "mappedBy": "orgs"
+    },
+    "kitprogresses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::kitprogress.kitprogress",
+      "mappedBy": "org"
+    },
+    "org_metadatum": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::org-metadata.org-metadata",
+      "inversedBy": "org"
+    },
+    "address": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::address.address",
+      "mappedBy": "org"
+    },
+    "lessons": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::lesson.lesson",
+      "mappedBy": "orgs"
+    },
+    "calander_activities": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::calander-activity.calander-activity",
+      "mappedBy": "orgs"
+    },
+    "user_levels": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-level.user-level",
+      "mappedBy": "org"
+    },
+    "teams": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::team.team",
+      "mappedBy": "org"
+    },
+    "usersubscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::usersubscription.usersubscription",
+      "mappedBy": "org"
+    }
+  }
+}

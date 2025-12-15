@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "userroles",
+  "info": {
+    "singularName": "userrole",
+    "pluralName": "userroles",
+    "displayName": "userrole"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "userroles"
+    },
+    "startdate": {
+      "type": "date"
+    },
+    "enddate": {
+      "type": "date"
+    },
+    "description": {
+      "type": "string"
+    }
+  }
+}

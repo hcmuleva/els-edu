@@ -1,0 +1,113 @@
+{
+  "kind": "collectionType",
+  "collectionName": "usersubscriptions",
+  "info": {
+    "singularName": "usersubscription",
+    "pluralName": "usersubscriptions",
+    "displayName": "usersubscription"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "transactionid": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "blocks"
+    },
+    "paymentstatus": {
+      "type": "enumeration",
+      "enum": [
+        "ACTIVE",
+        "EXPIRED",
+        "CANCELLED",
+        "PENDING",
+        "FAILED"
+      ]
+    },
+    "auto_renew": {
+      "type": "boolean"
+    },
+    "startdate": {
+      "type": "date"
+    },
+    "enddate": {
+      "type": "date"
+    },
+    "cancelled_at": {
+      "type": "date"
+    },
+    "next_billing_date": {
+      "type": "date"
+    },
+    "last_payment_at": {
+      "type": "date"
+    },
+    "grace_period_days": {
+      "type": "integer"
+    },
+    "subscription_type": {
+      "type": "enumeration",
+      "enum": [
+        "FREEMIUM",
+        "FREE",
+        "PAID",
+        "TRIAL"
+      ]
+    },
+    "cashfree_order_id": {
+      "type": "string"
+    },
+    "cashfree_subscription_id": {
+      "type": "string"
+    },
+    "payment_method": {
+      "type": "enumeration",
+      "enum": [
+        "CARD",
+        "UPI",
+        "NETBANKING",
+        "CASH",
+        "OTHER"
+      ]
+    },
+    "cancellation_reason": {
+      "type": "string"
+    },
+    "amount_paid": {
+      "type": "decimal"
+    },
+    "org": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org",
+      "inversedBy": "usersubscriptions"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "usersubscriptions"
+    },
+    "pricing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::pricing.pricing",
+      "inversedBy": "usersubscriptions"
+    },
+    "course": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course.course",
+      "inversedBy": "usersubscriptions"
+    },
+    "subjects": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::subject.subject",
+      "mappedBy": "usersubscription"
+    }
+  }
+}

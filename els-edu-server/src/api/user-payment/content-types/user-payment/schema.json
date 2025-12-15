@@ -1,0 +1,96 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_payments",
+  "info": {
+    "singularName": "user-payment",
+    "pluralName": "user-payments",
+    "displayName": "User Payment",
+    "description": "Payment transaction records for kit subscriptions"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "cashfree_order_id": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "cashfree_payment_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "payment_status": {
+      "type": "enumeration",
+      "enum": [
+        "PENDING",
+        "SUCCESS",
+        "FAILED",
+        "REFUNDED",
+        "CANCELLED"
+      ],
+      "default": "PENDING"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "payment_gateway_response": {
+      "type": "json"
+    },
+    "webhook_data": {
+      "type": "json"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "kit_name": {
+      "type": "string"
+    },
+    "pricing_name": {
+      "type": "string"
+    },
+    "transaction_date": {
+      "type": "datetime"
+    },
+    "kitsubscription": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kitsubscription.kitsubscription",
+      "inversedBy": "payments"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "org": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org"
+    },
+    "kit": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kit.kit"
+    },
+    "pricing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::pricing.pricing"
+    }
+  }
+}

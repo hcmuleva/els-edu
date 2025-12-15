@@ -1,0 +1,13 @@
+module.exports = {
+  routes: [
+    // {
+    //  method: 'GET',
+    //  path: '/custom-progress-update',
+    //  handler: 'custom-progress-update.exampleAction',
+    //  config: {
+    //    policies: [],
+    //    middlewares: [],
+    //  },
+    // },
+  ],
+};

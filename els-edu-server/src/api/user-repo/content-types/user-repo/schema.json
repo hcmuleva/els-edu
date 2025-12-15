@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_repos",
+  "info": {
+    "singularName": "user-repo",
+    "pluralName": "user-repos",
+    "displayName": "user-repo"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "repo_url": {
+      "type": "string"
+    },
+    "user_repo_name": {
+      "type": "string"
+    },
+    "kit": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kit.kit",
+      "inversedBy": "user_repos"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "user_repos"
+    }
+  }
+}

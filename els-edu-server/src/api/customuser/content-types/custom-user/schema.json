@@ -1,0 +1,14 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "custom_users",
+  "info": {
+    "singularName": "custom-user",
+    "pluralName": "custom-users",
+    "displayName": "custom-users"
+  },
+  "options": {
+    "comment": ""
+  },
+  "attributes": {}
+}

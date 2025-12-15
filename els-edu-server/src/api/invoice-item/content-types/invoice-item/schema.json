@@ -1,0 +1,106 @@
+{
+    "kind": "collectionType",
+    "collectionName": "invoice_items",
+    "info": {
+        "singularName": "invoice-item",
+        "pluralName": "invoice-items",
+        "displayName": "Invoice Item",
+        "description": "Individual line items in invoices with detailed breakdown"
+    },
+    "options": {
+        "draftAndPublish": false
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "invoice": {
+            "type": "relation",
+            "relation": "manyToOne",
+            "target": "api::invoice.invoice",
+            "inversedBy": "invoice_items"
+        },
+        "item_type": {
+            "type": "enumeration",
+            "enum": [
+                "COURSE",
+                "SUBJECT",
+                "PUBLISHER_COMMISSION",
+                "PLATFORM_FEE",
+                "TAX",
+                "DISCOUNT",
+                "SHIPPING",
+                "OTHER"
+            ],
+            "required": true
+        },
+        "item_name": {
+            "type": "string",
+            "required": true
+        },
+        "item_description": {
+            "type": "text"
+        },
+        "subject": {
+            "type": "relation",
+            "relation": "manyToOne",
+            "target": "api::subject.subject"
+        },
+        "course": {
+            "type": "relation",
+            "relation": "manyToOne",
+            "target": "api::course.course"
+        },
+        "quantity": {
+            "type": "decimal",
+            "default": 1
+        },
+        "unit_price": {
+            "type": "decimal",
+            "required": true
+        },
+        "line_total": {
+            "type": "decimal",
+            "required": true
+        },
+        "tax_rate": {
+            "type": "decimal",
+            "default": 0
+        },
+        "tax_amount": {
+            "type": "decimal",
+            "default": 0
+        },
+        "discount_rate": {
+            "type": "decimal",
+            "default": 0
+        },
+        "discount_amount": {
+            "type": "decimal",
+            "default": 0
+        },
+        "net_amount": {
+            "type": "decimal",
+            "required": true
+        },
+        "publisher": {
+            "type": "relation",
+            "relation": "manyToOne",
+            "target": "plugin::users-permissions.user"
+        },
+        "publisher_commission_rate": {
+            "type": "decimal",
+            "default": 0
+        },
+        "publisher_commission_amount": {
+            "type": "decimal",
+            "default": 0
+        },
+        "platform_fee_rate": {
+            "type": "decimal",
+            "default": 0
+        },
+        "platform_fee_amount": {
+            "type": "decimal",
+            "default": 0
+        }
+    }
+}

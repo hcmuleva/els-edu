@@ -1,0 +1,80 @@
+{
+  "kind": "collectionType",
+  "collectionName": "lessons",
+  "info": {
+    "singularName": "lesson",
+    "pluralName": "lessons",
+    "displayName": "lesson"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "lesson_link": {
+      "type": "text"
+    },
+    "duration": {
+      "type": "string"
+    },
+    "description": {
+      "type": "blocks"
+    },
+    "order": {
+      "type": "integer"
+    },
+    "is_free": {
+      "type": "boolean",
+      "default": false
+    },
+    "lesson_multimedia": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "kit": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kit.kit",
+      "inversedBy": "lessons"
+    },
+    "kitlevel": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::kitlevel.kitlevel",
+      "inversedBy": "lessons"
+    },
+    "user_lesson": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::user-lesson.user-lesson",
+      "mappedBy": "lesson"
+    },
+    "orgs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::org.org",
+      "inversedBy": "lessons"
+    },
+    "resources": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::resource.resource",
+      "mappedBy": "lesson"
+    },
+    "kitsubscriptions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::kitsubscription.kitsubscription",
+      "mappedBy": "unlocked_lessons"
+    }
+  }
+}

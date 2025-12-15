@@ -1,0 +1,123 @@
+{
+  "kind": "collectionType",
+  "collectionName": "subjects",
+  "info": {
+    "singularName": "subject",
+    "pluralName": "subjects",
+    "displayName": "subject"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "coverpage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "grade": {
+      "type": "enumeration",
+      "enum": [
+        "PLAYSCHOOL",
+        "LKG",
+        "UKG",
+        "FIRST",
+        "SECOND",
+        "THIRD",
+        "FOURTH",
+        "FIFTH",
+        "SIXTH",
+        "SEVENTH",
+        "EIGHTH",
+        "NINTH",
+        "TENTH",
+        "ELEVENTH",
+        "TWELFTH",
+        "DIPLOMA",
+        "GRADUATION",
+        "POSTGRADUATION",
+        "PHD"
+      ]
+    },
+    "level": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
+    },
+    "topics": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::topic.topic",
+      "mappedBy": "subject"
+    },
+    "contents": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::content.content",
+      "mappedBy": "subjects"
+    },
+    "quizzes": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz.quiz",
+      "mappedBy": "subject"
+    },
+    "quiz_results": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-result.quiz-result",
+      "mappedBy": "subject"
+    },
+    "quizResults": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-result.quiz-result",
+      "mappedBy": "subject"
+    },
+    "questions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::question.question",
+      "mappedBy": "subjectRef"
+    },
+    "courses": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::course.course",
+      "inversedBy": "subjects"
+    },
+    "usersubscription": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::usersubscription.usersubscription",
+      "inversedBy": "subjects"
+    },
+    "publishers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "published_subjects"
+    },
+    "approver": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "approved_subjects"
+    },
+    "authoredBy": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "authored_subjects"
+    }
+  }
+}

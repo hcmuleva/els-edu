@@ -1,0 +1,169 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quizzes",
+  "info": {
+    "singularName": "quiz",
+    "pluralName": "quizzes",
+    "displayName": "Quiz",
+    "description": "Dynamic quiz system for educational content"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "required": false
+    },
+    "description": {
+      "type": "richtext",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "quizType": {
+      "type": "enumeration",
+      "required": false,
+      "default": "standalone",
+      "enum": [
+        "standalone",
+        "kit",
+        "level",
+        "lesson"
+      ]
+    },
+    "relatedType": {
+      "type": "string",
+      "required": false
+    },
+    "kits": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::kit.kit",
+      "mappedBy": "quizzes"
+    },
+    "difficulty": {
+      "type": "enumeration",
+      "default": "beginner",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    "timeLimit": {
+      "type": "integer",
+      "min": 1,
+      "max": 300
+    },
+    "maxAttempts": {
+      "type": "integer",
+      "default": 3,
+      "min": 1,
+      "max": 10
+    },
+    "passingScore": {
+      "type": "decimal",
+      "default": 70,
+      "min": 0,
+      "max": 100
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "isRandomized": {
+      "type": "boolean",
+      "default": false
+    },
+    "showCorrectAnswers": {
+      "type": "enumeration",
+      "default": "after-submission",
+      "enum": [
+        "immediately",
+        "after-submission",
+        "never"
+      ]
+    },
+    "allowReview": {
+      "type": "boolean",
+      "default": true
+    },
+    "instructions": {
+      "type": "richtext",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "questions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::question.question",
+      "mappedBy": "quizzes"
+    },
+    "results": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-result.quiz-result",
+      "mappedBy": "quiz"
+    },
+    "quizResults": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-result.quiz-result",
+      "mappedBy": "quiz"
+    },
+    "tags": {
+      "type": "json"
+    },
+    "category": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "estimatedDuration": {
+      "type": "integer"
+    },
+    "certificate": {
+      "type": "boolean",
+      "default": false
+    },
+    "prerequisites": {
+      "type": "json"
+    },
+    "topic": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::topic.topic",
+      "inversedBy": "quizzes"
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "subject": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject.subject",
+      "inversedBy": "quizzes"
+    }
+  }
+}

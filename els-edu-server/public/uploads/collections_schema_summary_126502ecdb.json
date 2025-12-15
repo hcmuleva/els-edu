@@ -1,0 +1,267 @@
+[
+  {
+    "collectionName": "orgs",
+    "fields": [
+      {
+        "fieldName": "orgname",
+        "type": "string"
+      },
+      {
+        "fieldName": "logo",
+        "type": "media"
+      },
+      {
+        "fieldName": "description",
+        "type": "blocks"
+      },
+      {
+        "fieldName": "address",
+        "type": "blocks"
+      },
+      {
+        "fieldName": "contact_email",
+        "type": "email"
+      },
+      {
+        "fieldName": "contact_phone",
+        "type": "string"
+      },
+      {
+        "fieldName": "org_status",
+        "type": "enumeration"
+      },
+      {
+        "fieldName": "users_permissions_users",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "kits",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "pricings",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "kitsubscriptions",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "kitlevels",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "kitprogresses",
+        "type": "relation",
+        "relationType": "oneToMany"
+      }
+    ]
+  },
+  {
+    "collectionName": "kits",
+    "fields": [
+      {
+        "fieldName": "name",
+        "type": "string"
+      },
+      {
+        "fieldName": "level",
+        "type": "integer"
+      },
+      {
+        "fieldName": "description",
+        "type": "blocks"
+      },
+      {
+        "fieldName": "images",
+        "type": "media"
+      },
+      {
+        "fieldName": "category",
+        "type": "enumeration"
+      },
+      {
+        "fieldName": "std",
+        "type": "string"
+      },
+      {
+        "fieldName": "kitsubscriptions",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "kitlevels",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "kitprogresses",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "org",
+        "type": "relation",
+        "relationType": "manyToOne"
+      }
+    ]
+  },
+  {
+    "collectionName": "kitprogresses",
+    "fields": [
+      {
+        "fieldName": "users_permissions_user",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "kit",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "kitlevel",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "kit_status",
+        "type": "enumeration"
+      },
+      {
+        "fieldName": "started_at",
+        "type": "date"
+      },
+      {
+        "fieldName": "completed_at",
+        "type": "date"
+      },
+      {
+        "fieldName": "notes",
+        "type": "blocks"
+      },
+      {
+        "fieldName": "org",
+        "type": "relation",
+        "relationType": "manyToOne"
+      }
+    ]
+  },
+  {
+    "collectionName": "kitlevels",
+    "fields": [
+      {
+        "fieldName": "title",
+        "type": "string"
+      },
+      {
+        "fieldName": "description",
+        "type": "blocks"
+      },
+      {
+        "fieldName": "order",
+        "type": "integer"
+      },
+      {
+        "fieldName": "kit",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "kitprogresses",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "org",
+        "type": "relation",
+        "relationType": "manyToOne"
+      }
+    ]
+  },
+  {
+    "collectionName": "kitsubscriptions",
+    "fields": [
+      {
+        "fieldName": "users_permissions_user",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "kit",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "pricing",
+        "type": "relation",
+        "relationType": "manyToOne"
+      },
+      {
+        "fieldName": "startdate",
+        "type": "date"
+      },
+      {
+        "fieldName": "enddate",
+        "type": "date"
+      },
+      {
+        "fieldName": "paymentstatus",
+        "type": "enumeration"
+      },
+      {
+        "fieldName": "transactionid",
+        "type": "string"
+      },
+      {
+        "fieldName": "auto_renew",
+        "type": "boolean"
+      },
+      {
+        "fieldName": "notes",
+        "type": "blocks"
+      },
+      {
+        "fieldName": "org",
+        "type": "relation",
+        "relationType": "manyToOne"
+      }
+    ]
+  },
+  {
+    "collectionName": "pricings",
+    "fields": [
+      {
+        "fieldName": "option",
+        "type": "enumeration"
+      },
+      {
+        "fieldName": "name",
+        "type": "string"
+      },
+      {
+        "fieldName": "duration",
+        "type": "integer"
+      },
+      {
+        "fieldName": "cost",
+        "type": "decimal"
+      },
+      {
+        "fieldName": "kitsubscriptions",
+        "type": "relation",
+        "relationType": "oneToMany"
+      },
+      {
+        "fieldName": "org",
+        "type": "relation",
+        "relationType": "manyToOne"
+      }
+    ]
+  }
+]

@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_levels",
+  "info": {
+    "singularName": "user-level",
+    "pluralName": "user-levels",
+    "displayName": "user-level"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "progress": {
+      "type": "integer"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "user_levels"
+    },
+    "kitlevel": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::kitlevel.kitlevel",
+      "mappedBy": "user_level"
+    },
+    "org": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org",
+      "inversedBy": "user_levels"
+    }
+  }
+}

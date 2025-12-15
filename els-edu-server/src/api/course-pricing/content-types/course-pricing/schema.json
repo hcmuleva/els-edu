@@ -1,0 +1,83 @@
+{
+    "kind": "collectionType",
+    "collectionName": "course_pricings",
+    "info": {
+        "singularName": "course-pricing",
+        "pluralName": "course-pricings",
+        "displayName": "Course Pricing",
+        "description": "Pricing configuration for courses and subjects"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "name": {
+            "type": "string",
+            "required": true
+        },
+        "course": {
+            "type": "relation",
+            "relation": "oneToOne",
+            "target": "api::course.course"
+        },
+        "base_amount": {
+            "type": "decimal",
+            "required": true,
+            "default": 0
+        },
+        "currency": {
+            "type": "string",
+            "default": "INR"
+        },
+        "pricing_type": {
+            "type": "enumeration",
+            "enum": [
+                "COURSE_BUNDLE",
+                "INDIVIDUAL_SUBJECTS",
+                "HYBRID"
+            ],
+            "default": "COURSE_BUNDLE",
+            "required": true
+        },
+        "auto_calculate_from_subjects": {
+            "type": "boolean",
+            "default": true
+        },
+        "calculated_total": {
+            "type": "decimal",
+            "default": 0
+        },
+        "discount_percent": {
+            "type": "decimal",
+            "default": 0,
+            "min": 0,
+            "max": 100
+        },
+        "final_amount": {
+            "type": "decimal",
+            "default": 0
+        },
+        "is_active": {
+            "type": "boolean",
+            "default": true
+        },
+        "publisher": {
+            "type": "relation",
+            "relation": "manyToOne",
+            "target": "plugin::users-permissions.user"
+        },
+        "subject_pricings": {
+            "type": "relation",
+            "relation": "oneToMany",
+            "target": "api::subject-pricing.subject-pricing",
+            "mappedBy": "course_pricing"
+        },
+        "effective_from": {
+            "type": "datetime"
+        },
+        "effective_until": {
+            "type": "datetime"
+        }
+    }
+}

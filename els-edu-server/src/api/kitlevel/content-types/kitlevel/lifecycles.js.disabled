@@ -1,0 +1,45 @@
+/**
+ * Lifecycle hooks for kitlevel content type
+ * Prevents duplicate kitlevels with the same documentId
+ */
+
+module.exports = {
+  async beforeCreate(event) {
+    const { data } = event.params;
+
+    // If documentId is provided, check if it already exists
+    if (data.documentId) {
+      const existingLevel = await strapi.db
+        .query("api::kitlevel.kitlevel")
+        .findOne({
+          where: { documentId: data.documentId },
+        });
+
+      if (existingLevel) {
+        throw new Error(
+          `Kitlevel with documentId ${data.documentId} already exists. Cannot create duplicate.`
+        );
+      }
+    }
+  },
+
+  async beforeUpdate(event) {
+    const { data, where } = event.params;
+
+    // If trying to update documentId, ensure new one doesn't exist
+    if (data.documentId) {
+      const existingLevel = await strapi.db
+        .query("api::kitlevel.kitlevel")
+        .findOne({
+          where: { documentId: data.documentId },
+        });
+
+      // If found and it's not the current level being updated
+      if (existingLevel && existingLevel.documentId !== where.documentId) {
+        throw new Error(
+          `Kitlevel with documentId ${data.documentId} already exists. Cannot create duplicate.`
+        );
+      }
+    }
+  },
+};

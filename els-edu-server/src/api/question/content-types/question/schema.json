@@ -1,0 +1,196 @@
+{
+  "kind": "collectionType",
+  "collectionName": "questions",
+  "info": {
+    "singularName": "question",
+    "pluralName": "questions",
+    "displayName": "Question",
+    "description": "Dynamic questions supporting multiple types and media"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "questionText": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "required": false
+    },
+    "questionType": {
+      "type": "enumeration",
+      "required": false,
+      "default": "SC",
+      "enum": [
+        "SC",
+        "MCQ",
+        "TF",
+        "FillInBlank",
+        "Match",
+        "DragDrop",
+        "Ordering",
+        "Hotspot",
+        "Audio"
+      ]
+    },
+    "points": {
+      "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 100
+    },
+    "timeLimit": {
+      "type": "integer",
+      "min": 5,
+      "max": 600
+    },
+    "explanation": {
+      "type": "richtext",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "difficulty": {
+      "type": "enumeration",
+      "default": "medium",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "quizzes": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::quiz.quiz",
+      "inversedBy": "questions"
+    },
+    "questionImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false
+    },
+    "questionAudio": {
+      "type": "media",
+      "multiple": false,
+      "required": false
+    },
+    "questionVideo": {
+      "type": "media",
+      "multiple": false,
+      "required": false
+    },
+    "tags": {
+      "type": "json"
+    },
+    "subject": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "chapter": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "learningObjective": {
+      "type": "richtext",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "hints": {
+      "type": "json"
+    },
+    "options": {
+      "type": "json"
+    },
+    "correctAnswers": {
+      "type": "json"
+    },
+    "partialCredit": {
+      "type": "boolean",
+      "default": false
+    },
+    "shuffleOptions": {
+      "type": "boolean",
+      "default": true
+    },
+    "caseSensitive": {
+      "type": "boolean",
+      "default": false
+    },
+    "order": {
+      "type": "integer"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "statistics": {
+      "type": "json"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1
+    },
+    "tag_exams": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tag-exam.tag-exam",
+      "inversedBy": "questions"
+    },
+    "tag_years": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tag-year.tag-year",
+      "inversedBy": "questions"
+    },
+    "subjectRef": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject.subject",
+      "inversedBy": "questions"
+    },
+    "topicRef": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::topic.topic",
+      "inversedBy": "questions"
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "level": {
+      "type": "integer",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    }
+  }
+}

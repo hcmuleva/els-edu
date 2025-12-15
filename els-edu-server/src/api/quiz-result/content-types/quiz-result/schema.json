@@ -1,0 +1,66 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quiz_results",
+  "info": {
+    "singularName": "quiz-result",
+    "pluralName": "quiz-results",
+    "displayName": "Quiz Result",
+    "description": "Stores user quiz attempts and scores"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "score": {
+      "type": "integer",
+      "required": true
+    },
+    "totalQuestions": {
+      "type": "integer",
+      "required": true
+    },
+    "percentage": {
+      "type": "integer"
+    },
+    "answers": {
+      "type": "json"
+    },
+    "timeTaken": {
+      "type": "integer"
+    },
+    "questionTimings": {
+      "type": "json"
+    },
+    "startedAt": {
+      "type": "datetime"
+    },
+    "completedAt": {
+      "type": "datetime"
+    },
+    "quiz": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::quiz.quiz",
+      "inversedBy": "quizResults"
+    },
+    "topic": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::topic.topic",
+      "inversedBy": "quizResults"
+    },
+    "subject": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject.subject",
+      "inversedBy": "quizResults"
+    },
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "quiz_results"
+    }
+  }
+}

@@ -1,0 +1,263 @@
+{
+  "kind": "collectionType",
+  "collectionName": "up_users",
+  "info": {
+    "name": "user",
+    "description": "",
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "User"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "unique": true,
+      "configurable": false,
+      "required": true
+    },
+    "email": {
+      "type": "email",
+      "minLength": 6,
+      "configurable": false,
+      "required": true
+    },
+    "provider": {
+      "type": "string",
+      "configurable": false
+    },
+    "password": {
+      "type": "password",
+      "minLength": 6,
+      "configurable": false,
+      "private": true,
+      "searchable": false
+    },
+    "resetPasswordToken": {
+      "type": "string",
+      "configurable": false,
+      "private": true,
+      "searchable": false
+    },
+    "confirmationToken": {
+      "type": "string",
+      "configurable": false,
+      "private": true,
+      "searchable": false
+    },
+    "confirmed": {
+      "type": "boolean",
+      "default": false,
+      "configurable": false
+    },
+    "blocked": {
+      "type": "boolean",
+      "default": false,
+      "configurable": false
+    },
+    "role": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.role",
+      "inversedBy": "users",
+      "configurable": false
+    },
+    "first_name": {
+      "type": "string",
+      "required": false
+    },
+    "last_name": {
+      "type": "string",
+      "required": false
+    },
+    "mobile_number": {
+      "type": "biginteger",
+      "required": false
+    },
+    "age": {
+      "type": "integer"
+    },
+    "dob": {
+      "type": "date"
+    },
+    "privacy_accepted": {
+      "type": "boolean"
+    },
+    "getstarted_completed": {
+      "type": "boolean"
+    },
+    "gender": {
+      "type": "enumeration",
+      "enum": [
+        "MALE",
+        "FEMALE"
+      ]
+    },
+    "user_experience_level": {
+      "type": "enumeration",
+      "enum": [
+        "SCHOOL",
+        "COLLEGE",
+        "PROFESSIONAL"
+      ]
+    },
+    "user_role": {
+      "type": "enumeration",
+      "enum": [
+        "STUDENT",
+        "TEACHER",
+        "PARENT",
+        "MARKETING",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    "profile_picture": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "kitprogresses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::kitprogress.kitprogress",
+      "mappedBy": "users"
+    },
+    "user_metadatum": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::user-metadata.user-metadata",
+      "mappedBy": "user"
+    },
+    "user_lessons": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-lesson.user-lesson",
+      "mappedBy": "user"
+    },
+    "kitsubscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::kitsubscription.kitsubscription",
+      "mappedBy": "user"
+    },
+    "org": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org",
+      "inversedBy": "users"
+    },
+    "user_repos": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-repo.user-repo",
+      "mappedBy": "user"
+    },
+    "user_status": {
+      "type": "enumeration",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "BLOCKED"
+      ]
+    },
+    "profile_photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "calander_activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::calander-activity.calander-activity",
+      "mappedBy": "creator"
+    },
+    "user_levels": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-level.user-level",
+      "mappedBy": "user"
+    },
+    "team": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::team.team",
+      "inversedBy": "players"
+    },
+    "userroles": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::userrole.userrole",
+      "mappedBy": "user"
+    },
+    "quiz_results": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-result.quiz-result",
+      "mappedBy": "student"
+    },
+    "home_address": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::address.address",
+      "inversedBy": "user_address"
+    },
+    "user_roles": {
+      "type": "json"
+    },
+    "user_permissions": {
+      "type": "json"
+    },
+    "usersubscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::usersubscription.usersubscription",
+      "mappedBy": "users_permissions_user"
+    },
+    "published_courses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course.course",
+      "mappedBy": "publisher"
+    },
+    "published_subjects": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::subject.subject",
+      "mappedBy": "publishers"
+    },
+    "approved_subjects": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::subject.subject",
+      "mappedBy": "approver"
+    },
+    "authored_subjects": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::subject.subject",
+      "mappedBy": "authoredBy"
+    },
+    "published_courses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course.course",
+      "mappedBy": "publisher"
+    }
+  }
+}

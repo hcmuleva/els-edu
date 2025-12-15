@@ -1,0 +1,60 @@
+{
+  "kind": "collectionType",
+  "collectionName": "offers",
+  "info": {
+    "singularName": "offer",
+    "pluralName": "offers",
+    "displayName": "Offer",
+    "description": "Promotional offers and discounts for kits"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "discount_type": {
+      "type": "enumeration",
+      "enum": [
+        "PERCENTAGE",
+        "FIXED"
+      ],
+      "default": "PERCENTAGE",
+      "required": true
+    },
+    "discount_value": {
+      "type": "decimal",
+      "required": true
+    },
+    "start_date": {
+      "type": "datetime",
+      "required": true
+    },
+    "end_date": {
+      "type": "datetime",
+      "required": true
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "kits": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::kit.kit",
+      "inversedBy": "offers"
+    },
+    "pricings": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::pricing.pricing",
+      "inversedBy": "offers"
+    }
+  }
+}
