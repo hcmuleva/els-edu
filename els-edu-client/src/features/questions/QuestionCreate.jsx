@@ -134,8 +134,10 @@ export const QuestionCreate = () => {
                             <ArrowLeft className="w-5 h-5 text-gray-600" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-black text-foreground">Create Question</h1>
-                            <p className="text-sm text-muted-foreground mt-0.5">
+                            <h1 className="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                                Create Question
+                            </h1>
+                            <p className="text-xs font-medium text-muted-foreground mt-0.5">
                                 {questions.length} question{questions.length !== 1 ? 's' : ''}
                             </p>
                         </div>

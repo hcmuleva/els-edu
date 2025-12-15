@@ -44,17 +44,17 @@ export const QuestionBuilder = ({
     canMoveDown,
     showHeader = true
 }) => {
-    const [showMediaUpload, setShowMediaUpload] = useState(false);
+    const [showMediaUpload, setShowMediaUpload] = useState(false                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            );
 
-    const handleQuestionTextChange = (e) => {
+    const handleQuestionTextChange = (e) => {                                                                                                                                           
         onChange(index, { ...question, questionText: e.target.value });
     };
 
-    const handleExplanationChange = (e) => {
+    const handleExplanationChange = (e) => {                                                                                                                                           
         onChange(index, { ...question, explanation: e.target.value });
     };
 
-    const addOption = () => {
+    const addOption = () => {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
         const newOption = {
             id: Date.now(),
             option: '',
@@ -68,7 +68,7 @@ export const QuestionBuilder = ({
         });
     };
 
-    const removeOption = (optionId) => {
+    const removeOption = (optionId) => {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
         // Prevent deletion if only 2 options remain (minimum for SC/MCQ)
         if (question.options?.length <= 2) {
             return; // Silently prevent deletion - minimum 2 options required
@@ -98,10 +98,13 @@ export const QuestionBuilder = ({
         const { active, over } = event;
 
         if (active.id !== over.id) {
-            const oldIndex = question.options.findIndex(opt => opt.id === active.id);
-            const newIndex = question.options.findIndex(opt => opt.id === over.id);
+            const currentOptions = question.options || [];
+            if (currentOptions.length === 0) return;
 
-            const reorderedOptions = arrayMove(question.options, oldIndex, newIndex);
+            const oldIndex = currentOptions.findIndex(opt => opt.id === active.id);
+            const newIndex = currentOptions.findIndex(opt => opt.id === over.id);
+
+            const reorderedOptions = arrayMove(currentOptions, oldIndex, newIndex);
             
             // Re-label after reordering
             const relabeledOptions = reorderedOptions.map((opt, idx) => ({
@@ -246,8 +249,8 @@ export const QuestionBuilder = ({
             <div className="mb-4">
                 <CustomAsyncSelect
                     label="Topic Reference"
-                    value={question.topicRef}
-                    onChange={(topicId) => onChange(index, { ...question, topicRef: topicId })}
+                    value={question.topic}
+                    onChange={(topicId) => onChange(index, { ...question, topic: topicId })}
                     resource="topics"
                     optionText="name"
                     placeholder="Select topic to categorize..."
@@ -306,11 +309,11 @@ export const QuestionBuilder = ({
                     onDragEnd={handleDragEnd}
                 >
                     <SortableContext
-                        items={question.options.map(opt => opt.id)}
+                        items={question?.options?.map(opt => opt.id) || []}
                         strategy={verticalListSortingStrategy}
                     >
                         <div className="space-y-2">
-                            {(question.options || []).map((option) => (
+                            {(question?.options || []).map((option) => (
                                 <SortableOption
                                     key={option.id}
                                     option={option}
@@ -318,7 +321,8 @@ export const QuestionBuilder = ({
                                     onUpdateOption={updateOption}
                                     onRemoveOption={removeOption}
                                     onSelectCorrect={(optionId) => {
-                                        const updatedOptions = question.options.map(opt => ({
+                                        const currentOptions = question.options || [];
+                                        const updatedOptions = currentOptions.map(opt => ({
                                             ...opt,
                                             isCorrect: opt.id === optionId
                                         }));

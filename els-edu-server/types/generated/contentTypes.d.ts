@@ -1618,13 +1618,7 @@ export interface ApiQuestionQuestion extends Struct.CollectionTypeSchema {
     quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     shuffleOptions: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     statistics: Schema.Attribute.JSON;
-    subject: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    subjectRef: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
+    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
     tag_exams: Schema.Attribute.Relation<
       'manyToMany',
       'api::tag-exam.tag-exam'
@@ -1642,7 +1636,7 @@ export interface ApiQuestionQuestion extends Struct.CollectionTypeSchema {
         },
         number
       >;
-    topicRef: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
+    topic: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

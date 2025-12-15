@@ -94,12 +94,10 @@
       "type": "json"
     },
     "subject": {
-      "type": "string",
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      }
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject.subject",
+      "inversedBy": "questions"
     },
     "chapter": {
       "type": "string",
@@ -166,13 +164,7 @@
       "target": "api::tag-year.tag-year",
       "inversedBy": "questions"
     },
-    "subjectRef": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::subject.subject",
-      "inversedBy": "questions"
-    },
-    "topicRef": {
+    "topic": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::topic.topic",

@@ -87,7 +87,7 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::question.question",
-      "mappedBy": "subjectRef"
+      "mappedBy": "subject"
     },
     "courses": {
       "type": "relation",

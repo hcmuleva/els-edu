@@ -13,6 +13,7 @@ import {
 
 const OptionsDisplay = () => {
     const record = useRecordContext();
+
     if (!record || !record.options) return null;
 
     return (
@@ -104,7 +105,7 @@ export const QuestionShow = () => (
                 </Labeled>
 
                 <Labeled label="Topic">
-                    <ReferenceField source="topicRef" reference="topics" link="show" emptyText="No topic assigned">
+                    <ReferenceField source="topic" reference="topics" link="show" emptyText="No topic assigned">
                         <TextField source="name" />
                     </ReferenceField>
                 </Labeled>

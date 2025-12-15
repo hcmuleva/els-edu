@@ -1,106 +1,103 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useDataProvider, useGetIdentity, useSidebarState } from 'react-admin';
+import { useInfiniteGetList, useGetIdentity, useSidebarState } from 'react-admin';
 import { X, Search, Check, RotateCcw, User, Globe, BookOpen } from 'lucide-react';
 import { CustomAsyncSelect } from './CustomAsyncSelect';
 import { CustomSelect } from './CustomSelect';
 
 export const QuestionSelector = ({ open, onClose, onSelectQuestions, selectedIds = [] }) => {
-    const dataProvider = useDataProvider();
     const { data: identity } = useGetIdentity();
     const [sidebarOpen] = useSidebarState();
     
-    const [questions, setQuestions] = useState([]);
-    const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const [localSelected, setLocalSelected] = useState(selectedIds);
-    
     const [viewMode, setViewMode] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         difficulty: 'all',
         questionType: 'all',
-        topicRef: null
+        topic: null
     });
 
     const scrollContainerRef = useRef(null);
     const sentinelRef = useRef(null);
+    const isFetchingRef = useRef(false); // Guard to prevent multiple simultaneous fetches
+
+    // Build filter object for the query
+    const queryFilter = useMemo(() => {
+        const filter = {};
+        if (searchTerm) filter.q = searchTerm;
+        if (filters.difficulty !== 'all') filter.difficulty = filters.difficulty;
+        if (filters.questionType !== 'all') filter.questionType = filters.questionType;
+        if (filters.topic) filter.topic = filters.topic;
+        if (viewMode === 'my' && identity?.id) filter.creator = identity.id;
+        return filter;
+    }, [searchTerm, filters, viewMode, identity?.id]);
+
+    // Use React Admin's useInfiniteGetList hook for infinite scrolling
+    const {
+        data,
+        total,
+        isPending,
+        hasNextPage,
+        fetchNextPage,
+        isFetchingNextPage,
+    } = useInfiniteGetList('questions', {
+        pagination: { page: 1, perPage: 20 },
+        sort: { field: 'createdAt', order: 'DESC' },
+        filter: queryFilter,
+    }, {
+        enabled: open, // Only fetch when modal is open
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+
+    // Update fetch guard when fetching state changes
+    useEffect(() => {
+        isFetchingRef.current = isFetchingNextPage;
+    }, [isFetchingNextPage]);
+
+    // Flatten pages into a single array of questions
+    const questions = useMemo(() => 
+        data?.pages.flatMap(page => page.data) ?? [], 
+        [data]
+    );
 
     const resetFilters = () => {
-        setFilters({ difficulty: 'all', questionType: 'all', topicRef: null });
+        setFilters({ difficulty: 'all', questionType: 'all', topic: null });
         setSearchTerm('');
+        setLocalSelected([]); // Also reset selected questions
     };
 
-    const fetchQuestions = useCallback(async (pageNum, reset = false) => {
-        if (loading || (!hasMore && !reset)) return;
-        
-        setLoading(true);
-        try {
-            const filter = {};
-            if (searchTerm) filter.q = searchTerm;
-            if (filters.difficulty !== 'all') filter.difficulty = filters.difficulty;
-            if (filters.questionType !== 'all') filter.questionType = filters.questionType;
-            if (filters.topicRef) filter.topicRef = filters.topicRef;
-            if (viewMode === 'my' && identity?.id) filter.creator = identity.id;
-
-            const { data, total: totalCount } = await dataProvider.getList('questions', {
-                pagination: { page: pageNum, perPage: 20 },
-                sort: { field: 'createdAt', order: 'DESC' },
-                filter
-            });
-
-            if (reset) {
-                setQuestions(data);
-                setPage(1);
-            } else {
-                setQuestions(prev => [...prev, ...data]);
-            }
-            
-            setTotal(totalCount);
-            setHasMore(data.length === 20);
-        } catch (error) {
-            console.error('Error fetching questions:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [dataProvider, searchTerm, filters, viewMode, identity, loading, hasMore]);
-
-    // Reset and fetch when filters change
+    // Reset scroll position when filters change
     useEffect(() => {
-        setQuestions([]);
-        setPage(1);
-        setHasMore(true);
-        fetchQuestions(1, true);
-        
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = 0;
         }
     }, [searchTerm, filters, viewMode]);
 
-    // Infinite scroll observer
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            entries => {
-                if (entries[0].isIntersecting && hasMore && !loading) {
-                    const nextPage = page + 1;
-                    setPage(nextPage);
-                    fetchQuestions(nextPage, false);
-                }
-            },
-            { threshold: 0.1, rootMargin: '100px' }
-        );
-
-        if (sentinelRef.current) {
-            observer.observe(sentinelRef.current);
-        }
-
-        return () => {
-            if (sentinelRef.current) {
-                observer.unobserve(sentinelRef.current);
+    // Infinite scroll observer - fetch next page when sentinel is visible
+    const handleObserver = useCallback(
+        (entries) => {
+            const [target] = entries;
+            // Guard: Only fetch if intersecting, has more pages, and not already fetching
+            if (target.isIntersecting && hasNextPage && !isFetchingRef.current) {
+                isFetchingRef.current = true; // Set guard immediately
+                fetchNextPage();
             }
-        };
-    }, [hasMore, loading, page, fetchQuestions]);
+        },
+        [fetchNextPage, hasNextPage]
+    );
+
+    useEffect(() => {
+        const element = sentinelRef.current;
+        if (!element || !open) return;
+
+        const observer = new IntersectionObserver(handleObserver, { 
+            threshold: 0.1,
+            root: scrollContainerRef.current, // Observe within the scroll container
+        });
+        observer.observe(element);
+
+        return () => observer.unobserve(element);
+    }, [handleObserver, open]);
 
     const handleToggle = (id) => {
         setLocalSelected(prev => 
@@ -195,8 +192,8 @@ export const QuestionSelector = ({ open, onClose, onSelectQuestions, selectedIds
                             <CustomAsyncSelect
                                 resource="topics"
                                 optionText="name"
-                                value={filters.topicRef}
-                                onChange={(val) => setFilters(prev => ({ ...prev, topicRef: val }))}
+                                value={filters.topic}
+                                onChange={(val) => setFilters(prev => ({ ...prev, topic: val }))}
                                 placeholder="Filter by Topic"
                                 className="w-full"
                             />
@@ -246,9 +243,27 @@ export const QuestionSelector = ({ open, onClose, onSelectQuestions, selectedIds
                     ref={scrollContainerRef}
                     className="flex-1 overflow-y-auto bg-gray-50/50 p-6"
                 >
-                    {loading && questions.length === 0 ? (
-                        <div className="flex items-center justify-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    {isPending && questions.length === 0 ? (
+                        <div className="space-y-4 animate-pulse">
+                            {/* Skeleton loading cards */}
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-6 h-6 rounded-lg bg-gray-200" />
+                                        <div className="flex-1 space-y-3">
+                                            <div className="flex justify-between items-start gap-4">
+                                                <div className="h-5 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded-lg w-3/4" />
+                                                <div className="h-6 w-16 bg-gray-200 rounded-lg" />
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <div className="h-6 w-16 bg-gray-100 rounded-md" />
+                                                <div className="h-6 w-20 bg-gray-100 rounded-md" />
+                                                <div className="h-6 w-24 bg-gray-100 rounded-md" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : questions.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-64 text-muted-foreground p-6 text-center">
@@ -305,11 +320,11 @@ export const QuestionSelector = ({ open, onClose, onSelectQuestions, selectedIds
                                                         <span className="font-medium text-gray-600">{question.points} pts</span>
                                                     )}
 
-                                                    {question.topicRef?.name && (
+                                                    {question.topic?.name && (
                                                         <span className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
                                                             <BookOpen className="w-3 h-3 text-purple-500" />
-                                                            <span className="truncate max-w-[150px]" title={question.topicRef.name}>
-                                                                {question.topicRef.name}
+                                                            <span className="truncate max-w-[150px]" title={question.topic.name}>
+                                                                {question.topic.name}
                                                             </span>
                                                         </span>
                                                     )}
@@ -334,19 +349,21 @@ export const QuestionSelector = ({ open, onClose, onSelectQuestions, selectedIds
                             <div ref={sentinelRef} className="h-4" />
                             
                             {/* Loading indicator */}
-                            {loading && (
-                                <div className="py-6 flex items-center justify-center">
-                                    <div className="flex items-center gap-2 text-sm text-primary font-bold animate-pulse">
-                                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce"></span>
-                                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce delay-100"></span>
-                                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce delay-200"></span>
-                                        Loading more...
+                            {isFetchingNextPage && (
+                                <div className="py-8 flex flex-col items-center justify-center gap-3">
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-primary to-purple-500 animate-bounce [animation-delay:-0.3s]" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-primary to-purple-500 animate-bounce [animation-delay:-0.15s]" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-primary to-purple-500 animate-bounce" />
                                     </div>
+                                    <span className="text-sm font-semibold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                                        Loading more questions...
+                                    </span>
                                 </div>
                             )}
                             
                             {/* End of list indicator */}
-                            {!hasMore && questions.length > 0 && (
+                            {!hasNextPage && questions.length > 0 && (
                                 <div className="py-8 text-center text-xs font-bold text-muted-foreground uppercase tracking-wider opacity-60">
                                     — End of list —
                                 </div>

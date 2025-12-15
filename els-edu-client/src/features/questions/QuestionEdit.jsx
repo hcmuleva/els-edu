@@ -25,9 +25,9 @@ export const QuestionEdit = () => {
             const { documentId: docId, id, ...cleanData } = questionData;
             setQuestion({
                 ...cleanData,
-                topicRef: cleanData.topicRef && typeof cleanData.topicRef === 'object' 
-                    ? (cleanData.topicRef.documentId || cleanData.topicRef.id) 
-                    : cleanData.topicRef, // Handle object or scalar ID
+                topic: cleanData.topic && typeof cleanData.topic === 'object' 
+                    ? (cleanData.topic.documentId || cleanData.topic.id) 
+                    : cleanData.topic, // Handle object or scalar ID
                 id: Date.now(), // Local ID for UI only
             });
         }
