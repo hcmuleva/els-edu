@@ -11,7 +11,7 @@ const httpClient = (url, options = {}) => {
     }
     if (token) {
         options.headers.set('Authorization', `Bearer ${token}`);
-    }
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                           
     return fetchUtils.fetchJson(url, options);
 };
 
@@ -25,16 +25,16 @@ export const strapiDataProvider = {
         const { field = 'createdAt', order = 'DESC' } = params.sort || {};
 
         // Query parameters for Strapi v4+
-        // Use only ONE set of pagination params (not both old and new)
+        // Strapi v4 uses pagination[start] and pagination[limit] for offset-based pagination
         const query = {
             sort: `${field}:${order}`,
-            start: (page - 1) * perPage,
-            limit: perPage,
+            'pagination[start]': (page - 1) * perPage,
+            'pagination[limit]': perPage,
         };
 
         // Add population for specific resources
         if (resource === 'questions') {
-            query['populate'] = 'topicRef';  // Populate the topic reference
+            query['populate'] = 'topic';  // Populate the topic reference
         }
 
         // Filter Handling - only add valid filters
@@ -49,7 +49,7 @@ export const strapiDataProvider = {
                     query[`filters[username][$containsi]`] = value;
                 } else if (key === 'id' || key === 'documentId') {
                     query[`filters[${key}][$eq]`] = value;
-                } else if (key === 'creator' || typeof value === 'number') {
+                } else if (key === 'creator' || key === 'topic' || key === 'subjectRef' || typeof value === 'number') {
                     // For relation fields and numeric values, use $eq
                     query[`filters[${key}][$eq]`] = value;
                 } else {
@@ -103,7 +103,7 @@ export const strapiDataProvider = {
     getOne: async (resource, params) => {
         const query = {};
         if (resource === 'questions') {
-            query['populate'] = 'topicRef';
+            query['populate'] = 'topic';
         }
         const url = `${apiUrl}/${resource}/${params.id}?${queryString.stringify(query)}`;
         const { json } = await httpClient(url);

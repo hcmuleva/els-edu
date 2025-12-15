@@ -54,7 +54,7 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::question.question",
-      "mappedBy": "topicRef"
+      "mappedBy": "topic"
     }
   }
 }

@@ -72,7 +72,7 @@ const QUESTIONS = [
         difficulty: "hard",
         tags: ["Geometry", "Math"],
         subjectRef: { connect: [{ documentId: SUBJECT_ID }] },
-        topicRef: { connect: [{ documentId: TOPIC_ID }] },
+                                                                                                        : { connect: [{ documentId: TOPIC_ID }] },
         options: [
             { id: "a", text: "Exactly 180 degrees" },
             { id: "b", text: "Less than 180 degrees" },

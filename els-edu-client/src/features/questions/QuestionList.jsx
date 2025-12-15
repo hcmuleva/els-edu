@@ -78,7 +78,7 @@ export const QuestionList = () => (
             <TextField source="points" label="Points" />
             
             <ReferenceField 
-                source="topicRef" 
+                source="topic" 
                 reference="topics" 
                 label="Topic"
                 link={false}
