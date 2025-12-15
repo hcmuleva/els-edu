@@ -6,18 +6,16 @@ import {
     SelectInput,
     NumberInput,
     BooleanInput,
-    useNotify,
     useRedirect,
     Title
 } from 'react-admin';
-import { Plus, FileQuestion } from 'lucide-react';
+import { Plus, FileQuestion, ArrowLeft } from 'lucide-react';
 import { QuestionBuilder } from '../questions/components/QuestionBuilder';
 import { QuestionSelector } from '../../components/common/QuestionSelector';
 
 export const QuizCreate = () => {
     const [questions, setQuestions] = useState([]);
     const [showQuestionSelector, setShowQuestionSelector] = useState(false);
-    const notify = useNotify();
     const redirect = useRedirect();
 
     // Add new blank question
@@ -75,17 +73,27 @@ export const QuizCreate = () => {
             <Title title="Create Quiz" />
             
             {/* Header */}
-            <div className="bg-white border-b border-border/50 px-6 py-4">
+            <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-40 bg-white/80 backdrop-blur-md">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-black text-foreground">Create Quiz</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Draft</p>
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => redirect('/my-contents')}
+                            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                            <ArrowLeft className="w-6 h-6" />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-black text-foreground bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                                Create New Quiz
+                            </h1>
+                            <p className="text-sm text-muted-foreground mt-0.5 font-medium">Draft Mode</p>
+                        </div>
                     </div>
                     <div className="flex gap-3">
-                        <button className="px-6 py-2.5 rounded-xl border border-border/50 font-medium hover:bg-gray-50 transition-colors">
-                            Save Update
+                        <button className="px-6 py-2.5 rounded-xl border-2 border-border/50 font-bold text-muted-foreground hover:text-foreground hover:border-border hover:bg-gray-50 transition-all">
+                            Save Draft
                         </button>
-                        <button className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
+                        <button className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] transition-all">
                             Publish Quiz
                         </button>
                     </div>

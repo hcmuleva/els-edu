@@ -49,7 +49,7 @@ export const strapiDataProvider = {
                     query[`filters[username][$containsi]`] = value;
                 } else if (key === 'id' || key === 'documentId') {
                     query[`filters[${key}][$eq]`] = value;
-                } else if (key === 'creator' || typeof value === 'number') {
+                } else if (key === 'creator' || key === 'topicRef' || key === 'subjectRef' || typeof value === 'number') {
                     // For relation fields and numeric values, use $eq
                     query[`filters[${key}][$eq]`] = value;
                 } else {

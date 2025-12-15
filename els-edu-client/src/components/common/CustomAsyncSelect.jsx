@@ -82,12 +82,11 @@ export const CustomAsyncSelect = ({
           )
         : options;
 
-    const selectedOption = options.find(opt => 
-        (opt.documentId || opt.id) === value
-    );
+    const selectedOption = options.find(opt => opt.id === value);
 
-    const handleSelect = (id) => {
-        onChange(id);
+    const handleSelect = (option) => {
+        // Pass numeric ID for relation filtering
+        onChange(option.id);
         setIsOpen(false);
         setSearchQuery('');
     };
@@ -172,19 +171,19 @@ export const CustomAsyncSelect = ({
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((option) => (
                                 <button
-                                    key={option.documentId || option.id}
+                                    key={option.id}
                                     type="button"
-                                    onClick={() => handleSelect(option.documentId || option.id)}
+                                    onClick={() => handleSelect(option)}
                                     className={`
                                         w-full px-3 py-2.5 text-left text-sm rounded-lg flex items-center justify-between group transition-colors
-                                        ${(option.documentId || option.id) === value 
+                                        ${option.id === value 
                                             ? 'bg-primary/5 text-primary font-medium' 
                                             : 'text-gray-600 hover:bg-gray-50'
                                         }
                                     `}
                                 >
                                     <span>{option[optionText]}</span>
-                                    {(option.documentId || option.id) === value && (
+                                    {option.id === value && (
                                         <Check className="w-4 h-4 text-primary" />
                                     )}
                                 </button>

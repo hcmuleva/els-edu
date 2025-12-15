@@ -296,10 +296,10 @@ const MyContents = () => {
         }
 
         if (topicFilter) {
-             content = content.filter(item => {
-                 const tId = item.topicRef && (item.topicRef.documentId || item.topicRef.id);
-                 return tId === topicFilter;
-             });
+            content = content.filter(item => {
+                const tId = item.topicRef?.id;
+                return tId === topicFilter;
+            });
         }
 
         return content;
