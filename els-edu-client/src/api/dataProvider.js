@@ -34,7 +34,23 @@ export const strapiDataProvider = {
 
         // Add population for specific resources
         if (resource === 'questions') {
-            query['populate'] = 'topic';  // Populate the topic reference
+            // Use '*' to populate all relations (topic, subject, etc.)
+            // Strapi v4 doesn't support comma-separated values like 'topic,subject'
+            query['populate'] = '*';
+        } else if (resource === 'quizzes') {
+            // Only populate if explicitly requested in meta
+            // This prevents breaking the list view if populate causes issues
+            if (params.meta && params.meta.populate) {
+                const populateValue = params.meta.populate;
+                // Handle array format: ['topic', 'subject'] -> use '*' to populate all
+                // Handle string format: 'topic,subject' or '*' -> as is
+                if (Array.isArray(populateValue)) {
+                    query['populate'] = '*';
+                } else {
+                    query['populate'] = populateValue;
+                }
+            }
+            // Don't add default populate for list view to avoid breaking queries
         }
 
         // Filter Handling - only add valid filters
@@ -66,11 +82,33 @@ export const strapiDataProvider = {
         const rawData = Array.isArray(json) ? json : (json.data || []);
         
         // Map data to React Admin format
-        const data = rawData.map(item => ({
-            ...item,
-            id: item.id, // Primary key
-            // Ensure any other required transformations happen here
-        }));
+        const data = rawData.map(item => {
+            const normalized = {
+                ...item,
+                id: item.id, // Primary key
+            };
+            
+            // Normalize topic and subject for questions - ensure ID is accessible
+            if (resource === 'questions') {
+                if (item.topic && typeof item.topic === 'object') {
+                    // If topic is populated object, keep it as is (ReferenceField can extract ID)
+                    normalized.topic = item.topic;
+                } else if (item.topic) {
+                    // If topic is just an ID, keep it as is
+                    normalized.topic = item.topic;
+                }
+                
+                if (item.subject && typeof item.subject === 'object') {
+                    // If subject is populated object, keep it as is (ReferenceField can extract ID)
+                    normalized.subject = item.subject;
+                } else if (item.subject) {
+                    // If subject is just an ID, keep it as is
+                    normalized.subject = item.subject;
+                }
+            }
+            
+            return normalized;
+        });
 
         // Total Count Calculation
         // 1. Try X-Total-Count header
@@ -103,7 +141,10 @@ export const strapiDataProvider = {
     getOne: async (resource, params) => {
         const query = {};
         if (resource === 'questions') {
-            query['populate'] = 'topic';
+            // Use '*' to populate all relations (topic, subject, etc.)
+            query['populate'] = '*';
+        } else if (resource === 'quizzes') {
+            query['populate'] = '*'; // Populate all relations (topic, subject, questions, creator, etc.)
         }
         const url = `${apiUrl}/${resource}/${params.id}?${queryString.stringify(query)}`;
         const { json } = await httpClient(url);

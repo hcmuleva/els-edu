@@ -105,9 +105,39 @@ export const QuestionShow = () => (
                 </Labeled>
 
                 <Labeled label="Topic">
-                    <ReferenceField source="topic" reference="topics" link="show" emptyText="No topic assigned">
-                        <TextField source="name" />
-                    </ReferenceField>
+                    <FunctionField
+                        render={record => {
+                            if (!record.topic) return 'No topic assigned';
+                            // If topic is populated as object, show name directly
+                            if (typeof record.topic === 'object' && record.topic.name) {
+                                return record.topic.name;
+                            }
+                            // Otherwise, use ReferenceField to fetch
+                            return (
+                                <ReferenceField record={record} source="topic" reference="topics" link="show">
+                                    <TextField source="name" />
+                                </ReferenceField>
+                            );
+                        }}
+                    />
+                </Labeled>
+
+                <Labeled label="Subject">
+                    <FunctionField
+                        render={record => {
+                            if (!record.subject) return 'No subject assigned';
+                            // If subject is populated as object, show name directly
+                            if (typeof record.subject === 'object' && record.subject.name) {
+                                return record.subject.name;
+                            }
+                            // Otherwise, use ReferenceField to fetch
+                            return (
+                                <ReferenceField record={record} source="subject" reference="subjects" link="show">
+                                    <TextField source="name" />
+                                </ReferenceField>
+                            );
+                        }}
+                    />
                 </Labeled>
             </div>
 

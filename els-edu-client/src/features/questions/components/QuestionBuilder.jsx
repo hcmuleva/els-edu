@@ -245,15 +245,25 @@ export const QuestionBuilder = ({
                 />
             </div>
 
-            {/* Topic Reference - Body Grid */}
-            <div className="mb-4">
+            {/* Topic and Subject Reference - Body Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <CustomAsyncSelect
                     label="Topic Reference"
                     value={question.topic}
                     onChange={(topicId) => onChange(index, { ...question, topic: topicId })}
                     resource="topics"
                     optionText="name"
-                    placeholder="Select topic to categorize..."
+                    placeholder="Select topic..."
+                    allowEmpty
+                    helperText="Optional categorization"
+                />
+                <CustomAsyncSelect
+                    label="Subject Reference"
+                    value={question.subject}
+                    onChange={(subjectId) => onChange(index, { ...question, subject: subjectId })}
+                    resource="subjects"
+                    optionText="name"
+                    placeholder="Select subject..."
                     allowEmpty
                     helperText="Optional categorization"
                 />

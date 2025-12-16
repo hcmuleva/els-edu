@@ -25,9 +25,14 @@ export const QuestionEdit = () => {
             const { documentId: docId, id, ...cleanData } = questionData;
             setQuestion({
                 ...cleanData,
+                // Extract numeric ID (not documentId) for topic - Strapi relations use numeric IDs
                 topic: cleanData.topic && typeof cleanData.topic === 'object' 
-                    ? (cleanData.topic.documentId || cleanData.topic.id) 
-                    : cleanData.topic, // Handle object or scalar ID
+                    ? cleanData.topic.id  // Use numeric ID, not documentId
+                    : (cleanData.topic ? Number(cleanData.topic) : null), // Ensure it's a number
+                // Extract numeric ID (not documentId) for subject - Strapi relations use numeric IDs
+                subject: cleanData.subject && typeof cleanData.subject === 'object' 
+                    ? cleanData.subject.id  // Use numeric ID, not documentId
+                    : (cleanData.subject ? Number(cleanData.subject) : null), // Ensure it's a number
                 id: Date.now(), // Local ID for UI only
             });
         }
@@ -60,12 +65,30 @@ export const QuestionEdit = () => {
                 locale,
                 createdBy,
                 updatedBy,
+                localizations, // i18n plugin field - read-only, cannot be updated
                 ...questionDataToSave
             } = question;
             
+            // Ensure topic and subject are properly formatted for Strapi
+            // Strapi expects numeric IDs for manyToOne relations, or null to disconnect
+            const formattedData = {
+                ...questionDataToSave,
+                // Extract numeric ID if topic is an object, otherwise use the value (which should be numeric ID or null)
+                topic: questionDataToSave.topic && typeof questionDataToSave.topic === 'object'
+                    ? (questionDataToSave.topic.id || null)
+                    : (questionDataToSave.topic ? Number(questionDataToSave.topic) : null),
+                // Extract numeric ID if subject is an object, otherwise use the value (which should be numeric ID or null)
+                subject: questionDataToSave.subject && typeof questionDataToSave.subject === 'object'
+                    ? (questionDataToSave.subject.id || null)
+                    : (questionDataToSave.subject ? Number(questionDataToSave.subject) : null),
+            };
+            
+            // Explicitly remove documentId if it exists (it's read-only and cannot be updated)
+            delete formattedData.documentId;
+            
             await update('questions', { 
                 id: documentId,  // Use documentId for the API call
-                data: questionDataToSave,
+                data: formattedData,
                 previousData: questionDataToSave 
             });
             
