@@ -61,72 +61,14 @@ module.exports = {
   },
 
   /**
-   * Find duplicate kitlevels by documentId
-   */
-  async findDuplicateKitlevels(strapi) {
-    try {
-      console.log("🔍 Checking for duplicate kitlevels...");
-
-      // Get all kitlevels
-      const allLevels = await strapi.db
-        .query("api::kitlevel.kitlevel")
-        .findMany({
-          select: ["id", "documentId", "title"],
-        });
-
-      // Group by documentId
-      const grouped = {};
-      allLevels.forEach((level) => {
-        if (!grouped[level.documentId]) {
-          grouped[level.documentId] = [];
-        }
-        grouped[level.documentId].push(level);
-      });
-
-      // Find duplicates
-      const duplicates = Object.entries(grouped).filter(
-        ([_, levels]) => levels.length > 1
-      );
-
-      if (duplicates.length === 0) {
-        console.log("✅ No duplicate kitlevels found!");
-        return { duplicates: [], count: 0 };
-      }
-
-      console.log(`⚠️ Found ${duplicates.length} duplicate documentIds:`);
-      duplicates.forEach(([documentId, levels]) => {
-        console.log(
-          `  - ${documentId}: ${levels.length} copies (${levels[0].title})`
-        );
-        console.log(`    IDs: ${levels.map((l) => l.id).join(", ")}`);
-      });
-
-      return {
-        duplicates: duplicates.map(([documentId, levels]) => ({
-          documentId,
-          title: levels[0].title,
-          count: levels.length,
-          ids: levels.map((l) => l.id),
-        })),
-        count: duplicates.length,
-      };
-    } catch (error) {
-      console.error("❌ Error finding duplicates:", error);
-      throw error;
-    }
-  },
-
-  /**
    * Report on all duplicates
    */
   async reportDuplicates(strapi) {
     const lessonDuplicates = await this.findDuplicateLessons(strapi);
-    const kitlevelDuplicates = await this.findDuplicateKitlevels(strapi);
 
     return {
       lessons: lessonDuplicates,
-      kitlevels: kitlevelDuplicates,
-      totalIssues: lessonDuplicates.count + kitlevelDuplicates.count,
+      totalIssues: lessonDuplicates.count,
     };
   },
 };

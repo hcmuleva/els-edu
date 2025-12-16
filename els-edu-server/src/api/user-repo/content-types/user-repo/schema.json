@@ -17,12 +17,6 @@
     "user_repo_name": {
       "type": "string"
     },
-    "kit": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kit.kit",
-      "inversedBy": "user_repos"
-    },
     "user": {
       "type": "relation",
       "relation": "manyToOne",

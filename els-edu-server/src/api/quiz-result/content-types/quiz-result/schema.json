@@ -24,19 +24,77 @@
       "type": "integer"
     },
     "answers": {
-      "type": "json"
+      "type": "json",
+      "description": "Array of user answers with question IDs, selected options, correctness, and time spent"
     },
     "timeTaken": {
-      "type": "integer"
+      "type": "integer",
+      "description": "Total time taken in seconds"
     },
     "questionTimings": {
-      "type": "json"
+      "type": "json",
+      "description": "Time spent on each question in seconds"
     },
     "startedAt": {
       "type": "datetime"
     },
     "completedAt": {
       "type": "datetime"
+    },
+    "attemptNumber": {
+      "type": "integer",
+      "default": 1,
+      "description": "Which attempt this is for the user"
+    },
+    "isPassed": {
+      "type": "boolean",
+      "description": "Whether the user passed based on passing score"
+    },
+    "correctAnswers": {
+      "type": "integer",
+      "description": "Number of correct answers"
+    },
+    "incorrectAnswers": {
+      "type": "integer",
+      "description": "Number of incorrect answers"
+    },
+    "unansweredQuestions": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of questions not attempted"
+    },
+    "questionAnalysis": {
+      "type": "json",
+      "description": "Detailed analysis per question: {questionId, isCorrect, timeSpent, selectedAnswer, correctAnswer, difficulty}"
+    },
+    "weakAreas": {
+      "type": "json",
+      "description": "Topics/categories where user performed poorly"
+    },
+    "strongAreas": {
+      "type": "json",
+      "description": "Topics/categories where user performed well"
+    },
+    "recommendedRetake": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether system recommends retaking specific questions"
+    },
+    "retakeQuestions": {
+      "type": "json",
+      "description": "Array of question IDs recommended for retake"
+    },
+    "improvementSuggestions": {
+      "type": "json",
+      "description": "AI-generated suggestions for improvement"
+    },
+    "deviceInfo": {
+      "type": "json",
+      "description": "Device and browser information"
+    },
+    "sessionData": {
+      "type": "json",
+      "description": "Session tracking data for analytics"
     },
     "quiz": {
       "type": "relation",
@@ -56,11 +114,15 @@
       "target": "api::subject.subject",
       "inversedBy": "quizResults"
     },
-    "student": {
+    "questions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::question.question"
+    },
+    "user": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user",
-      "inversedBy": "quiz_results"
+      "target": "plugin::users-permissions.user"
     }
   }
 }

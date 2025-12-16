@@ -47,35 +47,11 @@
       "target": "plugin::users-permissions.user",
       "mappedBy": "org"
     },
-    "kits": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::kit.kit",
-      "mappedBy": "orgs"
-    },
     "pricings": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::pricing.pricing",
       "mappedBy": "orgs"
-    },
-    "kitsubscriptions": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::kitsubscription.kitsubscription",
-      "mappedBy": "org"
-    },
-    "kitlevels": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::kitlevel.kitlevel",
-      "mappedBy": "orgs"
-    },
-    "kitprogresses": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::kitprogress.kitprogress",
-      "mappedBy": "org"
     },
     "org_metadatum": {
       "type": "relation",

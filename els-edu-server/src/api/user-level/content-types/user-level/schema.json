@@ -32,12 +32,6 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "user_levels"
     },
-    "kitlevel": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::kitlevel.kitlevel",
-      "mappedBy": "user_level"
-    },
     "org": {
       "type": "relation",
       "relation": "manyToOne",

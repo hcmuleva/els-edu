@@ -36,22 +36,10 @@
         "FILE"
       ]
     },
-    "kit": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kit.kit",
-      "inversedBy": "resources"
-    },
     "lesson": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::lesson.lesson",
-      "inversedBy": "resources"
-    },
-    "kitlevel": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kitlevel.kitlevel",
       "inversedBy": "resources"
     }
   }

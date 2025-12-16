@@ -67,23 +67,11 @@
     "cashfree_plan_id": {
       "type": "string"
     },
-    "kitsubscriptions": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::kitsubscription.kitsubscription",
-      "mappedBy": "pricing"
-    },
     "orgs": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::org.org",
       "inversedBy": "pricings"
-    },
-    "kit": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kit.kit",
-      "inversedBy": "pricing_plans"
     },
     "offers": {
       "type": "relation",

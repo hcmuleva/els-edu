@@ -5,7 +5,7 @@
     "singularName": "user-payment",
     "pluralName": "user-payments",
     "displayName": "User Payment",
-    "description": "Payment transaction records for kit subscriptions"
+    "description": "Payment transaction records"
   },
   "options": {
     "draftAndPublish": false
@@ -57,20 +57,11 @@
     "customer_phone": {
       "type": "string"
     },
-    "kit_name": {
-      "type": "string"
-    },
     "pricing_name": {
       "type": "string"
     },
     "transaction_date": {
       "type": "datetime"
-    },
-    "kitsubscription": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kitsubscription.kitsubscription",
-      "inversedBy": "payments"
     },
     "user": {
       "type": "relation",
@@ -81,11 +72,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::org.org"
-    },
-    "kit": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kit.kit"
     },
     "pricing": {
       "type": "relation",
