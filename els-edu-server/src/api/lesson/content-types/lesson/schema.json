@@ -40,18 +40,6 @@
         "audios"
       ]
     },
-    "kit": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kit.kit",
-      "inversedBy": "lessons"
-    },
-    "kitlevel": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::kitlevel.kitlevel",
-      "inversedBy": "lessons"
-    },
     "user_lesson": {
       "type": "relation",
       "relation": "oneToOne",
@@ -69,12 +57,6 @@
       "relation": "oneToMany",
       "target": "api::resource.resource",
       "mappedBy": "lesson"
-    },
-    "kitsubscriptions": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::kitsubscription.kitsubscription",
-      "mappedBy": "unlocked_lessons"
     }
   }
 }

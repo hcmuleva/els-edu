@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "Tech Academy Pvt Ltd",
+    "billingAddress": "123 Technology Park, Sector 5, Gurgaon, Haryana 122001, India"
+  },
+  {
+    "id": 2,
+    "name": "Learning Solutions Inc",
+    "billingAddress": "456 Education Hub, Whitefield, Bangalore, Karnataka 560066, India"
+  },
+  {
+    "id": 3,
+    "name": "EduTech Innovations",
+    "billingAddress": "789 Innovation Drive, Bandra East, Mumbai, Maharashtra 400051, India"
+  },
+  {
+    "id": 4,
+    "name": "Global Learning Center",
+    "billingAddress": "321 Knowledge Street, Connaught Place, New Delhi, Delhi 110001, India"
+  }
+]

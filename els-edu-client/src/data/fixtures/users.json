@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "billingAddress": "45 Green Park, South Delhi, New Delhi, Delhi 110016, India"
+  },
+  {
+    "id": 2,
+    "name": "Sarah Johnson",
+    "email": "sarah.johnson@example.com",
+    "billingAddress": "78 MG Road, Koramangala, Bangalore, Karnataka 560034, India"
+  },
+  {
+    "id": 3,
+    "name": "Michael Brown",
+    "email": "michael.brown@example.com",
+    "billingAddress": "12 Marine Drive, Nariman Point, Mumbai, Maharashtra 400021, India"
+  },
+  {
+    "id": 4,
+    "name": "Emily Davis",
+    "email": "emily.davis@example.com",
+    "billingAddress": "67 Park Street, Kolkata, West Bengal 700016, India"
+  },
+  {
+    "id": 5,
+    "name": "David Wilson",
+    "email": "david.wilson@example.com",
+    "billingAddress": "89 Anna Nagar, Chennai, Tamil Nadu 600040, India"
+  },
+  {
+    "id": 6,
+    "name": "Lisa Anderson",
+    "email": "lisa.anderson@example.com",
+    "billingAddress": "23 Satellite Road, Ahmedabad, Gujarat 380015, India"
+  }
+]

@@ -126,12 +126,6 @@
         "audios"
       ]
     },
-    "kitprogresses": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::kitprogress.kitprogress",
-      "mappedBy": "users"
-    },
     "user_metadatum": {
       "type": "relation",
       "relation": "oneToOne",
@@ -142,12 +136,6 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::user-lesson.user-lesson",
-      "mappedBy": "user"
-    },
-    "kitsubscriptions": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::kitsubscription.kitsubscription",
       "mappedBy": "user"
     },
     "org": {

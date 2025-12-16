@@ -1,5 +1,5 @@
 import { Menu, usePermissions, useGetIdentity, useNotify, useAuthProvider, useSidebarState } from 'react-admin';
-import { LayoutDashboard, Users, BookOpen, GraduationCap, Settings, ChevronDown, LogOut, User, ChevronRight, Menu as MenuIcon, ChevronLeft, ChevronUp } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, GraduationCap, Settings, ChevronDown, LogOut, User, ChevronRight, Menu as MenuIcon, ChevronLeft, ChevronUp, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
@@ -331,6 +331,12 @@ const AppMenu = (props) => {
                         to="/users" 
                         primaryText="Users" 
                         leftIcon={<Users size={20} />} 
+                        isOpen={open}
+                    />
+                    <CustomMenuItem 
+                        to="/invoices" 
+                        primaryText="Invoices" 
+                        leftIcon={<FileText size={20} />} 
                         isOpen={open}
                     />
                     

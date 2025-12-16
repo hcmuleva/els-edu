@@ -35,6 +35,12 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org",
+      "inversedBy": "courses"
+    },
     "subjects": {
       "type": "relation",
       "relation": "manyToMany",

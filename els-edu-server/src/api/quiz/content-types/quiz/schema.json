@@ -39,7 +39,6 @@
       "default": "standalone",
       "enum": [
         "standalone",
-        "kit",
         "level",
         "lesson"
       ]
@@ -47,12 +46,6 @@
     "relatedType": {
       "type": "string",
       "required": false
-    },
-    "kits": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::kit.kit",
-      "mappedBy": "quizzes"
     },
     "difficulty": {
       "type": "enumeration",

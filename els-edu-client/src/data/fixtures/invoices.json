@@ -1,0 +1,226 @@
+[
+  {
+    "id": 1,
+    "number": "INV-2025-000001",
+    "date": "2025-01-15",
+    "dueDate": "2025-02-15",
+    "status": "sent",
+    "subtotal": 50000,
+    "tax": 9000,
+    "discount": 0,
+    "total": 59000,
+    "currency": "INR",
+    "targetType": "ORG",
+    "targetId": 1,
+    "targetName": "Tech Academy Pvt Ltd",
+    "categoryType": "course",
+    "categoryId": 1,
+    "categoryName": "Full Stack Development",
+    "lineItems": [
+      {
+        "description": "Full Stack Development Course - 6 months",
+        "quantity": 1,
+        "unitPrice": 50000
+      }
+    ],
+    "notes": "Payment terms: 30 days. Late payment charges apply.",
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-15T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "number": "INV-2025-000002",
+    "date": "2025-01-10",
+    "dueDate": "2025-01-25",
+    "status": "paid",
+    "subtotal": 15000,
+    "tax": 2700,
+    "discount": 1000,
+    "total": 16700,
+    "currency": "INR",
+    "targetType": "USER",
+    "targetId": 1,
+    "targetName": "John Smith",
+    "categoryType": "subject",
+    "categoryId": 1,
+    "categoryName": "Mathematics",
+    "lineItems": [
+      {
+        "description": "Mathematics Tutoring - 10 hours",
+        "quantity": 10,
+        "unitPrice": 1500
+      }
+    ],
+    "notes": "Individual tutoring sessions completed.",
+    "createdAt": "2025-01-10T14:30:00Z",
+    "updatedAt": "2025-01-12T09:15:00Z"
+  },
+  {
+    "id": 3,
+    "number": "INV-2025-000003",
+    "date": "2025-01-08",
+    "dueDate": "2025-01-20",
+    "status": "overdue",
+    "subtotal": 25000,
+    "tax": 4500,
+    "discount": 0,
+    "total": 29500,
+    "currency": "INR",
+    "targetType": "ORG",
+    "targetId": 2,
+    "targetName": "Learning Solutions Inc",
+    "categoryType": "course",
+    "categoryId": 2,
+    "categoryName": "Data Science Fundamentals",
+    "lineItems": [
+      {
+        "description": "Data Science Course License - 3 months",
+        "quantity": 1,
+        "unitPrice": 25000
+      }
+    ],
+    "notes": "Follow up required for payment.",
+    "createdAt": "2025-01-08T11:00:00Z",
+    "updatedAt": "2025-01-08T11:00:00Z"
+  },
+  {
+    "id": 4,
+    "number": "INV-2025-000004",
+    "date": "2025-01-12",
+    "dueDate": "2025-02-12",
+    "status": "draft",
+    "subtotal": 8000,
+    "tax": 1440,
+    "discount": 0,
+    "total": 9440,
+    "currency": "INR",
+    "targetType": "USER",
+    "targetId": 2,
+    "targetName": "Sarah Johnson",
+    "categoryType": "subject",
+    "categoryId": 2,
+    "categoryName": "Physics",
+    "lineItems": [
+      {
+        "description": "Physics Lab Sessions",
+        "quantity": 8,
+        "unitPrice": 1000
+      }
+    ],
+    "notes": "Draft invoice - pending approval.",
+    "createdAt": "2025-01-12T16:45:00Z",
+    "updatedAt": "2025-01-12T16:45:00Z"
+  },
+  {
+    "id": 5,
+    "number": "INV-2025-000005",
+    "date": "2025-01-14",
+    "dueDate": "2025-02-14",
+    "status": "sent",
+    "subtotal": 35000,
+    "tax": 6300,
+    "discount": 2000,
+    "total": 39300,
+    "currency": "INR",
+    "targetType": "ORG",
+    "targetId": 3,
+    "targetName": "EduTech Innovations",
+    "categoryType": "course",
+    "categoryId": 3,
+    "categoryName": "Web Development Bootcamp",
+    "lineItems": [
+      {
+        "description": "Web Development Bootcamp - Intensive 12 weeks",
+        "quantity": 1,
+        "unitPrice": 35000
+      }
+    ],
+    "notes": "Bulk discount applied. Group training program.",
+    "createdAt": "2025-01-14T09:20:00Z",
+    "updatedAt": "2025-01-14T09:20:00Z"
+  },
+  {
+    "id": 6,
+    "number": "INV-2025-000006",
+    "date": "2025-01-16",
+    "dueDate": "2025-02-16",
+    "status": "paid",
+    "subtotal": 12000,
+    "tax": 2160,
+    "discount": 0,
+    "total": 14160,
+    "currency": "INR",
+    "targetType": "USER",
+    "targetId": 3,
+    "targetName": "Michael Brown",
+    "categoryType": "subject",
+    "categoryId": 3,
+    "categoryName": "Chemistry",
+    "lineItems": [
+      {
+        "description": "Advanced Chemistry Sessions",
+        "quantity": 6,
+        "unitPrice": 2000
+      }
+    ],
+    "notes": "Payment received via bank transfer.",
+    "createdAt": "2025-01-16T13:10:00Z",
+    "updatedAt": "2025-01-16T15:30:00Z"
+  },
+  {
+    "id": 7,
+    "number": "INV-2025-000007",
+    "date": "2025-01-18",
+    "dueDate": "2025-03-18",
+    "status": "draft",
+    "subtotal": 75000,
+    "tax": 13500,
+    "discount": 5000,
+    "total": 83500,
+    "currency": "INR",
+    "targetType": "ORG",
+    "targetId": 4,
+    "targetName": "Global Learning Center",
+    "categoryType": "course",
+    "categoryId": 4,
+    "categoryName": "Machine Learning Specialization",
+    "lineItems": [
+      {
+        "description": "Machine Learning Specialization - 6 month program",
+        "quantity": 1,
+        "unitPrice": 75000
+      }
+    ],
+    "notes": "Corporate training program. Waiting for purchase order.",
+    "createdAt": "2025-01-18T10:45:00Z",
+    "updatedAt": "2025-01-18T10:45:00Z"
+  },
+  {
+    "id": 8,
+    "number": "INV-2025-000008",
+    "date": "2025-01-20",
+    "dueDate": "2025-02-20",
+    "status": "sent",
+    "subtotal": 18000,
+    "tax": 3240,
+    "discount": 0,
+    "total": 21240,
+    "currency": "INR",
+    "targetType": "USER",
+    "targetId": 4,
+    "targetName": "Emily Davis",
+    "categoryType": "subject",
+    "categoryId": 4,
+    "categoryName": "Biology",
+    "lineItems": [
+      {
+        "description": "Biology Practical Sessions",
+        "quantity": 9,
+        "unitPrice": 2000
+      }
+    ],
+    "notes": "Laboratory access included in the fee.",
+    "createdAt": "2025-01-20T14:20:00Z",
+    "updatedAt": "2025-01-20T14:20:00Z"
+  }
+]

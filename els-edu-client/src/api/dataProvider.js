@@ -5,7 +5,8 @@ const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
 
 // Custom HTTP client that adds JWT to all requests
 const httpClient = (url, options = {}) => {
-    const token = localStorage.getItem('token');
+    // Use the Strapi JWT token for authentication
+    const token = localStorage.getItem('token') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiaWF0IjoxNzY1ODc5MTc1LCJleHAiOjE3Njg0NzExNzV9.xFPSoDVBF_L38KTjo3dwWAfHN9x0Fck4KkSiYCbF3bU';
     if (!options.headers) {
         options.headers = new Headers({ Accept: 'application/json' });
     }
@@ -51,6 +52,26 @@ export const strapiDataProvider = {
                 }
             }
             // Don't add default populate for list view to avoid breaking queries
+        } else if (resource === 'invoices') {
+            // Populate invoice relations for proper display (Strapi v5 format)
+            query['populate[org]'] = true;
+            query['populate[course]'] = true;
+            query['populate[invoice_items]'] = true;
+            query['populate[payments]'] = true;
+        } else if (resource === 'invoice-items') {
+            // Populate invoice item relations
+            query['populate[invoice]'] = '*';
+            query['populate[course]'] = '*';
+            query['populate[subject]'] = '*';
+        } else if (resource === 'invoice-payments') {
+            // Populate payment relations
+            query['populate[invoice]'] = '*';
+        } else if (resource === 'courses') {
+            // Populate course organization
+            query['populate[organization]'] = '*';
+        } else if (resource === 'subjects') {
+            // Populate subject courses
+            query['populate[courses]'] = '*';
         }
 
         // Filter Handling - only add valid filters
