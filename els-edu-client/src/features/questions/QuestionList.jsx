@@ -77,15 +77,39 @@ export const QuestionList = () => (
             
             <TextField source="points" label="Points" />
             
-            <ReferenceField 
-                source="topic" 
-                reference="topics" 
+            <FunctionField 
                 label="Topic"
-                link={false}
-                emptyText="-"
-            >
-                <TextField source="name" />
-            </ReferenceField>
+                render={record => {
+                    if (!record.topic) return '-';
+                    // If topic is populated as object, show name directly
+                    if (typeof record.topic === 'object' && record.topic.name) {
+                        return record.topic.name;
+                    }
+                    // Otherwise, use ReferenceField to fetch
+                    return (
+                        <ReferenceField record={record} source="topic" reference="topics" link={false}>
+                            <TextField source="name" />
+                        </ReferenceField>
+                    );
+                }}
+            />
+
+            <FunctionField 
+                label="Subject"
+                render={record => {
+                    if (!record.subject) return '-';
+                    // If subject is populated as object, show name directly
+                    if (typeof record.subject === 'object' && record.subject.name) {
+                        return record.subject.name;
+                    }
+                    // Otherwise, use ReferenceField to fetch
+                    return (
+                        <ReferenceField record={record} source="subject" reference="subjects" link={false}>
+                            <TextField source="name" />
+                        </ReferenceField>
+                    );
+                }}
+            />
             
             <DateField source="createdAt" label="Created" showTime />
             

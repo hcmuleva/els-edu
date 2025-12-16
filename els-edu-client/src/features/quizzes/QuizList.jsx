@@ -112,7 +112,7 @@ export const QuizList = () => (
             />
             
             <ReferenceField 
-                source="topic.documentId" 
+                source="topic.id" 
                 reference="topics" 
                 label="Topic"
                 link={false}
@@ -122,7 +122,7 @@ export const QuizList = () => (
             </ReferenceField>
 
             <ReferenceField 
-                source="subject.documentId" 
+                source="subject.id" 
                 reference="subjects" 
                 label="Subject"
                 link={false}

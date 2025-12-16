@@ -105,12 +105,12 @@ export const QuizShow = () => (
                             />
                         </Labeled>
                         <Labeled label="Topic">
-                            <ReferenceField source="topic.documentId" reference="topics" link="show" emptyText="-">
+                            <ReferenceField source="topic.id" reference="topics" link="show" emptyText="-">
                                 <TextField source="name" />
                             </ReferenceField>
                         </Labeled>
                         <Labeled label="Subject">
-                            <ReferenceField source="subject.documentId" reference="subjects" link="show" emptyText="-">
+                            <ReferenceField source="subject.id" reference="subjects" link="show" emptyText="-">
                                 <TextField source="name" />
                             </ReferenceField>
                         </Labeled>
@@ -135,7 +135,7 @@ export const QuizShow = () => (
                         </Labeled>
                     </div>
                     <Labeled label="Created By">
-                        <ReferenceField source="creator.documentId" reference="users" link={false}>
+                        <ReferenceField source="creator.id" reference="users" link={false}>
                             <TextField source="username" />
                         </ReferenceField>
                     </Labeled>
