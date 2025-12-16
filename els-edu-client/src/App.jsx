@@ -16,38 +16,39 @@ import { CourseCreate } from "./features/courses/CourseCreate";
 import AppRoutes from "./routes/AppRoutes";
 
 const App = () => (
-    <Admin 
-        theme={theme} 
-        authProvider={authProvider}
-        dataProvider={strapiDataProvider}
-        layout={AppLayout}
-        dashboard={Dashboard}
-        loginPage={LoginPage}
-    >
-        {AppRoutes()}
-        
-        <Resource name="users" list={UserList} />
-        
-        {/* Educational Resources */}
-        <Resource 
-            name="questions" 
-            list={QuestionList} 
-            create={QuestionCreate}
-            show={QuestionShow}
-            edit={QuestionEdit}
-        />
-        <Resource 
-            name="quizzes" 
-            list={QuizList} 
-            create={QuizCreate} 
-            edit={QuizEdit}
-            show={QuizShow}
-        />
-        <Resource name="courses" list={CourseList} create={CourseCreate} />
-        
-        {/* Supporting Resources (for ReferenceInput) */}
-        <Resource name="topics" />
-    </Admin>
+  <Admin
+    theme={theme}
+    authProvider={authProvider}
+    dataProvider={strapiDataProvider}
+    layout={AppLayout}
+    dashboard={Dashboard}
+    loginPage={LoginPage}
+  >
+    {AppRoutes()}
+
+    <Resource name="users" list={UserList} />
+
+    {/* Educational Resources */}
+    <Resource
+      name="questions"
+      list={QuestionList}
+      create={QuestionCreate}
+      show={QuestionShow}
+      edit={QuestionEdit}
+    />
+    <Resource
+      name="quizzes"
+      list={QuizList}
+      create={QuizCreate}
+      edit={QuizEdit}
+      show={QuizShow}
+    />
+    <Resource name="courses" list={CourseList} create={CourseCreate} />
+
+    {/* Supporting Resources (for ReferenceInput) */}
+    <Resource name="topics" />
+    <Resource name="subjects" />
+  </Admin>
 );
 
 export default App;

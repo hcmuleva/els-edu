@@ -923,249 +923,6 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiKitKit extends Struct.CollectionTypeSchema {
-  collectionName: 'kits';
-  info: {
-    displayName: 'kit';
-    pluralName: 'kits';
-    singularName: 'kit';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    access_notes: Schema.Attribute.Text;
-    category_type: Schema.Attribute.Enumeration<
-      [
-        'AI',
-        'DEVOPS',
-        'DOCKER',
-        'TESTING',
-        'LEARNING',
-        'SKILL',
-        'PROJECT',
-        'WEBAPP',
-        'MOBILEAPP',
-        'FRONTEND',
-        'BACKEND',
-      ]
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Blocks;
-    experience_level: Schema.Attribute.Enumeration<
-      ['COLLEGE', 'PROFESSIONAL', 'SCHOOL']
-    >;
-    images: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios',
-      true
-    >;
-    is_featured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    kit_type: Schema.Attribute.Enumeration<['FREE', 'PAID', 'FREEMIUM']> &
-      Schema.Attribute.DefaultTo<'FREE'>;
-    kit_video: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
-    kitlevels: Schema.Attribute.Relation<'oneToMany', 'api::kitlevel.kitlevel'>;
-    kitprogresses: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitprogress.kitprogress'
-    >;
-    kitsubscriptions: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitsubscription.kitsubscription'
-    >;
-    lessons: Schema.Attribute.Relation<'oneToMany', 'api::lesson.lesson'>;
-    level: Schema.Attribute.Integer;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::kit.kit'> &
-      Schema.Attribute.Private;
-    name: Schema.Attribute.String;
-    offers: Schema.Attribute.Relation<'manyToMany', 'api::offer.offer'>;
-    orgs: Schema.Attribute.Relation<'manyToMany', 'api::org.org'>;
-    pricing_plans: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::pricing.pricing'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
-    resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user_repos: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-repo.user-repo'
-    >;
-    youtube_link: Schema.Attribute.String;
-  };
-}
-
-export interface ApiKitlevelKitlevel extends Struct.CollectionTypeSchema {
-  collectionName: 'kitlevels';
-  info: {
-    displayName: 'kitlevel';
-    pluralName: 'kitlevels';
-    singularName: 'kitlevel';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Blocks;
-    is_free: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    kitprogresses: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitprogress.kitprogress'
-    >;
-    kitsubscriptions: Schema.Attribute.Relation<
-      'manyToMany',
-      'api::kitsubscription.kitsubscription'
-    >;
-    lessons: Schema.Attribute.Relation<'oneToMany', 'api::lesson.lesson'>;
-    level_video: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitlevel.kitlevel'
-    > &
-      Schema.Attribute.Private;
-    order: Schema.Attribute.Integer;
-    orgs: Schema.Attribute.Relation<'manyToMany', 'api::org.org'>;
-    publishedAt: Schema.Attribute.DateTime;
-    resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
-    title: Schema.Attribute.String;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user_level: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::user-level.user-level'
-    >;
-    youtube_link: Schema.Attribute.String;
-  };
-}
-
-export interface ApiKitprogressKitprogress extends Struct.CollectionTypeSchema {
-  collectionName: 'kitprogresses';
-  info: {
-    displayName: 'kitprogress';
-    pluralName: 'kitprogresses';
-    singularName: 'kitprogress';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    completed_at: Schema.Attribute.Date;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    is_active: Schema.Attribute.Boolean;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    kit_status: Schema.Attribute.Enumeration<
-      ['NOT_STARTED', 'INPROGRESS', 'COMPLETED', 'SKIPPED']
-    > &
-      Schema.Attribute.DefaultTo<'NOT_STARTED'>;
-    kitlevel: Schema.Attribute.Relation<'manyToOne', 'api::kitlevel.kitlevel'>;
-    last_accessed_at: Schema.Attribute.Date;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitprogress.kitprogress'
-    > &
-      Schema.Attribute.Private;
-    notes: Schema.Attribute.Blocks;
-    org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
-    progress: Schema.Attribute.Integer;
-    publishedAt: Schema.Attribute.DateTime;
-    started_at: Schema.Attribute.Date;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    users: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-  };
-}
-
-export interface ApiKitsubscriptionKitsubscription
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'kitsubscriptions';
-  info: {
-    description: 'User kit subscriptions with payment tracking';
-    displayName: 'kitsubscription';
-    pluralName: 'kitsubscriptions';
-    singularName: 'kitsubscription';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    amount_paid: Schema.Attribute.Decimal;
-    auto_renew: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    cancellation_reason: Schema.Attribute.Text;
-    cancelled_at: Schema.Attribute.DateTime;
-    cashfree_order_id: Schema.Attribute.String;
-    cashfree_subscription_id: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    enddate: Schema.Attribute.Date;
-    grace_period_days: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    last_payment_at: Schema.Attribute.DateTime;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitsubscription.kitsubscription'
-    > &
-      Schema.Attribute.Private;
-    next_billing_date: Schema.Attribute.Date;
-    notes: Schema.Attribute.Blocks;
-    org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
-    payment_method: Schema.Attribute.Enumeration<
-      ['CARD', 'UPI', 'NETBANKING', 'WALLET', 'FREE', 'OTHER']
-    >;
-    payments: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-payment.user-payment'
-    >;
-    paymentstatus: Schema.Attribute.Enumeration<
-      ['ACTIVE', 'EXPIRED', 'CANCELLED', 'PENDING', 'FAILED']
-    > &
-      Schema.Attribute.DefaultTo<'PENDING'>;
-    pricing: Schema.Attribute.Relation<'manyToOne', 'api::pricing.pricing'>;
-    publishedAt: Schema.Attribute.DateTime;
-    startdate: Schema.Attribute.Date;
-    subscription_type: Schema.Attribute.Enumeration<
-      ['FREE', 'PAID', 'FREEMIUM']
-    >;
-    transactionid: Schema.Attribute.String & Schema.Attribute.Unique;
-    unlocked_lessons: Schema.Attribute.Relation<
-      'manyToMany',
-      'api::lesson.lesson'
-    >;
-    unlocked_levels: Schema.Attribute.Relation<
-      'manyToMany',
-      'api::kitlevel.kitlevel'
-    >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-  };
-}
-
 export interface ApiLessonLesson extends Struct.CollectionTypeSchema {
   collectionName: 'lessons';
   info: {
@@ -1183,12 +940,6 @@ export interface ApiLessonLesson extends Struct.CollectionTypeSchema {
     description: Schema.Attribute.Blocks;
     duration: Schema.Attribute.String;
     is_free: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    kitlevel: Schema.Attribute.Relation<'manyToOne', 'api::kitlevel.kitlevel'>;
-    kitsubscriptions: Schema.Attribute.Relation<
-      'manyToMany',
-      'api::kitsubscription.kitsubscription'
-    >;
     lesson_link: Schema.Attribute.Text;
     lesson_multimedia: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios'
@@ -1236,7 +987,6 @@ export interface ApiOfferOffer extends Struct.CollectionTypeSchema {
     discount_value: Schema.Attribute.Decimal & Schema.Attribute.Required;
     end_date: Schema.Attribute.DateTime & Schema.Attribute.Required;
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    kits: Schema.Attribute.Relation<'manyToMany', 'api::kit.kit'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::offer.offer'> &
       Schema.Attribute.Private;
@@ -1305,19 +1055,6 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Blocks;
-    kitlevels: Schema.Attribute.Relation<
-      'manyToMany',
-      'api::kitlevel.kitlevel'
-    >;
-    kitprogresses: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitprogress.kitprogress'
-    >;
-    kits: Schema.Attribute.Relation<'manyToMany', 'api::kit.kit'>;
-    kitsubscriptions: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitsubscription.kitsubscription'
-    >;
     lessons: Schema.Attribute.Relation<'manyToMany', 'api::lesson.lesson'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::org.org'> &
@@ -1482,11 +1219,6 @@ export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
     features: Schema.Attribute.JSON;
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     is_featured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    kitsubscriptions: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitsubscription.kitsubscription'
-    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1657,10 +1389,16 @@ export interface ApiQuizResultQuizResult extends Struct.CollectionTypeSchema {
   };
   attributes: {
     answers: Schema.Attribute.JSON;
+    attemptNumber: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
     completedAt: Schema.Attribute.DateTime;
+    correctAnswers: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    deviceInfo: Schema.Attribute.JSON;
+    improvementSuggestions: Schema.Attribute.JSON;
+    incorrectAnswers: Schema.Attribute.Integer;
+    isPassed: Schema.Attribute.Boolean;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1669,21 +1407,34 @@ export interface ApiQuizResultQuizResult extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     percentage: Schema.Attribute.Integer;
     publishedAt: Schema.Attribute.DateTime;
+    questionAnalysis: Schema.Attribute.JSON;
+    questions: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::question.question'
+    >;
     questionTimings: Schema.Attribute.JSON;
     quiz: Schema.Attribute.Relation<'manyToOne', 'api::quiz.quiz'>;
+    recommendedRetake: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    retakeQuestions: Schema.Attribute.JSON;
     score: Schema.Attribute.Integer & Schema.Attribute.Required;
+    sessionData: Schema.Attribute.JSON;
     startedAt: Schema.Attribute.DateTime;
-    student: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
+    strongAreas: Schema.Attribute.JSON;
     subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
     timeTaken: Schema.Attribute.Integer;
     topic: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
     totalQuestions: Schema.Attribute.Integer & Schema.Attribute.Required;
+    unansweredQuestions: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    weakAreas: Schema.Attribute.JSON;
   };
 }
 
@@ -1738,7 +1489,6 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
       }>;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     isRandomized: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    kits: Schema.Attribute.Relation<'manyToMany', 'api::kit.kit'>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
     maxAttempts: Schema.Attribute.Integer &
@@ -1770,7 +1520,7 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
       'api::quiz-result.quiz-result'
     >;
     quizType: Schema.Attribute.Enumeration<
-      ['standalone', 'kit', 'level', 'lesson']
+      ['standalone', 'subject', 'topic', 'content']
     > &
       Schema.Attribute.DefaultTo<'standalone'>;
     relatedType: Schema.Attribute.String;
@@ -1819,8 +1569,6 @@ export interface ApiResourceResource extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    kitlevel: Schema.Attribute.Relation<'manyToOne', 'api::kitlevel.kitlevel'>;
     lesson: Schema.Attribute.Relation<'manyToOne', 'api::lesson.lesson'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -2228,7 +1976,6 @@ export interface ApiUserLevelUserLevel extends Struct.CollectionTypeSchema {
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     is_completed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     is_locked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    kitlevel: Schema.Attribute.Relation<'oneToOne', 'api::kitlevel.kitlevel'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2287,7 +2034,7 @@ export interface ApiUserMetadataUserMetadata
 export interface ApiUserPaymentUserPayment extends Struct.CollectionTypeSchema {
   collectionName: 'user_payments';
   info: {
-    description: 'Payment transaction records for kit subscriptions';
+    description: 'Payment transaction records';
     displayName: 'User Payment';
     pluralName: 'user-payments';
     singularName: 'user-payment';
@@ -2308,12 +2055,6 @@ export interface ApiUserPaymentUserPayment extends Struct.CollectionTypeSchema {
     customer_email: Schema.Attribute.String;
     customer_name: Schema.Attribute.String;
     customer_phone: Schema.Attribute.String;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
-    kit_name: Schema.Attribute.String;
-    kitsubscription: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::kitsubscription.kitsubscription'
-    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2356,7 +2097,6 @@ export interface ApiUserRepoUserRepo extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    kit: Schema.Attribute.Relation<'manyToOne', 'api::kit.kit'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2954,14 +2694,6 @@ export interface PluginUsersPermissionsUser
     gender: Schema.Attribute.Enumeration<['MALE', 'FEMALE']>;
     getstarted_completed: Schema.Attribute.Boolean;
     home_address: Schema.Attribute.Relation<'oneToOne', 'api::address.address'>;
-    kitprogresses: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitprogress.kitprogress'
-    >;
-    kitsubscriptions: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::kitsubscription.kitsubscription'
-    >;
     last_name: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -3067,10 +2799,6 @@ declare module '@strapi/strapi' {
       'api::invoice-item.invoice-item': ApiInvoiceItemInvoiceItem;
       'api::invoice-payment.invoice-payment': ApiInvoicePaymentInvoicePayment;
       'api::invoice.invoice': ApiInvoiceInvoice;
-      'api::kit.kit': ApiKitKit;
-      'api::kitlevel.kitlevel': ApiKitlevelKitlevel;
-      'api::kitprogress.kitprogress': ApiKitprogressKitprogress;
-      'api::kitsubscription.kitsubscription': ApiKitsubscriptionKitsubscription;
       'api::lesson.lesson': ApiLessonLesson;
       'api::offer.offer': ApiOfferOffer;
       'api::org-metadata.org-metadata': ApiOrgMetadataOrgMetadata;
