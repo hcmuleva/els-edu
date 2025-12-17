@@ -50,23 +50,32 @@ async function exportContentData() {
       const pageData = response.data.data
         .map((item, index) => {
           try {
-            // Check if data exists directly on item (Strapi v5 flat format)
-            if (
-              !item.title &&
-              !item.type &&
-              !item.json_description &&
-              !item.youtubeurl
-            ) {
-              console.warn(`⚠️  Item ${index} (ID: ${item.id}) has no data`);
+            const attrs = item.attributes;
+
+            if (!attrs) {
+              console.warn(
+                `⚠️  Item ${index} (ID: ${item.id}) has no attributes`
+              );
               return null;
             }
 
             return {
               id: item.id,
-              title: item.title || null,
-              type: item.type || null,
-              json_description: item.json_description || null,
-              youtubeurl: item.youtubeurl || null,
+              title: attrs.title || null,
+              type: attrs.type || null,
+              json_description: attrs.json_description || null,
+              youtubeurl: attrs.youtubeurl || null,
+              publishedAt: attrs.publishedAt || null,
+              // Extract relation IDs
+              topic: attrs.topic?.data?.id || null,
+              subjects: attrs.subjects?.data?.map((s) => s.id) || [],
+              // Store multimedia info (we'll only transfer IDs, not the actual files)
+              multimedia:
+                attrs.multimedia?.data?.map((m) => ({
+                  id: m.id,
+                  name: m.attributes?.name || null,
+                  url: m.attributes?.url || null,
+                })) || [],
             };
           } catch (error) {
             console.error(`❌ Error processing item ${index}:`, error.message);
