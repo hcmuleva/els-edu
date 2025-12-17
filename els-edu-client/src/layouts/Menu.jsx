@@ -19,6 +19,7 @@ import {
   Menu as MenuIcon,
   ChevronLeft,
   ChevronUp,
+  FileText,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useLocation } from "react-router-dom";
@@ -399,6 +400,12 @@ const AppMenu = (props) => {
             to="/users"
             primaryText="Users"
             leftIcon={<Users size={20} />}
+            isOpen={open}
+          />
+          <CustomMenuItem
+            to="/invoices"
+            primaryText="Invoices"
+            leftIcon={<FileText size={20} />}
             isOpen={open}
           />
 
