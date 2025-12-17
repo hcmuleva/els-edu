@@ -397,6 +397,12 @@ const AppMenu = (props) => {
             isOpen={open}
           />
           <CustomMenuItem
+            to="/manage"
+            primaryText="Manage"
+            leftIcon={<Settings size={20} />}
+            isOpen={open}
+          />
+          <CustomMenuItem
             to="/users"
             primaryText="Users"
             leftIcon={<Users size={20} />}

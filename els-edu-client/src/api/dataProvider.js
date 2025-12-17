@@ -304,10 +304,17 @@ export const strapiDataProvider = {
   },
 
   create: async (resource, params) => {
+    // Strapi users-permissions /api/users expects a flat JSON body, not { data: ... }
+    const isUsersResource = resource === "users";
+    const body = isUsersResource
+      ? JSON.stringify(params.data)
+      : JSON.stringify({ data: params.data });
+
     const { json } = await httpClient(`${apiUrl}/${resource}`, {
       method: "POST",
-      body: JSON.stringify({ data: params.data }),
+      body,
     });
+
     const data = json.data || json;
     return { data: { ...data, id: data.id } };
   },

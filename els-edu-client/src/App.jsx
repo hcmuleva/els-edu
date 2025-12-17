@@ -6,6 +6,8 @@ import AppLayout from "./layouts/AppLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import LoginPage from "./pages/auth/LoginPage";
 import { UserList } from "./features/users/UserList";
+import { UserCreate } from "./features/users/UserCreate";
+import { UserEdit } from "./features/users/UserEdit";
 import { QuestionList } from "./features/questions/QuestionList";
 import { QuestionCreate } from "./features/questions/QuestionCreate";
 import { QuestionShow } from "./features/questions/QuestionShow";
@@ -27,7 +29,7 @@ const App = () => (
   >
     {AppRoutes()}
 
-    <Resource name="users" list={UserList} />
+    <Resource name="users" list={UserList} create={UserCreate} edit={UserEdit} />
 
     {/* Educational Resources */}
     <Resource
