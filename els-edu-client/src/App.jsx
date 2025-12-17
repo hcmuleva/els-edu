@@ -46,9 +46,23 @@ const App = () => (
     />
     <Resource name="courses" list={CourseList} create={CourseCreate} />
 
+    {/* Invoices */}
+    <Resource 
+      name="invoices" 
+      list={InvoicesList}
+      show={InvoiceShow}
+      create={InvoiceCreate}
+      edit={InvoiceEdit}
+    />
+
     {/* Supporting Resources (for ReferenceInput) */}
     <Resource name="topics" />
     <Resource name="subjects" />
+    <Resource name="orgs" />
+    <Resource name="pricings" />
+    <Resource name="offers" />
+    <Resource name="invoice-items" />
+    <Resource name="invoice-payments" />
   </Admin>
 );
 
