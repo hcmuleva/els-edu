@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Mathematics",
+    "code": "MATH"
+  },
+  {
+    "id": 2,
+    "name": "Physics",
+    "code": "PHYS"
+  },
+  {
+    "id": 3,
+    "name": "Chemistry",
+    "code": "CHEM"
+  },
+  {
+    "id": 4,
+    "name": "Biology",
+    "code": "BIO"
+  },
+  {
+    "id": 5,
+    "name": "Computer Science",
+    "code": "CS"
+  },
+  {
+    "id": 6,
+    "name": "English Literature",
+    "code": "ENG"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Full Stack Development",
+    "code": "FSD101"
+  },
+  {
+    "id": 2,
+    "name": "Data Science Fundamentals",
+    "code": "DS201"
+  },
+  {
+    "id": 3,
+    "name": "Web Development Bootcamp",
+    "code": "WDB301"
+  },
+  {
+    "id": 4,
+    "name": "Machine Learning Specialization",
+    "code": "ML401"
+  },
+  {
+    "id": 5,
+    "name": "Mobile App Development",
+    "code": "MAD501"
+  },
+  {
+    "id": 6,
+    "name": "Cloud Computing Essentials",
+    "code": "CCE601"
+  }
+]

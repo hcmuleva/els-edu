@@ -25,7 +25,8 @@ export const authProvider = {
         try {
             const response = await fetch(request);
             if (response.status < 200 || response.status >= 300) {
-                throw new Error(response.statusText);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error?.message || 'Invalid username or password');
             }
             const auth = await response.json();
             
@@ -44,27 +45,78 @@ export const authProvider = {
             
             return Promise.resolve();
         } catch (error) {
-            throw new Error('Network error');
+            throw new Error(error.message || 'Network error');
         }
     },
     logout: () => {
+        // Clear all auth-related data
         localStorage.removeItem('auth');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userId');
-        return Promise.resolve();
+        // Redirect to login page
+        return Promise.resolve('/login');
     },
-    checkAuth: () => {
-        return localStorage.getItem('token') ? Promise.resolve() : Promise.reject();
-    },
-    checkError: (error) => {
-        const status = error.status;
-        if (status === 401 || status === 403) {
+    checkAuth: async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            return Promise.reject({ redirectTo: '/login' });
+        }
+
+        // Validate token by fetching current user from Strapi
+        try {
+            const response = await fetch(`${apiUrl}/users/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                // Token is invalid, clear storage and reject
+                localStorage.removeItem('auth');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userId');
+                return Promise.reject({ redirectTo: '/login' });
+            }
+
+            if (!response.ok) {
+                // Other error, clear and reject
+                localStorage.removeItem('auth');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userId');
+                return Promise.reject({ redirectTo: '/login' });
+            }
+
+            const user = await response.json();
+            
+            // Update stored user data in case it changed
+            user.permissions = normalizePermissions(user);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('userId', user.id);
+            
+            return Promise.resolve();
+        } catch (error) {
+            // Network error or other issue, clear and reject
             localStorage.removeItem('auth');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('userId');
-            return Promise.reject();
+            return Promise.reject({ redirectTo: '/login' });
+        }
+    },
+    checkError: (error) => {
+        const status = error.status || error.response?.status;
+        if (status === 401 || status === 403) {
+            // Clear auth data on unauthorized/forbidden
+            localStorage.removeItem('auth');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userId');
+            return Promise.reject({ redirectTo: '/login' });
         }
         return Promise.resolve();
     },

@@ -1,5 +1,5 @@
 import { Admin, Resource } from "react-admin";
-import { strapiDataProvider } from "./api/dataProvider";
+import { compositeDataProvider } from "./data/compositeDataProvider";
 import { authProvider } from "./api/authProvider";
 import { theme } from "./config/theme";
 import AppLayout from "./layouts/AppLayout";
@@ -13,13 +13,14 @@ import { QuestionEdit } from "./features/questions/QuestionEdit";
 import { QuizList, QuizCreate, QuizEdit, QuizShow } from "./features/quizzes";
 import { CourseList } from "./features/courses/CourseList";
 import { CourseCreate } from "./features/courses/CourseCreate";
+import { InvoicesList, InvoiceShow, InvoiceCreate, InvoiceEdit } from "./features/invoices";
 import AppRoutes from "./routes/AppRoutes";
 
 const App = () => (
   <Admin
     theme={theme}
     authProvider={authProvider}
-    dataProvider={strapiDataProvider}
+    dataProvider={compositeDataProvider}
     layout={AppLayout}
     dashboard={Dashboard}
     loginPage={LoginPage}

@@ -47,6 +47,12 @@
       "target": "plugin::users-permissions.user",
       "mappedBy": "org"
     },
+    "courses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course.course",
+      "mappedBy": "organization"
+    },
     "pricings": {
       "type": "relation",
       "relation": "manyToMany",

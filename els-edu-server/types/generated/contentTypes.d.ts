@@ -662,6 +662,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
+    organization: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
     previewvideo: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
@@ -1051,6 +1052,7 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
     >;
     contact_email: Schema.Attribute.Email;
     contact_phone: Schema.Attribute.BigInteger;
+    courses: Schema.Attribute.Relation<'oneToMany', 'api::course.course'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
