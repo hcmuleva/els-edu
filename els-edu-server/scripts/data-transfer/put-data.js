@@ -13,36 +13,38 @@ async function importContentData() {
 
     for (const item of contentData) {
       try {
-        // Create payload with only the 4 fields we extracted
-        const postData = {
+        const updateData = {
           data: {
             title: item.title,
             type: item.type,
             json_description: item.json_description,
             youtubeurl: item.youtubeurl,
+            // Add relations
+            topic: item.topic || null,
+            subjects: item.subjects || [],
+            // Add multimedia (only IDs will work if the files already exist in local DB)
+            multimedia: item.multimedia?.map((m) => m.id) || [],
           },
         };
 
-        // PUT to update existing content records in local database
-        const response = await axios.put(
+        await axios.put(
           `http://localhost:1337/api/contents/${item.id}`,
-          postData,
+          updateData,
           {
             headers: {
-              Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzY0MzQ5NDU4LCJleHAiOjE3NjY5NDE0NTh9.jZeGhwG47IUzu9T3ISjAoFEnf-EfoB6dWpdAO0uOisc`,
-              "Content-Type": "application/json",
+              Authorization: `Bearer 2cbb2f98d4ffe8d63ba70f6f69c86a368cebcc8cd59ba3fcc0adb8ce79d5b7d08bea8da36c34088ffae0b7b0b181e65bc3a8020a9ddfc90585e81b5cd41de3cd6a656544af9a4d2e43e5dce20bce2e40470872c4a8c404cf543bd9fa883dca58174316662313b9b05792605cb24cd0491889656ffccef894671edf876d866ec3`,
             },
           }
         );
 
         successCount++;
         console.log(
-          `✓ Updated content: ${item.id} - ${item.title || "Untitled"}`
+          `✓ Updated content ID: ${item.id} - ${item.title || "Untitled"}`
         );
       } catch (error) {
         errorCount++;
         console.error(
-          `✗ Failed to update ID ${item.id} "${item.title || "Untitled"}":`,
+          `✗ Failed to update ID ${item.id}:`,
           error.response?.data?.error?.message || error.message
         );
       }
