@@ -1410,6 +1410,10 @@ export interface ApiQuizResultQuizResult extends Struct.CollectionTypeSchema {
     percentage: Schema.Attribute.Integer;
     publishedAt: Schema.Attribute.DateTime;
     questionAnalysis: Schema.Attribute.JSON;
+    questions: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::question.question'
+    >;
     questionTimings: Schema.Attribute.JSON;
     quiz: Schema.Attribute.Relation<'manyToOne', 'api::quiz.quiz'>;
     recommendedRetake: Schema.Attribute.Boolean &
@@ -1517,7 +1521,9 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::quiz-result.quiz-result'
     >;
-    quizType: Schema.Attribute.Enumeration<['standalone', 'level', 'lesson']> &
+    quizType: Schema.Attribute.Enumeration<
+      ['standalone', 'subject', 'topic', 'content']
+    > &
       Schema.Attribute.DefaultTo<'standalone'>;
     relatedType: Schema.Attribute.String;
     results: Schema.Attribute.Relation<

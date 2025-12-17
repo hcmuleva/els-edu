@@ -39,8 +39,9 @@
       "default": "standalone",
       "enum": [
         "standalone",
-        "level",
-        "lesson"
+        "subject",
+        "topic",
+        "content"
       ]
     },
     "relatedType": {

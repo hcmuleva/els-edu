@@ -20,6 +20,7 @@
     "autoprefixer": "^10.4.23",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
+    "katex": "^0.16.27",
     "lucide-react": "^0.561.0",
     "postcss": "^8.5.6",
     "query-string": "^9.3.1",
@@ -27,7 +28,10 @@
     "react": "^19.2.0",
     "react-admin": "^5.13.3",
     "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.10.1",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^3.4.19"
   },

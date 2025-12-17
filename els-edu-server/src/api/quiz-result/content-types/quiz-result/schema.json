@@ -114,6 +114,11 @@
       "target": "api::subject.subject",
       "inversedBy": "quizResults"
     },
+    "questions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::question.question"
+    },
     "user": {
       "type": "relation",
       "relation": "manyToOne",
