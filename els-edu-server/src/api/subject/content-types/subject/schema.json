@@ -17,12 +17,7 @@
     "coverpage": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "grade": {
       "type": "enumeration",
@@ -118,6 +113,11 @@
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
       "inversedBy": "authored_subjects"
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
     }
   }
 }

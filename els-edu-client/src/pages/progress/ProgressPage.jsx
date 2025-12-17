@@ -122,7 +122,7 @@ const ProgressPage = () => {
         console.log("Quiz results fetched:", data);
         setQuizResults(data || []);
       } catch (error) {
-        console.error("Error fetching quiz results:", error);
+        console.error(" Error fetching quiz results:", error);
       } finally {
         setLoading(false);
       }

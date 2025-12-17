@@ -52,6 +52,9 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
         const targetId = selectedContent.documentId || selectedContent.id;
         const { data } = await dataProvider.getOne("contents", {
           id: targetId,
+          meta: {
+            populate: ["multimedia", "quizzes"], // Ensure quizzes are fetched
+          },
         });
         setContentDetails(data);
       } catch (error) {
@@ -203,18 +206,28 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
               </div>
 
               {/* Related Quizzes - Below Title */}
-              {topicQuizzes.length > 0 && (
+              {(contentDetails?.quizzes?.length > 0 ||
+                topicQuizzes.length > 0) && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {topicQuizzes.map((quiz) => (
+                  {/* Content Specific Quizzes */}
+                  {contentDetails?.quizzes?.map((quiz) => (
                     <button
                       key={quiz.id}
                       onClick={() => onQuizStart && onQuizStart(quiz)}
-                      className="flex items-center gap-1.5 px-3 py-1 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg font-bold text-xs transition-colors border border-violet-100"
+                      className="flex items-center gap-1.5 px-3 py-1 bg-violet-600 text-white hover:bg-violet-700 rounded-lg font-bold text-xs transition-colors shadow-sm shadow-violet-200"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
-                      <span>Take Quiz: {quiz.title}</span>
+                      <span>Quiz: {quiz.title}</span>
                     </button>
                   ))}
+
+                  {/* Topic Quizzes (Optional fallback or separate section? User asked for content quizzes) 
+                      Let's keeping topic quizzes distinct or removed if content quizzes exist? 
+                      The user said "only load quiz in the qontent when the quiz is assigned to the content".
+                      I will render content quizzes first. I'll keep topic quizzes but visually distinct or maybe only if no content quizzes?
+                      Actually, let's keep both but maybe different styling?
+                      Or just render content quizzes as requested.
+                  */}
                 </div>
               )}
 

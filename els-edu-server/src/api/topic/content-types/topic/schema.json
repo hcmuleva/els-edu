@@ -55,6 +55,11 @@
       "relation": "oneToMany",
       "target": "api::question.question",
       "mappedBy": "topic"
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
     }
   }
 }

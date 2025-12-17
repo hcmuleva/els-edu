@@ -15,7 +15,19 @@ import { QuestionEdit } from "./features/questions/QuestionEdit";
 import { QuizList, QuizCreate, QuizEdit, QuizShow } from "./features/quizzes";
 import { CourseList } from "./features/courses/CourseList";
 import { CourseCreate } from "./features/courses/CourseCreate";
-import { InvoicesList, InvoiceShow, InvoiceCreate, InvoiceEdit } from "./features/invoices";
+import { SubjectCreate } from "./features/subjects/SubjectCreate";
+import { SubjectEdit } from "./features/subjects/SubjectEdit";
+import { TopicCreate } from "./features/topics/TopicCreate";
+import { TopicEdit } from "./features/topics/TopicEdit";
+import { ContentCreate } from "./features/contents/ContentCreate";
+import { ContentEdit } from "./features/contents/ContentEdit";
+import { ContentShow } from "./features/contents/ContentShow";
+import {
+  InvoicesList,
+  InvoiceShow,
+  InvoiceCreate,
+  InvoiceEdit,
+} from "./features/invoices";
 import AppRoutes from "./routes/AppRoutes";
 
 const App = () => (
@@ -29,7 +41,12 @@ const App = () => (
   >
     {AppRoutes()}
 
-    <Resource name="users" list={UserList} create={UserCreate} edit={UserEdit} />
+    <Resource
+      name="users"
+      list={UserList}
+      create={UserCreate}
+      edit={UserEdit}
+    />
 
     {/* Educational Resources */}
     <Resource
@@ -49,17 +66,23 @@ const App = () => (
     <Resource name="courses" list={CourseList} create={CourseCreate} />
 
     {/* Invoices */}
-    <Resource 
-      name="invoices" 
+    <Resource
+      name="invoices"
       list={InvoicesList}
       show={InvoiceShow}
       create={InvoiceCreate}
       edit={InvoiceEdit}
     />
 
-    {/* Supporting Resources (for ReferenceInput) */}
-    <Resource name="topics" />
-    <Resource name="subjects" />
+    {/* Supporting Resources (for ReferenceInput and Creation) */}
+    <Resource name="topics" create={TopicCreate} edit={TopicEdit} />
+    <Resource name="subjects" create={SubjectCreate} edit={SubjectEdit} />
+    <Resource
+      name="contents"
+      create={ContentCreate}
+      edit={ContentEdit}
+      show={ContentShow}
+    />
     <Resource name="orgs" />
     <Resource name="pricings" />
     <Resource name="offers" />
