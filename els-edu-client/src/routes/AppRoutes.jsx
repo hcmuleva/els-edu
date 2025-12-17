@@ -6,6 +6,7 @@ import BrowseSubjectsPage from "../pages/subjects/BrowseSubjectsPage";
 import SubjectDetailPage from "../pages/subjects/SubjectDetailPage";
 import QuizPlayer from "../pages/quiz/QuizPlayer";
 import ProgressPage from "../pages/progress/ProgressPage";
+import ManagePage from "../pages/manage/ManagePage";
 
 const AppRoutes = () => (
   <>
@@ -18,6 +19,7 @@ const AppRoutes = () => (
       <Route path="/browse-subjects/:id" element={<SubjectDetailPage />} />
       <Route path="/quiz/:id/play" element={<QuizPlayer />} />
       <Route path="/progress" element={<ProgressPage />} />
+      <Route path="/manage" element={<ManagePage />} />
     </CustomRoutes>
   </>
 );
