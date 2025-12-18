@@ -77,13 +77,19 @@ export const getList = async (httpClient, resource, params) => {
 export const getOne = async (httpClient, resource, params) => {
   const query = {};
 
-  Object.assign(query, buildPopulate(resource, params.meta));
-
-  // Default population for specific resources if not provided
-  if (!params.meta?.populate) {
-    if (resource === "questions" || resource === "quizzes") {
-      query["populate"] = "*";
-    }
+  // For topics, subjects, contents - always use wildcard populate to ensure relations load
+  // This is needed because relations must be populated for edit forms to work correctly
+  if (
+    resource === "topics" ||
+    resource === "subjects" ||
+    resource === "contents" ||
+    resource === "questions" ||
+    resource === "quizzes"
+  ) {
+    query["populate"] = "*";
+  } else {
+    // For other resources, use buildPopulate if meta.populate is provided
+    Object.assign(query, buildPopulate(resource, params.meta));
   }
 
   // Try documentId filter first

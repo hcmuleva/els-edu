@@ -14,7 +14,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment files
-.env
+# .env  # UNCOMMENTED - needed for Docker build with production values
 .env.local
 .env.*.local
 .secrets.env

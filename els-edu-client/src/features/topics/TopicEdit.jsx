@@ -32,6 +32,9 @@ export const TopicEdit = () => {
     subject: null,
   });
 
+  // Store full subject object for initialData
+  const [initialSubject, setInitialSubject] = useState(null);
+
   // Load existing data when topic is fetched
   useEffect(() => {
     if (topic) {
@@ -47,6 +50,11 @@ export const TopicEdit = () => {
             ? Number(topic.subject)
             : null, // Ensure it's a number
       });
+
+      // Store the full subject object for initialData
+      if (topic.subject && typeof topic.subject === "object") {
+        setInitialSubject(topic.subject);
+      }
     }
   }, [topic]);
 
@@ -171,6 +179,7 @@ export const TopicEdit = () => {
                 setFormData((prev) => ({ ...prev, subject: val }))
               }
               placeholder="Select subject..."
+              initialData={initialSubject}
             />
           </div>
 

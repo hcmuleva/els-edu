@@ -21,15 +21,12 @@ export const ContentEdit = () => {
   const [update, { isLoading: isSubmitting }] = useUpdate();
   const { data: identity } = useGetIdentity();
 
-  const { data: content, isLoading } = useGetOne(
-    "contents",
-    { id },
-    {
-      meta: { populate: ["topic", "subjects", "multimedia"] },
-    }
-  );
+  const { data: content, isLoading } = useGetOne("contents", {
+    id,
+    meta: { populate: ["topic", "subjects", "multimedia"] },
+  });
 
-  const [formData, setFormData] = useState                                            ({
+  const [formData, setFormData] = useState({
     title: "",
     type: "TEXT",
     youtubeurl: "",
@@ -42,6 +39,10 @@ export const ContentEdit = () => {
   const [multimediaPreview, setMultimediaPreview] = useState([]);
   const [existingMultimedia, setExistingMultimedia] = useState([]);
   const [isPreview, setIsPreview] = useState(false);
+
+  // Store full objects for initialData
+  const [initialTopic, setInitialTopic] = useState(null);
+  const [initialSubject, setInitialSubject] = useState(null);
 
   useEffect(() => {
     if (content) {
@@ -58,7 +59,7 @@ export const ContentEdit = () => {
           .join("\n\n");
       };
 
-      setFormData(                                                                                                                                                                                {
+      setFormData({
         title: content.title || "",
         type: content.type || "TEXT",
         youtubeurl: content.youtubeurl || "",
@@ -72,6 +73,14 @@ export const ContentEdit = () => {
 
       if (content.multimedia) {
         setExistingMultimedia(content.multimedia);
+      }
+
+      // Store full objects for initialData
+      if (content.topic && typeof content.topic === "object") {
+        setInitialTopic(content.topic);
+      }
+      if (content.subjects?.[0] && typeof content.subjects[0] === "object") {
+        setInitialSubject(content.subjects[0]);
       }
     }
   }, [content]);
@@ -396,6 +405,7 @@ export const ContentEdit = () => {
                   setFormData((prev) => ({ ...prev, topic: val }))
                 }
                 placeholder="Select topic..."
+                initialData={initialTopic}
               />
             </div>
             <div className="space-y-2">
@@ -414,6 +424,7 @@ export const ContentEdit = () => {
                 }
                 placeholder="Select subject..."
                 allowEmpty
+                initialData={initialSubject}
               />
             </div>
           </div>
@@ -438,8 +449,10 @@ export const ContentEdit = () => {
                         {file.mime?.startsWith("image/") ? (
                           <img
                             src={`${
-                              import.meta.env.VITE_API_URL ||
-                              "http://localhost:1337"
+                              import.meta.env.VITE_API_URL?.replace(
+                                "/api",
+                                ""
+                              ) || ""
                             }${file.url}`}
                             alt={file.name}
                             className="w-full h-32 object-cover"

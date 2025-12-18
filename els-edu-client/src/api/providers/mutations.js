@@ -2,6 +2,39 @@
 import { apiUrl } from "./httpClient";
 
 /**
+ * Recursively strips system fields from the payload
+ */
+const sanitizePayload = (data) => {
+  if (Array.isArray(data)) {
+    return data.map(sanitizePayload);
+  }
+  if (data !== null && typeof data === "object") {
+    // Check if it's a File object (don't sanitize) or Date
+    if (data instanceof Date) return data;
+
+    const {
+      documentId,
+      createdAt,
+      updatedAt,
+      publishedAt,
+      createdBy,
+      updatedBy,
+      locale,
+      localizations,
+      ...rest
+    } = data;
+
+    // Recursively sanitize all remaining properties
+    const sanitized = {};
+    for (const key in rest) {
+      sanitized[key] = sanitizePayload(rest[key]);
+    }
+    return sanitized;
+  }
+  return data;
+};
+
+/**
  * Create a new resource
  * Handles both JSON and FormData formats
  */
@@ -37,9 +70,10 @@ export const createResource = async (httpClient, resource, params) => {
 
   // Regular JSON handling
   const isUsersResource = resource === "users";
+  const sanitizedData = sanitizePayload(params.data);
   const body = isUsersResource
-    ? JSON.stringify(params.data)
-    : JSON.stringify({ data: params.data });
+    ? JSON.stringify(sanitizedData)
+    : JSON.stringify({ data: sanitizedData });
 
   const { json } = await httpClient(`${apiUrl}/${resource}`, {
     method: "POST",
@@ -83,9 +117,12 @@ export const updateResource = async (httpClient, resource, params) => {
   }
 
   // Regular JSON handling
+  // Recursively strip read-only fields
+  const cleanData = sanitizePayload(params.data);
+
   const { json } = await httpClient(`${apiUrl}/${resource}/${params.id}`, {
     method: "PUT",
-    body: JSON.stringify({ data: params.data }),
+    body: JSON.stringify({ data: cleanData }),
   });
   const data = json.data || json;
   return { data: { ...data, id: data.id } };

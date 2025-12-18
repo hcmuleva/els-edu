@@ -6,10 +6,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy the rest of the application code
+# Copy the rest of the application code (including .env file)
 COPY . .
 
-# Run the build command
+# Run the build command (will use .env file automatically)
 RUN npm run build
 
 # Stage 2: Serve the production build with NGINX
