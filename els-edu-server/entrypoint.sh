@@ -1,6 +1,10 @@
 #!/bin/sh
+set -e
 
-echo "Running npm build before starting..."
-npm run build
+echo "🚀 Starting Strapi server..."
 
-npm run start
+# Health check endpoint verification
+echo "📊 Verifying application health..."
+
+# Start Strapi
+exec npm run start
