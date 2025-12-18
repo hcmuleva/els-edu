@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useDataProvider, Title, useGetIdentity } from "react-admin";
 import {
   ArrowLeft,
@@ -12,6 +12,8 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
+  Target,
+  RotateCcw,
 } from "lucide-react";
 
 const QuizPlayer = () => {
@@ -19,6 +21,7 @@ const QuizPlayer = () => {
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
   const { identity } = useGetIdentity();
+  const [searchParams] = useSearchParams();
 
   const [quiz, setQuiz] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -28,6 +31,8 @@ const QuizPlayer = () => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showPreStart, setShowPreStart] = useState(true);
+  const [quizStarted, setQuizStarted] = useState(false);
 
   // Quiz result tracking
   const [quizStartTime, setQuizStartTime] = useState(null);
@@ -36,11 +41,23 @@ const QuizPlayer = () => {
   const [existingResults, setExistingResults] = useState([]);
   const [attemptsUsed, setAttemptsUsed] = useState(0);
 
+  // Replay mode
+  const [isReplayMode, setIsReplayMode] = useState(false);
+  const [replayQuestionIds, setReplayQuestionIds] = useState([]);
+
   // Fetch quiz data and existing attempts
   useEffect(() => {
     const fetchQuizAndAttempts = async () => {
       try {
         setLoading(true);
+
+        // Check for replay mode
+        const replayParam = searchParams.get("replay");
+        if (replayParam) {
+          const questionIds = replayParam.split(",").filter(Boolean);
+          setIsReplayMode(true);
+          setReplayQuestionIds(questionIds);
+        }
 
         // Fetch quiz
         const { data } = await dataProvider.getOne("quizzes", {
@@ -48,14 +65,21 @@ const QuizPlayer = () => {
           meta: { populate: ["questions", "subject", "topic", "creator"] },
         });
         setQuiz(data);
-        setQuestions(data.questions || []);
 
-        if (data.timeLimit) {
+        // Filter questions if in replay mode
+        let quizQuestions = data.questions || [];
+        if (replayParam) {
+          const questionIds = replayParam.split(",").filter(Boolean);
+          quizQuestions = quizQuestions.filter(
+            (q) =>
+              questionIds.includes(q.id) || questionIds.includes(q.documentId)
+          );
+        }
+        setQuestions(quizQuestions);
+
+        if (data.timeLimit && !replayParam) {
           setTimeRemaining(data.timeLimit * 60);
         }
-
-        // Set quiz start time
-        setQuizStartTime(new Date());
 
         // Fetch existing quiz results for this user and quiz
         if (identity?.id) {
@@ -85,7 +109,11 @@ const QuizPlayer = () => {
     };
 
     fetchQuizAndAttempts();
-  }, [id, dataProvider, identity]);
+  }, [id, dataProvider, identity, searchParams]);
+
+  // Helper function to get question ID consistently
+  const getQuestionId = (question) => question?.documentId || question?.id;
+  const getOptionId = (option) => option?.documentId || option?.id;
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -93,11 +121,12 @@ const QuizPlayer = () => {
   useEffect(() => {
     if (!currentQuestion) return;
 
-    const questionId = currentQuestion.id;
+    const questionId = getQuestionId(currentQuestion);
     const now = new Date();
 
     // Save timing for previous question if exists
-    const prevQuestionId = questions[currentQuestionIndex - 1]?.id;
+    const prevQuestion = questions[currentQuestionIndex - 1];
+    const prevQuestionId = getQuestionId(prevQuestion);
     if (prevQuestionId && questionStartTimes[prevQuestionId]) {
       const timeSpent = Math.floor(
         (now - questionStartTimes[prevQuestionId]) / 1000
@@ -135,9 +164,10 @@ const QuizPlayer = () => {
   }, [timeRemaining, showResults]);
 
   const handleAnswerSelect = (optionId) => {
+    const questionId = getQuestionId(currentQuestion);
     setSelectedAnswers({
       ...selectedAnswers,
-      [currentQuestion.id]: optionId,
+      [questionId]: optionId,
     });
   };
 
@@ -156,7 +186,7 @@ const QuizPlayer = () => {
   const handleSubmitQuiz = async () => {
     // Calculate final timing for current question
     const now = new Date();
-    const currentQuestionId = currentQuestion?.id;
+    const currentQuestionId = getQuestionId(currentQuestion);
     if (currentQuestionId && questionStartTimes[currentQuestionId]) {
       const timeSpent = Math.floor(
         (now - questionStartTimes[currentQuestionId]) / 1000
@@ -176,14 +206,17 @@ const QuizPlayer = () => {
 
       // Build question analysis
       const questionAnalysis = score.questionResults.map((result, index) => ({
-        questionId: result.question.id,
+        questionId: result.question.documentId || result.question.id,
         questionText: result.question.questionText,
         isCorrect: result.isCorrect,
         isAttempted: result.isAttempted,
         selectedAnswer: result.selectedAnswer,
-        correctAnswer: result.correctOption?.id,
+        correctAnswer:
+          result.correctOption?.documentId || result.correctOption?.id,
         correctAnswerText: result.correctOption?.option,
-        timeSpent: questionTimings[result.question.id] || 0,
+        timeSpent:
+          questionTimings[result.question.documentId || result.question.id] ||
+          0,
         difficulty: result.question.difficulty,
       }));
 
@@ -192,7 +225,7 @@ const QuizPlayer = () => {
         user: identity.id,
         subject: quiz.subject?.id || quiz.subject,
         topic: quiz.topic?.id || quiz.topic,
-        questions: questions.map((q) => q.id), // Add question IDs for relation
+        questions: questions.map((q) => q.documentId || q.id), // Add question IDs for relation
         score: score.correct,
         totalQuestions: score.total,
         percentage: score.percentage,
@@ -241,10 +274,12 @@ const QuizPlayer = () => {
     const questionResults = [];
 
     questions.forEach((question) => {
-      const selectedAnswer = selectedAnswers[question.id];
+      const questionId = getQuestionId(question);
+      const selectedAnswer = selectedAnswers[questionId];
       const correctOption = question.options?.find((opt) => opt.isCorrect);
+      const correctOptionId = getOptionId(correctOption);
       const isAttempted = selectedAnswer !== undefined;
-      const isCorrect = selectedAnswer === correctOption?.id;
+      const isCorrect = selectedAnswer === correctOptionId;
 
       if (isAttempted) attempted++;
       if (isCorrect) correct++;
@@ -313,6 +348,191 @@ const QuizPlayer = () => {
           >
             Go Back
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if attempts exceeded (but allow replay mode)
+  const canStartQuiz =
+    isReplayMode || !quiz.maxAttempts || attemptsUsed < quiz.maxAttempts;
+  const attemptsRemaining = quiz.maxAttempts
+    ? quiz.maxAttempts - attemptsUsed
+    : Infinity;
+
+  // Pre-Start Screen
+  if (showPreStart && !quizStarted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Title title={quiz.title} />
+        <div className="bg-white rounded-3xl p-8 max-w-2xl w-full border border-border/50 shadow-sm">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+              <Trophy className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-black text-gray-800 mb-2">
+              {isReplayMode ? "Replay Quiz" : quiz.title}
+            </h1>
+            {quiz.subject && (
+              <p className="text-gray-500 font-medium">{quiz.subject.name}</p>
+            )}
+          </div>
+
+          {/* Quiz Info */}
+          <div className="space-y-4 mb-6">
+            {isReplayMode && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <RotateCcw className="w-6 h-6 text-blue-600" />
+                  <div>
+                    <p className="font-bold text-blue-800">Replay Mode</p>
+                    <p className="text-sm text-blue-600">
+                      Practicing {questions.length} selected question
+                      {questions.length > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Grid3x3 className="w-5 h-5 text-gray-600" />
+                  <span className="text-sm text-gray-500 font-medium">
+                    Questions
+                  </span>
+                </div>
+                <p className="text-2xl font-black text-gray-800">
+                  {questions.length}
+                </p>
+              </div>
+
+              {timeRemaining !== null && !isReplayMode && (
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm text-gray-500 font-medium">
+                      Time Limit
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black text-gray-800">
+                    {quiz.timeLimit} min
+                  </p>
+                </div>
+              )}
+
+              {!isReplayMode && quiz.passingScore && (
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Target className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm text-gray-500 font-medium">
+                      Passing Score
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black text-gray-800">
+                    {quiz.passingScore}%
+                  </p>
+                </div>
+              )}
+
+              {!isReplayMode && quiz.maxAttempts > 0 && (
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Trophy className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm text-gray-500 font-medium">
+                      Attempts
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black text-gray-800">
+                    {attemptsUsed} / {quiz.maxAttempts}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Attempts Warning */}
+          {!canStartQuiz && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-red-800 mb-1">
+                    Maximum Attempts Reached
+                  </p>
+                  <p className="text-sm text-red-600">
+                    You have used all {quiz.maxAttempts} attempts for this quiz.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Last Attempt Warning */}
+          {canStartQuiz && attemptsRemaining === 1 && !isReplayMode && (
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-orange-800 mb-1">
+                    Last Attempt!
+                  </p>
+                  <p className="text-sm text-orange-600">
+                    This is your final attempt for this quiz. Make it count!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Instructions */}
+          {quiz.instructions && (
+            <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+              <h3 className="font-bold text-gray-800 mb-2">Instructions</h3>
+              <div
+                className="text-sm text-gray-600"
+                dangerouslySetInnerHTML={{ __html: quiz.instructions }}
+              />
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex-1 px-6 py-4 bg-white border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                setQuizStarted(true);
+                setShowPreStart(false);
+                setQuizStartTime(new Date());
+              }}
+              disabled={!canStartQuiz}
+              className={`flex-1 px-6 py-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                canStartQuiz
+                  ? "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg hover:scale-105"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              <Trophy className="w-5 h-5" />
+              Start Quiz
+            </button>
+          </div>
+
+          {/* Attempts Remaining Info */}
+          {canStartQuiz && attemptsRemaining !== Infinity && !isReplayMode && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">
+                <span className="font-bold">{attemptsRemaining}</span> attempt
+                {attemptsRemaining !== 1 ? "s" : ""} remaining
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -666,14 +886,15 @@ const QuizPlayer = () => {
                   Choose your answer
                 </p>
                 {currentQuestion?.options?.map((option, index) => {
-                  const isSelected =
-                    selectedAnswers[currentQuestion.id] === option.id;
+                  const questionId = getQuestionId(currentQuestion);
+                  const optionId = getOptionId(option);
+                  const isSelected = selectedAnswers[questionId] === optionId;
                   const letters = ["A", "B", "C", "D", "E", "F"];
 
                   return (
                     <button
-                      key={option.id || index}
-                      onClick={() => handleAnswerSelect(option.id)}
+                      key={optionId || index}
+                      onClick={() => handleAnswerSelect(optionId)}
                       className={`w-full p-5 rounded-2xl border-2 transition-all text-left flex items-center gap-4 hover:shadow-md ${
                         isSelected
                           ? "border-primary bg-primary/5 shadow-sm"
@@ -755,12 +976,13 @@ const QuizPlayer = () => {
 
               <div className="grid grid-cols-5 gap-2 mb-6">
                 {questions.map((q, index) => {
-                  const isAnswered = selectedAnswers[q.id] !== undefined;
+                  const questionId = getQuestionId(q);
+                  const isAnswered = selectedAnswers[questionId] !== undefined;
                   const isCurrent = index === currentQuestionIndex;
 
                   return (
                     <button
-                      key={q.id}
+                      key={questionId}
                       onClick={() => setCurrentQuestionIndex(index)}
                       className={`aspect-square rounded-xl font-bold text-sm transition-all border-2 ${
                         isCurrent && isAnswered

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Title, useDataProvider } from "react-admin";
 import {
@@ -23,29 +23,55 @@ const SubjectDetailPage = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("topics");
 
+  // Fetch Subject Metadata Only (Optimization)
   useEffect(() => {
     const fetchSubject = async () => {
       try {
         setLoading(true);
         setError(null);
+        // Fetch Subject with light population
         const { data } = await dataProvider.getOne("subjects", {
-          id, // Strapi v5 dataProvider handles documentId automatically
+          id,
           meta: {
             populate: {
               topics: {
-                populate: ["contents", "quizzes"],
+                fields: ["name", "description", "icon", "documentId", "id"],
               },
-              contents: true,
               quizzes: {
-                populate: ["questions"],
+                fields: [
+                  "title",
+                  "difficulty",
+                  "timeLimit",
+                  "documentId",
+                  "id",
+                ],
+                populate: {
+                  questions: {
+                    fields: ["id", "documentId"], // Return array of IDs so .length works in QuizCard
+                  },
+                },
               },
-              coverpage: true,
+              contents: {
+                fields: ["title", "documentId", "id"], // Fetch for count display
+              },
+              coverpage: {
+                fields: [
+                  "url",
+                  "alternativeText",
+                  "name",
+                  "caption",
+                  "documentId",
+                  "id",
+                ],
+              },
             },
           },
         });
         setSubject(data);
+
         // Default to first topic if available
         if (data.topics && data.topics.length > 0) {
+          // Temporarily set partial topic, the effect below will fetch full details
           setSelectedTopic(data.topics[0]);
         }
       } catch (error) {
@@ -58,6 +84,47 @@ const SubjectDetailPage = () => {
 
     fetchSubject();
   }, [id, dataProvider]);
+
+  // Lazy Load Selected Topic Details
+  useEffect(() => {
+    const fetchTopicDetails = async () => {
+      if (!selectedTopic || selectedTopic.loaded) return; // Skip if already loaded
+
+      try {
+        const topicId = selectedTopic.documentId || selectedTopic.id;
+        const { data } = await dataProvider.getOne("topics", {
+          id: topicId,
+          meta: {
+            populate: {
+              contents: {
+                populate: ["multimedia", "quizzes"], // Get content-specific quizzes
+              },
+              quizzes: {
+                populate: ["questions"], // Get topic-level quizzes
+              },
+            },
+          },
+        });
+
+        // Update the selected topic with full data and mark as loaded
+        setSelectedTopic((prev) => ({ ...data, loaded: true }));
+
+        // Also update the subject state to cache this data (optional but good for switching back)
+        setSubject((prev) => ({
+          ...prev,
+          topics: prev.topics.map((t) =>
+            t.id === data.id ? { ...data, loaded: true } : t
+          ),
+        }));
+      } catch (err) {
+        console.error("Error fetching topic details:", err);
+      }
+    };
+
+    if (selectedTopic && !selectedTopic.loaded) {
+      fetchTopicDetails();
+    }
+  }, [selectedTopic, dataProvider]);
 
   const handleQuizStart = (quiz) => {
     const quizId = quiz.documentId || quiz.id;
