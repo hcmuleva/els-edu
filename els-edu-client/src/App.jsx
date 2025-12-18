@@ -15,6 +15,7 @@ import { QuestionEdit } from "./features/questions/QuestionEdit";
 import { QuizList, QuizCreate, QuizEdit, QuizShow } from "./features/quizzes";
 import { CourseList } from "./features/courses/CourseList";
 import { CourseCreate } from "./features/courses/CourseCreate";
+import { CourseEdit } from "./features/courses/CourseEdit";
 import { SubjectCreate } from "./features/subjects/SubjectCreate";
 import { SubjectEdit } from "./features/subjects/SubjectEdit";
 import { TopicCreate } from "./features/topics/TopicCreate";
@@ -63,7 +64,12 @@ const App = () => (
       edit={QuizEdit}
       show={QuizShow}
     />
-    <Resource name="courses" list={CourseList} create={CourseCreate} />
+    <Resource
+      name="courses"
+      list={CourseList}
+      create={CourseCreate}
+      edit={CourseEdit}
+    />
 
     {/* Invoices */}
     <Resource

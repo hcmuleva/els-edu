@@ -1,20 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useNotify,
   useRedirect,
   Title,
-  useCreate,
-  useGetIdentity,
+  useUpdate,
+  useGetOne,
+  Loading,
 } from "react-admin";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { ImageUpload } from "../../components/common/ImageUpload";
+import { useParams } from "react-router-dom";
 
-export const CourseCreate = () => {
+export const CourseEdit = () => {
+  const { id } = useParams();
   const notify = useNotify();
   const redirect = useRedirect();
-  const [create, { isLoading }] = useCreate();
-  const { data: identity } = useGetIdentity();
+  const [update, { isLoading: isUpdating }] = useUpdate();
+
+  const { data: course, isLoading } = useGetOne("courses", { id });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,6 +32,24 @@ export const CourseCreate = () => {
   });
 
   const [coverPreview, setCoverPreview] = useState(null);
+
+  useEffect(() => {
+    if (course) {
+      setFormData({
+        name: course.name || "",
+        description: course.description || "",
+        category: course.category || "",
+        subcategory: course.subcategory || "",
+        condition: course.condition || "DRAFT",
+        privacy: course.privacy || "PRIVATE",
+        visibility: course.visibility || "GLOBAL",
+        cover: null,
+      });
+      if (course.cover?.url) {
+        setCoverPreview(course.cover.url);
+      }
+    }
+  }, [course]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -43,22 +65,17 @@ export const CourseCreate = () => {
 
   const removeCover = () => {
     setFormData((prev) => ({ ...prev, cover: null }));
-    setCoverPreview(null);
+    setCoverPreview(course?.cover?.url || null);
   };
 
   const handleSave = async () => {
     try {
-      // Validation
       if (!formData.name.trim()) {
         notify("Please enter a course name", { type: "warning" });
         return;
       }
 
-      // Prepare payload
-      // If there's a file, we usually need FormData for Strapi
-      // If no file, JSON is fine. mimicking ContentEdit pattern for file upload
-
-      const hasFile = !!formData.cover;
+      const hasNewFile = formData.cover instanceof File;
 
       const baseData = {
         name: formData.name,
@@ -68,32 +85,31 @@ export const CourseCreate = () => {
         condition: formData.condition,
         privacy: formData.privacy,
         visibility: formData.visibility,
-        creator: identity?.id,
-        publisher: identity?.id,
-        organization: identity?.org?.id,
       };
 
-      if (hasFile) {
+      if (hasNewFile) {
         const submitData = new FormData();
         submitData.append("data", JSON.stringify(baseData));
         submitData.append("files.cover", formData.cover);
 
-        await create("courses", {
+        await update("courses", {
+          id,
           data: submitData,
+          previousData: course,
           meta: { isFormData: true },
         });
       } else {
-        await create("courses", { data: baseData });
+        await update("courses", { id, data: baseData, previousData: course });
       }
 
-      notify("Course created successfully!", { type: "success" });
+      notify("Course updated successfully!", { type: "success" });
 
       setTimeout(() => {
         redirect("/my-contents");
       }, 500);
     } catch (error) {
-      console.error("Error creating course:", error);
-      notify("Error creating course. Please try again.", { type: "error" });
+      console.error("Error updating course:", error);
+      notify("Error updating course. Please try again.", { type: "error" });
     }
   };
 
@@ -147,9 +163,17 @@ export const CourseCreate = () => {
     { id: "SOCH", name: "Soch" },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Title title="Create Course" />
+      <Title title="Edit Course" />
 
       {/* Header */}
       <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-10">
@@ -165,10 +189,10 @@ export const CourseCreate = () => {
             </button>
             <div>
               <h1 className="text-xl font-black bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                Create Course
+                Edit Course
               </h1>
               <p className="text-xs font-medium text-muted-foreground mt-0.5">
-                Create a comprehensive learning path
+                Update course information
               </p>
             </div>
           </div>
@@ -183,10 +207,10 @@ export const CourseCreate = () => {
             <button
               type="button"
               onClick={handleSave}
-              disabled={isLoading}
+              disabled={isUpdating}
               className="px-5 py-2 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Saving..." : "Save Course"}
+              {isUpdating ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>
@@ -234,9 +258,12 @@ export const CourseCreate = () => {
           {/* Cover Image Upload */}
           <ImageUpload
             value={formData.cover}
-            onChange={(file) =>
-              setFormData((prev) => ({ ...prev, cover: file }))
-            }
+            onChange={(file) => {
+              setFormData((prev) => ({ ...prev, cover: file }));
+              const reader = new FileReader();
+              reader.onloadend = () => setCoverPreview(reader.result);
+              reader.readAsDataURL(file);
+            }}
             onRemove={removeCover}
             preview={coverPreview}
             label="Cover Image"
