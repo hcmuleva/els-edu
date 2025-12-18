@@ -555,6 +555,7 @@ export interface ApiContentContent extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     quizzes: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
+    resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
     subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     title: Schema.Attribute.String;
     topic: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
@@ -643,7 +644,21 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    category: Schema.Attribute.String;
+    category: Schema.Attribute.Enumeration<
+      [
+        'KIDS',
+        'PRIMARY',
+        'MIDDLE',
+        'SCHOOL',
+        'COLLEGE',
+        'OLDAGE',
+        'SANSKAR',
+        'COMPETION',
+        'PROJECT',
+        'DIY',
+        'EDUCATION',
+      ]
+    >;
     condition: Schema.Attribute.Enumeration<
       ['DRAFT', 'REVIEW', 'REJECT', 'APPROVED', 'PUBLISH', 'RETIRED']
     >;
@@ -667,7 +682,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
-    organization: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
+    organizations: Schema.Attribute.Relation<'manyToMany', 'api::org.org'>;
     previewvideo: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
@@ -678,7 +693,19 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
-    subcategory: Schema.Attribute.String;
+    subcategory: Schema.Attribute.Enumeration<
+      [
+        'CREATIVITY',
+        'COMPETION',
+        'ACADEMIC',
+        'ELECTROICS',
+        'SOFTWARE',
+        'DHARM',
+        'SIKSHA',
+        'GYAN',
+        'SOCH',
+      ]
+    >;
     subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     tags: Schema.Attribute.JSON;
     updatedAt: Schema.Attribute.DateTime;
@@ -929,48 +956,6 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiLessonLesson extends Struct.CollectionTypeSchema {
-  collectionName: 'lessons';
-  info: {
-    displayName: 'lesson';
-    pluralName: 'lessons';
-    singularName: 'lesson';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Blocks;
-    duration: Schema.Attribute.String;
-    is_free: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    lesson_link: Schema.Attribute.Text;
-    lesson_multimedia: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::lesson.lesson'
-    > &
-      Schema.Attribute.Private;
-    order: Schema.Attribute.Integer;
-    orgs: Schema.Attribute.Relation<'manyToMany', 'api::org.org'>;
-    publishedAt: Schema.Attribute.DateTime;
-    resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
-    title: Schema.Attribute.String;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user_lesson: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::user-lesson.user-lesson'
-    >;
-  };
-}
-
 export interface ApiOfferOffer extends Struct.CollectionTypeSchema {
   collectionName: 'offers';
   info: {
@@ -1057,12 +1042,11 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
     >;
     contact_email: Schema.Attribute.Email;
     contact_phone: Schema.Attribute.BigInteger;
-    courses: Schema.Attribute.Relation<'oneToMany', 'api::course.course'>;
+    courses: Schema.Attribute.Relation<'manyToMany', 'api::course.course'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Blocks;
-    lessons: Schema.Attribute.Relation<'manyToMany', 'api::lesson.lesson'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::org.org'> &
       Schema.Attribute.Private;
@@ -1080,10 +1064,6 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    user_levels: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-level.user-level'
-    >;
     users: Schema.Attribute.Relation<
       'oneToMany',
       'plugin::users-permissions.user'
@@ -1420,7 +1400,6 @@ export interface ApiQuizResultQuizResult extends Struct.CollectionTypeSchema {
       'api::question.question'
     >;
     questionTimings: Schema.Attribute.JSON;
-    quiz: Schema.Attribute.Relation<'manyToOne', 'api::quiz.quiz'>;
     recommendedRetake: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
     retakeQuestions: Schema.Attribute.JSON;
@@ -1463,12 +1442,6 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
   };
   attributes: {
     allowReview: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    category: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     certificate: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     content: Schema.Attribute.Relation<'manyToOne', 'api::content.content'>;
     createdAt: Schema.Attribute.DateTime;
@@ -1523,19 +1496,11 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
       'manyToMany',
       'api::question.question'
     >;
-    quizResults: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-result.quiz-result'
-    >;
     quizType: Schema.Attribute.Enumeration<
       ['standalone', 'subject', 'topic', 'content']
     > &
       Schema.Attribute.DefaultTo<'standalone'>;
     relatedType: Schema.Attribute.String;
-    results: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-result.quiz-result'
-    >;
     showCorrectAnswers: Schema.Attribute.Enumeration<
       ['immediately', 'after-submission', 'never']
     > &
@@ -1574,10 +1539,10 @@ export interface ApiResourceResource extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
+    content: Schema.Attribute.Relation<'manyToOne', 'api::content.content'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    lesson: Schema.Attribute.Relation<'manyToOne', 'api::lesson.lesson'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1907,146 +1872,6 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiUserExperienceUserExperience
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'user_experiences';
-  info: {
-    displayName: 'user-experience';
-    pluralName: 'user-experiences';
-    singularName: 'user-experience';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    experience_type: Schema.Attribute.Enumeration<
-      ['NEWBIE', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PROFESSIONAL']
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-experience.user-experience'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiUserLessonUserLesson extends Struct.CollectionTypeSchema {
-  collectionName: 'user_lessons';
-  info: {
-    displayName: 'user-lesson';
-    pluralName: 'user-lessons';
-    singularName: 'user-lesson';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    is_completed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    is_locked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    lesson: Schema.Attribute.Relation<'oneToOne', 'api::lesson.lesson'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-lesson.user-lesson'
-    > &
-      Schema.Attribute.Private;
-    org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
-    progress: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-  };
-}
-
-export interface ApiUserLevelUserLevel extends Struct.CollectionTypeSchema {
-  collectionName: 'user_levels';
-  info: {
-    displayName: 'user-level';
-    pluralName: 'user-levels';
-    singularName: 'user-level';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    is_completed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    is_locked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-level.user-level'
-    > &
-      Schema.Attribute.Private;
-    org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
-    progress: Schema.Attribute.Integer;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-  };
-}
-
-export interface ApiUserMetadataUserMetadata
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'user_metadatas';
-  info: {
-    displayName: 'user-metadata';
-    pluralName: 'user-metadatas';
-    singularName: 'user-metadata';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    docker_token: Schema.Attribute.String;
-    docker_username: Schema.Attribute.String;
-    github_token: Schema.Attribute.Text;
-    github_username: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-metadata.user-metadata'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'oneToOne',
-      'plugin::users-permissions.user'
-    >;
-  };
-}
-
 export interface ApiUserPaymentUserPayment extends Struct.CollectionTypeSchema {
   collectionName: 'user_payments';
   info: {
@@ -2099,63 +1924,48 @@ export interface ApiUserPaymentUserPayment extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiUserRepoUserRepo extends Struct.CollectionTypeSchema {
-  collectionName: 'user_repos';
+export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
+  collectionName: 'user_profiles';
   info: {
-    displayName: 'user-repo';
-    pluralName: 'user-repos';
-    singularName: 'user-repo';
+    displayName: 'user-profile';
+    pluralName: 'user-profiles';
+    singularName: 'user-profile';
   };
   options: {
     draftAndPublish: true;
   };
   attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-repo.user-repo'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    repo_url: Schema.Attribute.String;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
+    certificates: Schema.Attribute.Media<
+      'images' | 'files' | 'videos' | 'audios',
+      true
     >;
-    user_repo_name: Schema.Attribute.String;
-  };
-}
-
-export interface ApiUserroleUserrole extends Struct.CollectionTypeSchema {
-  collectionName: 'userroles';
-  info: {
-    displayName: 'userrole';
-    pluralName: 'userroles';
-    singularName: 'userrole';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    description: Schema.Attribute.String;
-    enddate: Schema.Attribute.Date;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::userrole.userrole'
+      'api::user-profile.user-profile'
     > &
       Schema.Attribute.Private;
+    profession: Schema.Attribute.Enumeration<
+      [
+        'TEACHER',
+        'STUDENT',
+        'BUSINESS',
+        'AUTHOR',
+        'MARKETING',
+        'HOUSWIFE',
+        'FREELAUNCER',
+        'SERVICE',
+      ]
+    >;
     publishedAt: Schema.Attribute.DateTime;
-    startdate: Schema.Attribute.Date;
+    resume: Schema.Attribute.Media<
+      'images' | 'files' | 'videos' | 'audios',
+      true
+    >;
+    totalexperience: Schema.Attribute.Decimal;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2686,6 +2496,7 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::subject.subject'
     >;
+    assigned_roles: Schema.Attribute.JSON;
     authored_subjects: Schema.Attribute.Relation<
       'manyToMany',
       'api::subject.subject'
@@ -2709,6 +2520,29 @@ export interface PluginUsersPermissionsUser
     first_name: Schema.Attribute.String;
     gender: Schema.Attribute.Enumeration<['MALE', 'FEMALE']>;
     getstarted_completed: Schema.Attribute.Boolean;
+    grade: Schema.Attribute.Enumeration<
+      [
+        'PLAYSCHOOL',
+        'LKG',
+        'UKG',
+        'FIRST',
+        'SECOND',
+        'THIRD',
+        'FOURTH',
+        'FIFTH',
+        'SIXTH',
+        'SEVENTH',
+        'EIGHTH',
+        'NINTH',
+        'TENTH',
+        'ELEVENTH',
+        'TWELFTH',
+        'DIPLOMA',
+        'GRADUATION',
+        'POSTGRADUATION',
+        'PHD',
+      ]
+    >;
     home_address: Schema.Attribute.Relation<'oneToOne', 'api::address.address'>;
     last_name: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -2725,9 +2559,6 @@ export interface PluginUsersPermissionsUser
         minLength: 6;
       }>;
     privacy_accepted: Schema.Attribute.Boolean;
-    profile_photo: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios'
-    >;
     profile_picture: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios'
     >;
@@ -2741,10 +2572,6 @@ export interface PluginUsersPermissionsUser
       'api::subject.subject'
     >;
     publishedAt: Schema.Attribute.DateTime;
-    quiz_results: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-result.quiz-result'
-    >;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
     role: Schema.Attribute.Relation<
       'manyToOne',
@@ -2757,27 +2584,14 @@ export interface PluginUsersPermissionsUser
     user_experience_level: Schema.Attribute.Enumeration<
       ['SCHOOL', 'COLLEGE', 'PROFESSIONAL']
     >;
-    user_lessons: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-lesson.user-lesson'
-    >;
-    user_levels: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::user-level.user-level'
-    >;
-    user_metadatum: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::user-metadata.user-metadata'
-    >;
     user_permissions: Schema.Attribute.JSON;
-    user_repos: Schema.Attribute.Relation<
+    user_profiles: Schema.Attribute.Relation<
       'oneToMany',
-      'api::user-repo.user-repo'
+      'api::user-profile.user-profile'
     >;
     user_role: Schema.Attribute.Enumeration<
       ['STUDENT', 'TEACHER', 'PARENT', 'MARKETING', 'ADMIN', 'SUPERADMIN']
     >;
-    user_roles: Schema.Attribute.JSON;
     user_status: Schema.Attribute.Enumeration<
       ['PENDING', 'APPROVED', 'REJECTED', 'BLOCKED']
     >;
@@ -2787,7 +2601,6 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 3;
       }>;
-    userroles: Schema.Attribute.Relation<'oneToMany', 'api::userrole.userrole'>;
     usersubscriptions: Schema.Attribute.Relation<
       'oneToMany',
       'api::usersubscription.usersubscription'
@@ -2815,7 +2628,6 @@ declare module '@strapi/strapi' {
       'api::invoice-item.invoice-item': ApiInvoiceItemInvoiceItem;
       'api::invoice-payment.invoice-payment': ApiInvoicePaymentInvoicePayment;
       'api::invoice.invoice': ApiInvoiceInvoice;
-      'api::lesson.lesson': ApiLessonLesson;
       'api::offer.offer': ApiOfferOffer;
       'api::org-metadata.org-metadata': ApiOrgMetadataOrgMetadata;
       'api::org.org': ApiOrgOrg;
@@ -2831,13 +2643,8 @@ declare module '@strapi/strapi' {
       'api::tag-year.tag-year': ApiTagYearTagYear;
       'api::team.team': ApiTeamTeam;
       'api::topic.topic': ApiTopicTopic;
-      'api::user-experience.user-experience': ApiUserExperienceUserExperience;
-      'api::user-lesson.user-lesson': ApiUserLessonUserLesson;
-      'api::user-level.user-level': ApiUserLevelUserLevel;
-      'api::user-metadata.user-metadata': ApiUserMetadataUserMetadata;
       'api::user-payment.user-payment': ApiUserPaymentUserPayment;
-      'api::user-repo.user-repo': ApiUserRepoUserRepo;
-      'api::userrole.userrole': ApiUserroleUserrole;
+      'api::user-profile.user-profile': ApiUserProfileUserProfile;
       'api::usersubscription.usersubscription': ApiUsersubscriptionUsersubscription;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

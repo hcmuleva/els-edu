@@ -35,9 +35,9 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
-    "organization": {
+    "organizations": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::org.org",
       "inversedBy": "courses"
     },
@@ -57,10 +57,34 @@
       "type": "json"
     },
     "category": {
-      "type": "string"
+      "type": "enumeration",
+      "enum": [
+        "KIDS",
+        "PRIMARY",
+        "MIDDLE",
+        "SCHOOL",
+        "COLLEGE",
+        "OLDAGE",
+        "SANSKAR",
+        "COMPETION",
+        "PROJECT",
+        "DIY",
+        "EDUCATION"
+      ]
     },
     "subcategory": {
-      "type": "string"
+      "type": "enumeration",
+      "enum": [
+        "CREATIVITY",
+        "COMPETION",
+        "ACADEMIC",
+        "ELECTROICS",
+        "SOFTWARE",
+        "DHARM",
+        "SIKSHA",
+        "GYAN",
+        "SOCH"
+      ]
     },
     "description": {
       "type": "richtext"

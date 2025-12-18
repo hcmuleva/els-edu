@@ -49,9 +49,9 @@
     },
     "courses": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::course.course",
-      "mappedBy": "organization"
+      "mappedBy": "organizations"
     },
     "pricings": {
       "type": "relation",
@@ -71,23 +71,11 @@
       "target": "api::address.address",
       "mappedBy": "org"
     },
-    "lessons": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::lesson.lesson",
-      "mappedBy": "orgs"
-    },
     "calander_activities": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::calander-activity.calander-activity",
       "mappedBy": "orgs"
-    },
-    "user_levels": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::user-level.user-level",
-      "mappedBy": "org"
     },
     "teams": {
       "type": "relation",

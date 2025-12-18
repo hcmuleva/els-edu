@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_profiles",
+  "info": {
+    "singularName": "user-profile",
+    "pluralName": "user-profiles",
+    "displayName": "user-profile"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "user_profiles"
+    },
+    "resume": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "certificates": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "totalexperience": {
+      "type": "decimal"
+    },
+    "profession": {
+      "type": "enumeration",
+      "enum": [
+        "TEACHER",
+        "STUDENT",
+        "BUSINESS",
+        "AUTHOR",
+        "MARKETING",
+        "HOUSWIFE",
+        "FREELAUNCER",
+        "SERVICE"
+      ]
+    }
+  }
+}
