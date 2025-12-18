@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/els", // <-- important for deployment under emeelan.com/els
+  base: "/els-kids", // <-- important for deployment under emeelan.com/els
   server: {
     watch: {
       // Ignore heavy dirs to save watchers

@@ -1,4 +1,4 @@
-FROM node:20.18.1-bullseye-slim
+FROM node:18.20.8-bullseye
 
 # Install deps (Debian-based, avoids musl issue with swc/sharp)
 RUN apt-get update && apt-get install -y \
@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Set env
-ARG NODE_ENV=production
+ARG NODE_ENV=development
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /opt/app
