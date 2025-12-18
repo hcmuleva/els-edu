@@ -25,9 +25,7 @@ const StatCard = ({ title, value, subtitle, icon: Icon, gradient }) => (
       <h3 className="text-3xl font-heading font-black text-foreground mb-1">
         {value}
       </h3>
-      <p className="text-sm font-medium text-muted-foreground mb-1">
-        {title}
-      </p>
+      <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
       {subtitle && (
         <p className="text-xs text-muted-foreground/80">{subtitle}</p>
       )}
@@ -60,6 +58,47 @@ const ManagePage = () => {
   });
   const [activeTab, setActiveTab] = useState("users");
   const [rows, setRows] = useState([]);
+
+  // Role management
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUserRole = storedUser?.user_role || "STUDENT";
+
+  const canEditUser = (targetRole) => {
+    if (currentUserRole === "SUPERADMIN") return true;
+    if (currentUserRole === "ADMIN") {
+      return targetRole !== "ADMIN" && targetRole !== "SUPERADMIN";
+    }
+    if (currentUserRole === "TEACHER") {
+      return targetRole === "STUDENT";
+    }
+    return false;
+  };
+
+  const getAvailableRoles = () => {
+    const roles = [
+      { id: "STUDENT", name: "Student" },
+      { id: "TEACHER", name: "Teacher" },
+      { id: "PARENT", name: "Parent" },
+      { id: "MARKETING", name: "Marketing" },
+      { id: "ADMIN", name: "Admin" },
+      { id: "SUPERADMIN", name: "Super Admin" },
+    ];
+
+    if (currentUserRole === "SUPERADMIN") return roles;
+    if (currentUserRole === "ADMIN") {
+      return roles.filter((r) => r.id !== "ADMIN" && r.id !== "SUPERADMIN");
+    }
+    if (currentUserRole === "TEACHER") {
+      return roles.filter((r) => r.id === "STUDENT");
+    }
+    return roles.filter((r) => r.id === "STUDENT");
+  };
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [updatingUser, setUpdatingUser] = useState(false);
@@ -96,15 +135,15 @@ const ManagePage = () => {
               ...(orgId && { "filters[org][id][$eq]": orgId }),
             },
           }),
-          api.get("topics", { params: { "pagination[limit]": 1 } }).catch(
-            () => null
-          ),
-          api.get("quizzes", { params: { "pagination[limit]": 1 } }).catch(
-            () => null
-          ),
-          api.get("questions", { params: { "pagination[limit]": 1 } }).catch(
-            () => null
-          ),
+          api
+            .get("topics", { params: { "pagination[limit]": 1 } })
+            .catch(() => null),
+          api
+            .get("quizzes", { params: { "pagination[limit]": 1 } })
+            .catch(() => null),
+          api
+            .get("questions", { params: { "pagination[limit]": 1 } })
+            .catch(() => null),
         ]);
 
         const getTotal = (res) =>
@@ -139,33 +178,7 @@ const ManagePage = () => {
           },
         });
 
-        // Load default tab data (users) scoped to current org
-        const usersListRes = await api.get("users", {
-          params: {
-            "pagination[page]": 1,
-            "pagination[pageSize]": 10,
-            ...(orgId && { "filters[org][id][$eq]": orgId }),
-          },
-        });
-        const usersData = usersListRes.data?.data || usersListRes.data || [];
-        setRows(
-          usersData.map((u) => ({
-            id: u.id,
-            username: u.username,
-            email: u.email,
-            role: u.user_role || u.role?.name || "N/A",
-            status:
-              u.user_status ||
-              (u.blocked
-                ? "BLOCKED"
-                : u.confirmed
-                ? "APPROVED"
-                : "PENDING"),
-            experience: u.user_experience_level || "-",
-            joinedAt: u.createdAt,
-            raw: u,
-          }))
-        );
+        // Initial stats loaded. Data will be fetched by loadTabData triggered by useEffect.
       } catch (e) {
         console.error(e);
         setError(
@@ -181,7 +194,11 @@ const ManagePage = () => {
     fetchStats();
   }, []);
 
-  const loadTabData = async (tab) => {
+  useEffect(() => {
+    loadTabData(activeTab, page);
+  }, [activeTab, page, searchQuery, roleFilter, statusFilter]);
+
+  const loadTabData = async (tab, currentPage = 1) => {
     try {
       setLoading(true);
       setActiveTab(tab);
@@ -192,15 +209,37 @@ const ManagePage = () => {
         storedUser?.org ||
         storedUser?.organization?.id ||
         storedUser?.organization;
+
+      let params = {};
+
       if (tab === "users") {
-        res = await api.get("users", {
-          params: {
-            "pagination[page]": 1,
-            "pagination[pageSize]": 10,
-            ...(orgId && { "filters[org][id][$eq]": orgId }),
-          },
-        });
+        params = {
+          start: (currentPage - 1) * pageSize,
+          limit: pageSize,
+          populate: "org",
+        };
+        if (orgId) params["filters[org][id][$eq]"] = orgId;
+        if (searchQuery) {
+          params["filters[$or][0][username][$contains]"] = searchQuery;
+          params["filters[$or][1][email][$contains]"] = searchQuery;
+        }
+        if (roleFilter) params["filters[user_role][$eq]"] = roleFilter;
+        if (statusFilter) params["filters[user_status][$eq]"] = statusFilter;
+
+        res = await api.get("users", { params });
         const data = res.data?.data || res.data || [];
+
+        // Accurate total count logic for users
+        let userTotal = parseInt(res.headers?.["x-total-count"]);
+        if (isNaN(userTotal)) {
+          // Heuristic if header is missing
+          userTotal =
+            data.length >= pageSize
+              ? currentPage * pageSize + 1
+              : (currentPage - 1) * pageSize + data.length;
+        }
+        setTotal(userTotal);
+
         setRows(
           data.map((u) => ({
             id: u.id,
@@ -209,50 +248,56 @@ const ManagePage = () => {
             role: u.user_role || u.role?.name || "N/A",
             status:
               u.user_status ||
-              (u.blocked
-                ? "BLOCKED"
-                : u.confirmed
-                ? "APPROVED"
-                : "PENDING"),
+              (u.blocked ? "BLOCKED" : u.confirmed ? "APPROVED" : "PENDING"),
             experience: u.user_experience_level || "-",
             joinedAt: u.createdAt,
+            organization: u.org?.name || u.organization?.name || "-",
             raw: u,
           }))
         );
-      } else if (tab === "courses") {
-        res = await api.get("courses", {
-          params: {
-            "pagination[page]": 1,
-            "pagination[pageSize]": 10,
-          },
-        });
-        const data = res.data?.data || res.data || [];
-        setRows(
-          data.map((c) => ({
-            id: c.id,
-            title: c.title,
-            code: c.course_code || c.slug,
-            status: c.course_status || "N/A",
-            createdAt: c.createdAt,
-          }))
-        );
-      } else if (tab === "subjects") {
-        res = await api.get("subjects", {
-          params: {
-            "pagination[page]": 1,
-            "pagination[pageSize]": 10,
-          },
-        });
-        const data = res.data?.data || res.data || [];
-        setRows(
-          data.map((s) => ({
-            id: s.id,
-            name: s.name || s.title,
-            grade: s.grade || s.level || "N/A",
-            status: s.subject_status || "N/A",
-            createdAt: s.createdAt,
-          }))
-        );
+      } else {
+        // Standard Strapi pagination for courses and subjects
+        params = {
+          "pagination[page]": currentPage,
+          "pagination[pageSize]": pageSize,
+          populate: "*",
+        };
+
+        if (tab === "courses") {
+          if (searchQuery) params["filters[name][$contains]"] = searchQuery; // Changed title to name
+          if (statusFilter) params["filters[condition][$eq]"] = statusFilter; // Changed course_status to condition
+
+          res = await api.get("courses", { params });
+          const data = res.data?.data || res.data || [];
+          setTotal(res.data?.meta?.pagination?.total || 0);
+          setRows(
+            data.map((c) => ({
+              id: c.id,
+              name: c.name,
+              category: c.category || "-",
+              subcategory: c.subcategory || "-",
+              status: c.condition || "N/A",
+              createdAt: c.createdAt,
+            }))
+          );
+        } else if (tab === "subjects") {
+          if (searchQuery) params["filters[name][$contains]"] = searchQuery;
+          // Subjects don't seem to have a status in the JSON provided, but keeping statusFilter for now if user needs it
+          // if (statusFilter) params["filters[subject_status][$eq]"] = statusFilter;
+
+          res = await api.get("subjects", { params });
+          const data = res.data?.data || res.data || [];
+          setTotal(res.data?.meta?.pagination?.total || 0);
+          setRows(
+            data.map((s) => ({
+              id: s.id,
+              name: s.name,
+              grade: s.grade || "-",
+              level: s.level || "-",
+              createdAt: s.createdAt,
+            }))
+          );
+        }
       }
     } catch (e) {
       console.error(e);
@@ -269,13 +314,15 @@ const ManagePage = () => {
   const renderTableHeader = () => {
     if (activeTab === "users") {
       return (
-        <tr className="text-xs text-muted-foreground uppercase bg-muted/40">
-          <th className="px-4 py-3 text-left w-1/4">Student</th>
-          <th className="px-4 py-3 text-left w-1/4">Contact</th>
-          <th className="px-4 py-3 text-left w-32">Role</th>
-          <th className="px-4 py-3 text-left w-40">Experience</th>
-          <th className="px-4 py-3 text-left w-32">Joined</th>
-          <th className="px-4 py-3 text-left w-32">Status</th>
+        <tr className="text-xs text-muted-foreground uppercase bg-muted/40 font-bold">
+          <th className="px-4 py-3 text-left w-12">#</th>
+          <th className="px-4 py-3 text-left w-1/5">Student</th>
+          <th className="px-4 py-3 text-left w-1/5">Organization</th>
+          <th className="px-4 py-3 text-left w-1/5">Contact</th>
+          <th className="px-4 py-3 text-left w-24">Role</th>
+          <th className="px-4 py-3 text-left w-32">Experience</th>
+          <th className="px-4 py-3 text-left w-24">Joined</th>
+          <th className="px-4 py-3 text-left w-24">Status</th>
           <th className="px-4 py-3 text-left sticky right-0 bg-card z-20 w-32">
             Actions
           </th>
@@ -284,73 +331,84 @@ const ManagePage = () => {
     }
     if (activeTab === "courses") {
       return (
-        <tr className="text-xs text-muted-foreground uppercase bg-muted/40">
-          <th className="px-4 py-3 text-left">Title</th>
-          <th className="px-4 py-3 text-left">Course Code</th>
+        <tr className="text-xs text-muted-foreground uppercase bg-muted/40 font-bold">
+          <th className="px-4 py-3 text-left w-12">#</th>
+          <th className="px-4 py-3 text-left w-1/4">Name</th>
+          <th className="px-4 py-3 text-left">Category</th>
+          <th className="px-4 py-3 text-left">Subcategory</th>
           <th className="px-4 py-3 text-left">Status</th>
           <th className="px-4 py-3 text-left">Created At</th>
         </tr>
       );
     }
     return (
-      <tr className="text-xs text-muted-foreground uppercase bg-muted/40">
-        <th className="px-4 py-3 text-left">Name</th>
-        <th className="px-4 py-3 text-left">Grade / Level</th>
-        <th className="px-4 py-3 text-left">Status</th>
+      <tr className="text-xs text-muted-foreground uppercase bg-muted/40 font-bold">
+        <th className="px-4 py-3 text-left w-12">#</th>
+        <th className="px-4 py-3 text-left w-1/4">Name</th>
+        <th className="px-4 py-3 text-left">Grade</th>
+        <th className="px-4 py-3 text-left">Level</th>
         <th className="px-4 py-3 text-left">Created At</th>
       </tr>
     );
   };
 
-  const renderTableRow = (row) => {
+  const renderTableRow = (row, index) => {
+    const rowNumber = (page - 1) * pageSize + index + 1;
     if (activeTab === "users") {
       return (
         <tr
           key={row.id}
-          className="border-b border-border/40 hover:bg-muted/40"
+          className="border-b border-border/40 hover:bg-muted/40 transition-colors"
         >
+          <td className="px-4 py-3 text-sm text-muted-foreground">
+            {rowNumber}
+          </td>
           {/* Student */}
           <td className="px-4 py-3 text-sm font-medium text-foreground">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">
+              <div className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
                 {row.username?.[0]?.toUpperCase() || "U"}
               </div>
               <div className="flex flex-col">
-                <span>{row.username}</span>
-                <span className="text-xs text-muted-foreground">@{row.id}</span>
+                <span className="font-semibold">{row.username}</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-tight">
+                  ID: {row.id}
+                </span>
               </div>
             </div>
           </td>
+          {/* Organization */}
+          <td className="px-4 py-3 text-sm text-muted-foreground">
+            {row.organization}
+          </td>
           {/* Contact */}
           <td className="px-4 py-3 text-sm text-muted-foreground">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col">
               <span>{row.email}</span>
             </div>
           </td>
           {/* Role */}
           <td className="px-4 py-3 text-sm">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border border-sky-300 bg-sky-50 text-sky-700">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-sky-300 bg-sky-50 text-sky-700 uppercase">
               {row.role}
             </span>
           </td>
           {/* Experience */}
           <td className="px-4 py-3 text-sm">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border border-purple-300 bg-purple-50 text-purple-700">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-purple-300 bg-purple-50 text-purple-700 uppercase">
               {row.experience}
             </span>
           </td>
           {/* Joined */}
           <td className="px-4 py-3 text-sm text-muted-foreground">
-            {row.joinedAt
-              ? new Date(row.joinedAt).toLocaleDateString()
-              : "-"}
+            {row.joinedAt ? new Date(row.joinedAt).toLocaleDateString() : "-"}
           </td>
           {/* Status */}
           <td className="px-4 py-3 text-sm">
             <span
               className={cn(
-                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border",
-                row.status === "APPROVED"
+                "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase",
+                row.status === "APPROVED" || row.status === "ACTIVE"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : row.status === "REJECTED" || row.status === "BLOCKED"
                   ? "bg-red-50 text-red-700 border-red-200"
@@ -361,59 +419,77 @@ const ManagePage = () => {
             </span>
           </td>
           {/* Actions - sticky right */}
-          <td className="px-4 py-3 text-sm sticky right-0 bg-card z-10 shadow-[ -8px_0_8px_-6px_rgba(15,23,42,0.08)]">
-            <button
-              onClick={() => {
-                setSelectedUser(row.raw);
-                setDrawerOpen(true);
-              }}
-              className="inline-flex items-center px-3 py-1.5 rounded-full border border-border text-xs font-semibold hover:bg-muted"
-            >
-              Actions ▾
-            </button>
+          <td className="px-4 py-3 text-sm sticky right-0 bg-card z-10 shadow-[-8px_0_8px_-6px_rgba(0,0,0,0.05)]">
+            {canEditUser(row.role) ? (
+              <button
+                onClick={() => {
+                  setSelectedUser(row.raw);
+                  setDrawerOpen(true);
+                }}
+                className="inline-flex items-center px-3 py-1.5 rounded-lg border border-border text-xs font-bold hover:bg-muted hover:text-primary transition-all shadow-sm"
+              >
+                Actions ▾
+              </button>
+            ) : (
+              <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 px-3">
+                Read Only
+              </span>
+            )}
           </td>
         </tr>
       );
     }
     if (activeTab === "courses") {
       return (
-        <tr key={row.id} className="border-b border-border/40 hover:bg-muted/40">
-          <td className="px-4 py-3 text-sm font-medium text-foreground">
-            {row.title}
+        <tr
+          key={row.id}
+          className="border-b border-border/40 hover:bg-muted/40 transition-colors"
+        >
+          <td className="px-4 py-3 text-sm text-muted-foreground">
+            {rowNumber}
+          </td>
+          <td className="px-4 py-3 text-sm font-semibold text-foreground">
+            {row.name}
           </td>
           <td className="px-4 py-3 text-sm text-muted-foreground">
-            {row.code || "-"}
+            {row.category}
+          </td>
+          <td className="px-4 py-3 text-sm text-muted-foreground">
+            {row.subcategory}
           </td>
           <td className="px-4 py-3 text-sm">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+            <span
+              className={cn(
+                "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase",
+                row.status === "APPROVED"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : row.status === "DRAFT" || row.status === "REVIEW"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-red-50 text-red-700 border-red-200"
+              )}
+            >
               {row.status}
             </span>
           </td>
           <td className="px-4 py-3 text-sm text-muted-foreground">
-            {row.createdAt
-              ? new Date(row.createdAt).toLocaleDateString()
-              : "-"}
+            {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-"}
           </td>
         </tr>
       );
     }
     return (
-      <tr key={row.id} className="border-b border-border/40 hover:bg-muted/40">
-        <td className="px-4 py-3 text-sm font-medium text-foreground">
+      <tr
+        key={row.id}
+        className="border-b border-border/40 hover:bg-muted/40 transition-colors"
+      >
+        <td className="px-4 py-3 text-sm text-muted-foreground">{rowNumber}</td>
+        <td className="px-4 py-3 text-sm font-semibold text-foreground">
           {row.name}
         </td>
+        <td className="px-4 py-3 text-sm text-muted-foreground">{row.grade}</td>
+        <td className="px-4 py-3 text-sm text-muted-foreground">{row.level}</td>
         <td className="px-4 py-3 text-sm text-muted-foreground">
-          {row.grade}
-        </td>
-        <td className="px-4 py-3 text-sm">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700">
-            {row.status}
-          </span>
-        </td>
-        <td className="px-4 py-3 text-sm text-muted-foreground">
-          {row.createdAt
-            ? new Date(row.createdAt).toLocaleDateString()
-            : "-"}
+          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-"}
         </td>
       </tr>
     );
@@ -457,24 +533,33 @@ const ManagePage = () => {
       </div>
 
       {/* Tabs and table */}
-      <div className="bg-card border border-border/60 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/40">
-          <div className="flex items-center gap-2">
+      <div className="bg-card border border-border/60 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-border/60 bg-muted/40 gap-4">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
             <TabButton
               active={activeTab === "users"}
-              onClick={() => loadTabData("users")}
+              onClick={() => {
+                setActiveTab("users");
+                setPage(1);
+              }}
             >
               Users
             </TabButton>
             <TabButton
               active={activeTab === "courses"}
-              onClick={() => loadTabData("courses")}
+              onClick={() => {
+                setActiveTab("courses");
+                setPage(1);
+              }}
             >
               Courses
             </TabButton>
             <TabButton
               active={activeTab === "subjects"}
-              onClick={() => loadTabData("subjects")}
+              onClick={() => {
+                setActiveTab("subjects");
+                setPage(1);
+              }}
             >
               Subjects
             </TabButton>
@@ -483,42 +568,256 @@ const ManagePage = () => {
             {activeTab === "users" && (
               <button
                 onClick={() => navigate("/users/create")}
-                className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90"
+                className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 shadow-sm transition-all"
               >
                 + Add User
               </button>
             )}
             {loading && (
-              <span className="text-xs text-muted-foreground mr-1">
+              <span className="text-xs text-muted-foreground font-medium animate-pulse">
                 Loading...
               </span>
             )}
           </div>
         </div>
 
+        {/* Filters Area */}
+        <div className="px-6 py-4 border-b border-border/40 bg-card/50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+            />
+            <svg
+              className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+
+          {activeTab === "users" && (
+            <select
+              className="px-4 py-2 bg-background border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer"
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All Roles</option>
+              <option value="STUDENT">Student</option>
+              <option value="TEACHER">Teacher</option>
+              <option value="PARENT">Parent</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          )}
+
+          <select
+            className="px-4 py-2 bg-background border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All Status / Condition</option>
+            {activeTab === "courses" ? (
+              <>
+                <option value="APPROVED">Approved</option>
+                <option value="DRAFT">Draft</option>
+                <option value="REVIEW">Review</option>
+              </>
+            ) : (
+              <>
+                <option value="APPROVED">Approved / Confirmed</option>
+                <option value="PENDING">Pending</option>
+                <option value="BLOCKED">Blocked</option>
+                <option value="REJECTED">Rejected</option>
+              </>
+            )}
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchQuery("");
+              setRoleFilter("");
+              setStatusFilter("");
+              setPage(1);
+            }}
+            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left sm:text-center"
+          >
+            Reset Filters
+          </button>
+        </div>
+
         {error && (
-          <div className="px-4 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100">
+          <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
             {error}
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[400px]">
           <table className="min-w-full text-left">
             <thead>{renderTableHeader()}</thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {!loading && rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
-                    className="px-4 py-6 text-center text-sm text-muted-foreground"
+                    colSpan={
+                      activeTab === "users"
+                        ? 9
+                        : activeTab === "courses"
+                        ? 6
+                        : 5
+                    }
+                    className="px-4 py-20 text-center"
                   >
-                    No records found.
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <div className="p-4 rounded-full bg-muted">
+                        <svg
+                          className="w-8 h-8"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <p className="font-medium">
+                        No records found matching your filters.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setRoleFilter("");
+                          setStatusFilter("");
+                        }}
+                        className="text-primary hover:underline text-sm font-semibold"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}
-              {rows.map(renderTableRow)}
+              {rows.map((row, index) => renderTableRow(row, index))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination control */}
+        <div className="px-6 py-4 border-t border-border/60 bg-muted/20 flex items-center justify-between">
+          <div className="text-xs text-muted-foreground font-medium">
+            Showing{" "}
+            <span className="text-foreground">{(page - 1) * pageSize + 1}</span>{" "}
+            to{" "}
+            <span className="text-foreground">
+              {Math.min(page * pageSize, total)}
+            </span>{" "}
+            of <span className="text-foreground">{total}</span> results
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => {
+                const pageNum = i + 1;
+                // Show current page, first, last, and neighbors
+                const totalPages = Math.ceil(total / pageSize);
+                const isVisible =
+                  pageNum === 1 ||
+                  pageNum === totalPages ||
+                  Math.abs(pageNum - page) <= 2;
+
+                if (!isVisible) {
+                  if (pageNum === 2 || pageNum === totalPages - 1) {
+                    return (
+                      <span
+                        key={pageNum}
+                        className="text-muted-foreground px-1"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={cn(
+                      "w-8 h-8 rounded-lg text-xs font-bold transition-all",
+                      page === pageNum
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "hover:bg-muted text-muted-foreground font-medium"
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() =>
+                setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))
+              }
+              disabled={page >= Math.ceil(total / pageSize)}
+              className="p-2 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -579,12 +878,11 @@ const ManagePage = () => {
                     }
                   >
                     <option value="">Select role</option>
-                    <option value="STUDENT">Student</option>
-                    <option value="TEACHER">Teacher</option>
-                    <option value="PARENT">Parent</option>
-                    <option value="MARKETING">Marketing</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="SUPERADMIN">Super Admin</option>
+                    {getAvailableRoles().map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -668,5 +966,3 @@ const ManagePage = () => {
 };
 
 export default ManagePage;
-
-
