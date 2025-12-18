@@ -126,29 +126,11 @@
         "audios"
       ]
     },
-    "user_metadatum": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::user-metadata.user-metadata",
-      "mappedBy": "user"
-    },
-    "user_lessons": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::user-lesson.user-lesson",
-      "mappedBy": "user"
-    },
     "org": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::org.org",
       "inversedBy": "users"
-    },
-    "user_repos": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::user-repo.user-repo",
-      "mappedBy": "user"
     },
     "user_status": {
       "type": "enumeration",
@@ -159,27 +141,11 @@
         "BLOCKED"
       ]
     },
-    "profile_photo": {
-      "type": "media",
-      "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
-    },
     "calander_activities": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::calander-activity.calander-activity",
       "mappedBy": "creator"
-    },
-    "user_levels": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::user-level.user-level",
-      "mappedBy": "user"
     },
     "team": {
       "type": "relation",
@@ -187,25 +153,13 @@
       "target": "api::team.team",
       "inversedBy": "players"
     },
-    "userroles": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::userrole.userrole",
-      "mappedBy": "user"
-    },
-    "quiz_results": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::quiz-result.quiz-result",
-      "mappedBy": "student"
-    },
     "home_address": {
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::address.address",
       "inversedBy": "user_address"
     },
-    "user_roles": {
+    "assigned_roles": {
       "type": "json"
     },
     "user_permissions": {
@@ -241,11 +195,35 @@
       "target": "api::subject.subject",
       "mappedBy": "authoredBy"
     },
-    "published_courses": {
+    "grade": {
+      "type": "enumeration",
+      "enum": [
+        "PLAYSCHOOL",
+        "LKG",
+        "UKG",
+        "FIRST",
+        "SECOND",
+        "THIRD",
+        "FOURTH",
+        "FIFTH",
+        "SIXTH",
+        "SEVENTH",
+        "EIGHTH",
+        "NINTH",
+        "TENTH",
+        "ELEVENTH",
+        "TWELFTH",
+        "DIPLOMA",
+        "GRADUATION",
+        "POSTGRADUATION",
+        "PHD"
+      ]
+    },
+    "user_profiles": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::course.course",
-      "mappedBy": "publisher"
+      "target": "api::user-profile.user-profile",
+      "mappedBy": "user"
     }
   }
 }

@@ -36,10 +36,10 @@
         "FILE"
       ]
     },
-    "lesson": {
+    "content": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::lesson.lesson",
+      "target": "api::content.content",
       "inversedBy": "resources"
     }
   }

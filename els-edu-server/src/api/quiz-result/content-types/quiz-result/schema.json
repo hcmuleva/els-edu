@@ -24,16 +24,13 @@
       "type": "integer"
     },
     "answers": {
-      "type": "json",
-      "description": "Array of user answers with question IDs, selected options, correctness, and time spent"
+      "type": "json"
     },
     "timeTaken": {
-      "type": "integer",
-      "description": "Total time taken in seconds"
+      "type": "integer"
     },
     "questionTimings": {
-      "type": "json",
-      "description": "Time spent on each question in seconds"
+      "type": "json"
     },
     "startedAt": {
       "type": "datetime"
@@ -43,64 +40,45 @@
     },
     "attemptNumber": {
       "type": "integer",
-      "default": 1,
-      "description": "Which attempt this is for the user"
+      "default": 1
     },
     "isPassed": {
-      "type": "boolean",
-      "description": "Whether the user passed based on passing score"
+      "type": "boolean"
     },
     "correctAnswers": {
-      "type": "integer",
-      "description": "Number of correct answers"
+      "type": "integer"
     },
     "incorrectAnswers": {
-      "type": "integer",
-      "description": "Number of incorrect answers"
+      "type": "integer"
     },
     "unansweredQuestions": {
       "type": "integer",
-      "default": 0,
-      "description": "Number of questions not attempted"
+      "default": 0
     },
     "questionAnalysis": {
-      "type": "json",
-      "description": "Detailed analysis per question: {questionId, isCorrect, timeSpent, selectedAnswer, correctAnswer, difficulty}"
+      "type": "json"
     },
     "weakAreas": {
-      "type": "json",
-      "description": "Topics/categories where user performed poorly"
+      "type": "json"
     },
     "strongAreas": {
-      "type": "json",
-      "description": "Topics/categories where user performed well"
+      "type": "json"
     },
     "recommendedRetake": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether system recommends retaking specific questions"
+      "default": false
     },
     "retakeQuestions": {
-      "type": "json",
-      "description": "Array of question IDs recommended for retake"
+      "type": "json"
     },
     "improvementSuggestions": {
-      "type": "json",
-      "description": "AI-generated suggestions for improvement"
+      "type": "json"
     },
     "deviceInfo": {
-      "type": "json",
-      "description": "Device and browser information"
+      "type": "json"
     },
     "sessionData": {
-      "type": "json",
-      "description": "Session tracking data for analytics"
-    },
-    "quiz": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::quiz.quiz",
-      "inversedBy": "quizResults"
+      "type": "json"
     },
     "topic": {
       "type": "relation",
