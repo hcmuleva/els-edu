@@ -117,7 +117,7 @@ const ProgressPage = () => {
           filter: { user: identity.id },
           pagination: { page: 1, perPage: 1000 },
           sort: { field: "completedAt", order: "DESC" },
-          meta: { populate: ["quiz", "subject", "questionAnalysis.question"] },
+          meta: { populate: ["quiz", "subject"] },
         });
         console.log("Quiz results fetched:", data);
         setQuizResults(data || []);
