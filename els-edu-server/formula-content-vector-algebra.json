@@ -1,0 +1,159 @@
+{
+  "data": {
+    "id": null,
+    "documentId": null,
+    "title": "Vector Algebra – Class 12 Formulas",
+    "createdAt": "2025-12-19T16:45:00.000Z",
+    "updatedAt": "2025-12-19T16:45:00.000Z", 
+    "publishedAt": "2025-12-19T16:45:00.000Z",
+    "type": "MD",
+    "json_description": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Position Vector: If A is a point with coordinates (x, y, z), then position vector \\(\\vec{OA} = x\\hat{i} + y\\hat{j} + z\\hat{k}\\) where O is the origin."
+          }
+        ]
+      },
+      {
+        "type": "paragraph", 
+        "children": [
+          {
+            "type": "text",
+            "text": "Magnitude of Vector: For vector \\(\\vec{a} = a_1\\hat{i} + a_2\\hat{j} + a_3\\hat{k}\\), magnitude is \\(|\\vec{a}| = \\sqrt{a_1^2 + a_2^2 + a_3^2}\\)"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text", 
+            "text": "Unit Vector: Unit vector in direction of \\(\\vec{a}\\) is \\(\\hat{a} = \\frac{\\vec{a}}{|\\vec{a}|}\\). Unit vectors along coordinate axes are \\(\\hat{i}, \\hat{j}, \\hat{k}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Vector Addition: \\(\\vec{a} + \\vec{b} = (a_1 + b_1)\\hat{i} + (a_2 + b_2)\\hat{j} + (a_3 + b_3)\\hat{k}\\). Addition is commutative: \\(\\vec{a} + \\vec{b} = \\vec{b} + \\vec{a}\\)"
+          }
+        ]
+      },
+      {
+        "type": "paragraph", 
+        "children": [
+          {
+            "type": "text",
+            "text": "Scalar Multiplication: For scalar k and vector \\(\\vec{a}\\), \\(k\\vec{a} = ka_1\\hat{i} + ka_2\\hat{j} + ka_3\\hat{k}\\). Magnitude becomes \\(|k\\vec{a}| = |k||\\vec{a}|\\)"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Dot Product: \\(\\vec{a} \\cdot \\vec{b} = a_1b_1 + a_2b_2 + a_3b_3 = |\\vec{a}||\\vec{b}|\\cos\\theta\\) where \\(\\theta\\) is angle between vectors."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Cross Product: \\(\\vec{a} \\times \\vec{b} = \\begin{vmatrix} \\hat{i} & \\hat{j} & \\hat{k} \\\\ a_1 & a_2 & a_3 \\\\ b_1 & b_2 & b_3 \\end{vmatrix} = (a_2b_3 - a_3b_2)\\hat{i} - (a_1b_3 - a_3b_1)\\hat{j} + (a_1b_2 - a_2b_1)\\hat{k}\\)"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Cross Product Properties: \\(|\\vec{a} \\times \\vec{b}| = |\\vec{a}||\\vec{b}|\\sin\\theta\\). Cross product is anti-commutative: \\(\\vec{a} \\times \\vec{b} = -\\vec{b} \\times \\vec{a}\\)"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Section Formula: Position vector of point dividing line segment joining points A and B internally in ratio m:n is \\(\\vec{r} = \\frac{n\\vec{a} + m\\vec{b}}{m + n}\\)"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Scalar Triple Product: \\([\\vec{a} \\vec{b} \\vec{c}] = \\vec{a} \\cdot (\\vec{b} \\times \\vec{c}) = \\begin{vmatrix} a_1 & a_2 & a_3 \\\\ b_1 & b_2 & b_3 \\\\ c_1 & c_2 & c_3 \\end{vmatrix}\\). Represents volume of parallelepiped."
+          }
+        ]
+      },
+      {
+        "type": "paragraph", 
+        "children": [
+          {
+            "type": "text",
+            "text": "Vector Triple Product: \\(\\vec{a} \\times (\\vec{b} \\times \\vec{c}) = \\vec{b}(\\vec{a} \\cdot \\vec{c}) - \\vec{c}(\\vec{a} \\cdot \\vec{b})\\). This is the BAC-CAB rule."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Condition for Collinearity: Three points A, B, C are collinear if \\(\\vec{AB} \\times \\vec{AC} = \\vec{0}\\) or \\(\\vec{AB} = k\\vec{AC}\\) for some scalar k."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text", 
+            "text": "Condition for Coplanarity: Four points A, B, C, D are coplanar if \\([\\vec{AB} \\vec{AC} \\vec{AD}] = 0\\) or scalar triple product is zero."
+          }
+        ]
+      }
+    ],
+    "youtubeurl": null,
+    "multimedia": null,
+    "subjects": [
+      {
+        "id": null,
+        "documentId": "g8ftn6180xn6v3rfpysjmipv",
+        "name": "Formula",
+        "grade": "TWELFTH",
+        "createdAt": null,
+        "updatedAt": null,
+        "publishedAt": null,
+        "level": null,
+        "description": null
+      }
+    ],
+    "topic": {
+      "id": null,
+      "documentId": null,
+      "name": "Vector Algebra",
+      "description": null,
+      "createdAt": null,
+      "updatedAt": null,
+      "publishedAt": null,
+      "icon": null
+    },
+    "quizzes": [],
+    "creator": null,
+    "resources": []
+  },
+  "meta": {}
+}

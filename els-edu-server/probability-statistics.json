@@ -1,0 +1,118 @@
+{
+  "data": {
+    "title": "Probability and Statistics – Class 12 Formulas",
+    "type": "MD",
+    "json_description": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Basic Probability: For event A, \\(P(A) = \\frac{\\text{Number of favorable outcomes}}{\\text{Total number of outcomes}}\\). \\(0 \\leq P(A) \\leq 1\\). \\(P(\\text{certain event}) = 1\\), \\(P(\\text{impossible event}) = 0\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Complement Rule: \\(P(A') = 1 - P(A)\\) where \\(A'\\) is complement of A. \\(P(A) + P(A') = 1\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Addition Rule: \\(P(A \\cup B) = P(A) + P(B) - P(A \\cap B)\\). For mutually exclusive events: \\(P(A \\cup B) = P(A) + P(B)\\) since \\(P(A \\cap B) = 0\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Conditional Probability: \\(P(A|B) = \\frac{P(A \\cap B)}{P(B)}\\) where \\(P(B) \\neq 0\\). This gives probability of A given that B has occurred."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Multiplication Rule: \\(P(A \\cap B) = P(A) \\cdot P(B|A) = P(B) \\cdot P(A|B)\\). For independent events: \\(P(A \\cap B) = P(A) \\cdot P(B)\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Bayes' Theorem: \\(P(A_i|B) = \\frac{P(B|A_i) \\cdot P(A_i)}{\\sum_{j=1}^{n} P(B|A_j) \\cdot P(A_j)}\\) where \\(A_1, A_2, ..., A_n\\) form a partition of sample space."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Random Variable Expectation: For discrete random variable X, \\(E(X) = \\sum_{i} x_i P(X = x_i)\\). Properties: \\(E(aX + b) = aE(X) + b\\), \\(E(X + Y) = E(X) + E(Y)\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Variance: \\(\\text{Var}(X) = E(X^2) - [E(X)]^2 = E[(X - \\mu)^2]\\) where \\(\\mu = E(X)\\). \\(\\text{Var}(aX + b) = a^2\\text{Var}(X)\\). Standard deviation \\(\\sigma = \\sqrt{\\text{Var}(X)}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Binomial Distribution: \\(P(X = r) = \\binom{n}{r} p^r q^{n-r}\\) where \\(q = 1-p\\). Mean \\(= np\\), Variance \\(= npq\\). Used for n independent trials with constant probability p."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Normal Distribution: \\(f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}\\). Standard normal: \\(\\mu = 0, \\sigma = 1\\). \\(Z = \\frac{X - \\mu}{\\sigma}\\) converts to standard normal."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Correlation Coefficient: \\(r = \\frac{\\sum(x_i - \\bar{x})(y_i - \\bar{y})}{\\sqrt{\\sum(x_i - \\bar{x})^2 \\sum(y_i - \\bar{y})^2}} = \\frac{\\text{Cov}(X,Y)}{\\sigma_X \\sigma_Y}\\). Range: \\(-1 \\leq r \\leq 1\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Linear Regression: Line of regression of Y on X: \\(y - \\bar{y} = r \\frac{\\sigma_y}{\\sigma_x}(x - \\bar{x})\\). Line of regression of X on Y: \\(x - \\bar{x} = r \\frac{\\sigma_x}{\\sigma_y}(y - \\bar{y})\\)."
+          }
+        ]
+      }
+    ],
+    "subjects": [{"documentId": "g8ftn6180xn6v3rfpysjmipv"}],
+    "topic": {"name": "Probability and Statistics"}
+  }
+}

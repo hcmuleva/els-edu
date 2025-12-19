@@ -1,0 +1,118 @@
+{
+  "data": {
+    "title": "Three Dimensional Geometry – Class 12 Formulas",
+    "type": "MD", 
+    "json_description": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Direction Cosines: For a line making angles \\(\\alpha, \\beta, \\gamma\\) with x, y, z axes, direction cosines are \\(l = \\cos\\alpha\\), \\(m = \\cos\\beta\\), \\(n = \\cos\\gamma\\) where \\(l^2 + m^2 + n^2 = 1\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Direction Ratios: If direction ratios are \\(a, b, c\\), then direction cosines are \\(l = \\frac{a}{\\sqrt{a^2+b^2+c^2}}\\), \\(m = \\frac{b}{\\sqrt{a^2+b^2+c^2}}\\), \\(n = \\frac{c}{\\sqrt{a^2+b^2+c^2}}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Distance Formula: Distance between points \\(A(x_1, y_1, z_1)\\) and \\(B(x_2, y_2, z_2)\\) is \\(d = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Section Formula: Point dividing line segment joining \\(A(x_1, y_1, z_1)\\) and \\(B(x_2, y_2, z_2)\\) in ratio \\(m:n\\) internally is \\(\\left(\\frac{mx_2+nx_1}{m+n}, \\frac{my_2+ny_1}{m+n}, \\frac{mz_2+nz_1}{m+n}\\right)\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Equation of Line: Vector form: \\(\\vec{r} = \\vec{a} + \\lambda \\vec{b}\\). Cartesian form: \\(\\frac{x-x_1}{l} = \\frac{y-y_1}{m} = \\frac{z-z_1}{n}\\) where \\((x_1, y_1, z_1)\\) is a point and \\(l, m, n\\) are direction ratios."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Angle Between Lines: If lines have direction ratios \\((a_1, b_1, c_1)\\) and \\((a_2, b_2, c_2)\\), angle \\(\\theta\\) between them is \\(\\cos\\theta = \\frac{a_1a_2 + b_1b_2 + c_1c_2}{\\sqrt{a_1^2+b_1^2+c_1^2}\\sqrt{a_2^2+b_2^2+c_2^2}}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Equation of Plane: Vector form: \\(\\vec{r} \\cdot \\vec{n} = d\\). Cartesian form: \\(ax + by + cz = d\\) where \\((a, b, c)\\) is normal vector. Intercept form: \\(\\frac{x}{a} + \\frac{y}{b} + \\frac{z}{c} = 1\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Distance from Point to Plane: Distance from point \\((x_1, y_1, z_1)\\) to plane \\(ax + by + cz + d = 0\\) is \\(\\frac{|ax_1 + by_1 + cz_1 + d|}{\\sqrt{a^2 + b^2 + c^2}}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Distance Between Parallel Planes: For parallel planes \\(ax + by + cz + d_1 = 0\\) and \\(ax + by + cz + d_2 = 0\\), distance is \\(\\frac{|d_1 - d_2|}{\\sqrt{a^2 + b^2 + c^2}}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Angle Between Planes: For planes with normal vectors \\(\\vec{n_1}\\) and \\(\\vec{n_2}\\), angle \\(\\theta\\) is \\(\\cos\\theta = \\frac{|\\vec{n_1} \\cdot \\vec{n_2}|}{|\\vec{n_1}||\\vec{n_2}|}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Distance from Point to Line: Distance from point \\(P\\) to line through point \\(A\\) with direction vector \\(\\vec{b}\\) is \\(d = \\frac{|\\vec{AP} \\times \\vec{b}|}{|\\vec{b}|}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Shortest Distance Between Skew Lines: For lines \\(\\vec{r} = \\vec{a_1} + \\lambda \\vec{b_1}\\) and \\(\\vec{r} = \\vec{a_2} + \\mu \\vec{b_2}\\), shortest distance is \\(d = \\frac{|(\\vec{a_2} - \\vec{a_1}) \\cdot (\\vec{b_1} \\times \\vec{b_2})|}{|\\vec{b_1} \\times \\vec{b_2}|}\\)."
+          }
+        ]
+      }
+    ],
+    "subjects": [{"documentId": "g8ftn6180xn6v3rfpysjmipv"}],
+    "topic": {"name": "Three Dimensional Geometry"}
+  }
+}

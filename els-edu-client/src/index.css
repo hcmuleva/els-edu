@@ -47,3 +47,68 @@
     @apply font-heading font-bold tracking-tight;
   }
 }
+
+/* Book Style Content */
+@layer components {
+  .book-style-content {
+    @apply text-gray-800 leading-relaxed;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    line-height: 1.8;
+    letter-spacing: 0.02em;
+  }
+  
+  .book-style-content .paragraph-block {
+    @apply mb-6;
+    text-align: justify;
+    text-indent: 1.5em;
+    hyphens: auto;
+  }
+  
+  .book-style-content .paragraph-block:first-child {
+    text-indent: 0;
+  }
+  
+  /* Mathematical formulas styling */
+  .book-style-content .katex {
+    font-size: 1.2em;
+    color: #1f2937;
+    font-weight: 500;
+  }
+  
+  .book-style-content .katex-display {
+    @apply my-6 p-4 bg-blue-50 rounded-lg border border-blue-100;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Inline math styling */
+  .book-style-content .katex:not(.katex-display) {
+    @apply bg-blue-50 px-2 py-1 rounded border border-blue-100;
+    margin: 0 4px;
+    display: inline-block;
+  }
+  
+  /* Enhanced spacing for readability */
+  .book-style-content > * + * {
+    @apply mt-6;
+  }
+  
+  /* Make formulas more prominent */
+  .book-style-content p:has(.katex) {
+    @apply leading-loose;
+    margin: 1.5rem 0;
+  }
+  
+  /* Rule headings (like "Power Rule:", "Exponential Rule:") */
+  .book-style-content strong,
+  .book-style-content b {
+    @apply font-bold text-gray-900;
+    margin-right: 0.5rem;
+  }
+  
+  /* Spacing between rules */
+  .book-style-content br + strong,
+  .book-style-content br + b {
+    margin-top: 1rem;
+    display: inline-block;
+  }
+}

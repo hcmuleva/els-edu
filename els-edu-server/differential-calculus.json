@@ -1,0 +1,91 @@
+{
+  "data": {
+    "title": "Differential Calculus – Class 12 Formulas",
+    "type": "MD",
+    "json_description": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Basic Derivatives: \\(\\frac{d}{dx}(x^n) = nx^{n-1}\\), \\(\\frac{d}{dx}(e^x) = e^x\\), \\(\\frac{d}{dx}(\\ln x) = \\frac{1}{x}\\), \\(\\frac{d}{dx}(\\sin x) = \\cos x\\), \\(\\frac{d}{dx}(\\cos x) = -\\sin x\\), \\(\\frac{d}{dx}(\\tan x) = \\sec^2 x\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Product Rule: \\(\\frac{d}{dx}[f(x)g(x)] = f'(x)g(x) + f(x)g'(x)\\). Quotient Rule: \\(\\frac{d}{dx}\\left[\\frac{f(x)}{g(x)}\\right] = \\frac{f'(x)g(x) - f(x)g'(x)}{[g(x)]^2}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Chain Rule: \\(\\frac{d}{dx}[f(g(x))] = f'(g(x)) \\cdot g'(x)\\). For composite function \\(y = f(u)\\) where \\(u = g(x)\\): \\(\\frac{dy}{dx} = \\frac{dy}{du} \\cdot \\frac{du}{dx}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph", 
+        "children": [
+          {
+            "type": "text",
+            "text": "Implicit Differentiation: For equation \\(F(x,y) = 0\\), \\(\\frac{dy}{dx} = -\\frac{\\frac{\\partial F}{\\partial x}}{\\frac{\\partial F}{\\partial y}}\\). Differentiate both sides treating y as function of x."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Parametric Differentiation: If \\(x = f(t)\\) and \\(y = g(t)\\), then \\(\\frac{dy}{dx} = \\frac{\\frac{dy}{dt}}{\\frac{dx}{dt}} = \\frac{g'(t)}{f'(t)}\\). Second derivative: \\(\\frac{d^2y}{dx^2} = \\frac{d}{dx}\\left(\\frac{dy}{dx}\\right) = \\frac{\\frac{d}{dt}\\left(\\frac{dy}{dx}\\right)}{\\frac{dx}{dt}}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Logarithmic Differentiation: For \\(y = [f(x)]^{g(x)}\\), take \\(\\ln y = g(x) \\ln f(x)\\), then \\(\\frac{1}{y}\\frac{dy}{dx} = g'(x)\\ln f(x) + g(x)\\frac{f'(x)}{f(x)}\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "L'Hôpital's Rule: For indeterminate forms \\(\\frac{0}{0}\\) or \\(\\frac{\\infty}{\\infty}\\): \\(\\lim_{x \\to a} \\frac{f(x)}{g(x)} = \\lim_{x \\to a} \\frac{f'(x)}{g'(x)}\\) if the limit exists."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Maxima and Minima: Critical points where \\(f'(x) = 0\\) or undefined. Second derivative test: \\(f''(x) > 0\\) gives local minimum, \\(f''(x) < 0\\) gives local maximum, \\(f''(x) = 0\\) is inconclusive."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Mean Value Theorem: If f is continuous on [a,b] and differentiable on (a,b), then \\(\\exists c \\in (a,b)\\) such that \\(f'(c) = \\frac{f(b) - f(a)}{b - a}\\)."
+          }
+        ]
+      }
+    ],
+    "subjects": [{"documentId": "g8ftn6180xn6v3rfpysjmipv"}],
+    "topic": {"name": "Differential Calculus"}
+  }
+}

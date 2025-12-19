@@ -1,0 +1,82 @@
+{
+  "data": {
+    "title": "Inverse Trigonometric Functions – Class 12 Formulas",
+    "type": "MD",
+    "json_description": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Domain and Range: \\(\\sin^{-1}x\\) has domain \\([-1,1]\\) and range \\([- \\frac{\\pi}{2}, \\frac{\\pi}{2}]\\). \\(\\cos^{-1}x\\) has domain \\([-1,1]\\) and range \\([0, \\pi]\\). \\(\\tan^{-1}x\\) has domain \\(\\mathbb{R}\\) and range \\((- \\frac{\\pi}{2}, \\frac{\\pi}{2})\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Basic Identities: \\(\\sin^{-1}x + \\cos^{-1}x = \\frac{\\pi}{2}\\) for \\(x \\in [-1,1]\\). \\(\\tan^{-1}x + \\cot^{-1}x = \\frac{\\pi}{2}\\) for \\(x \\in \\mathbb{R}\\). \\(\\sec^{-1}x + \\cosec^{-1}x = \\frac{\\pi}{2}\\) for \\(|x| \\geq 1\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Negative Argument Properties: \\(\\sin^{-1}(-x) = -\\sin^{-1}x\\), \\(\\tan^{-1}(-x) = -\\tan^{-1}x\\), \\(\\cosec^{-1}(-x) = -\\cosec^{-1}x\\). \\(\\cos^{-1}(-x) = \\pi - \\cos^{-1}x\\), \\(\\cot^{-1}(-x) = \\pi - \\cot^{-1}x\\), \\(\\sec^{-1}(-x) = \\pi - \\sec^{-1}x\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Addition Formulas: \\(\\sin^{-1}x + \\sin^{-1}y = \\sin^{-1}(x\\sqrt{1-y^2} + y\\sqrt{1-x^2})\\) when \\(x^2 + y^2 \\leq 1\\). \\(\\cos^{-1}x + \\cos^{-1}y = \\cos^{-1}(xy - \\sqrt{1-x^2}\\sqrt{1-y^2})\\) when \\(x + y \\geq 0\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Tangent Addition: \\(\\tan^{-1}x + \\tan^{-1}y = \\tan^{-1}\\left(\\frac{x+y}{1-xy}\\right)\\) when \\(xy < 1\\). \\(\\tan^{-1}x + \\tan^{-1}y = \\pi + \\tan^{-1}\\left(\\frac{x+y}{1-xy}\\right)\\) when \\(xy > 1\\) and \\(x,y > 0\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Subtraction Formulas: \\(\\sin^{-1}x - \\sin^{-1}y = \\sin^{-1}(x\\sqrt{1-y^2} - y\\sqrt{1-x^2})\\). \\(\\tan^{-1}x - \\tan^{-1}y = \\tan^{-1}\\left(\\frac{x-y}{1+xy}\\right)\\) when \\(xy > -1\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Multiple Angle Formulas: \\(2\\tan^{-1}x = \\sin^{-1}\\left(\\frac{2x}{1+x^2}\\right) = \\cos^{-1}\\left(\\frac{1-x^2}{1+x^2}\\right) = \\tan^{-1}\\left(\\frac{2x}{1-x^2}\\right)\\) for appropriate domains."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Special Values: \\(\\sin^{-1}(\\frac{1}{2}) = \\frac{\\pi}{6}\\), \\(\\cos^{-1}(\\frac{\\sqrt{3}}{2}) = \\frac{\\pi}{6}\\), \\(\\tan^{-1}1 = \\frac{\\pi}{4}\\), \\(\\sin^{-1}(\\frac{\\sqrt{3}}{2}) = \\frac{\\pi}{3}\\), \\(\\cos^{-1}(\\frac{1}{2}) = \\frac{\\pi}{3}\\)."
+          }
+        ]
+      }
+    ],
+    "subjects": [{"documentId": "g8ftn6180xn6v3rfpysjmipv"}],
+    "topic": {"name": "Inverse Trigonometric Functions"}
+  }
+}

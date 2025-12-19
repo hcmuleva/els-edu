@@ -1,0 +1,100 @@
+{
+  "data": {
+    "title": "Matrices and Determinants – Class 12 Formulas", 
+    "type": "MD",
+    "json_description": [
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Matrix Addition: \\((A + B)_{ij} = A_{ij} + B_{ij}\\). Properties: \\(A + B = B + A\\) (commutative), \\((A + B) + C = A + (B + C)\\) (associative), \\(A + O = A\\) where O is null matrix."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Matrix Multiplication: \\((AB)_{ij} = \\sum_{k=1}^{n} A_{ik}B_{kj}\\). Properties: \\((AB)C = A(BC)\\), \\(A(B + C) = AB + AC\\), \\(AI = IA = A\\) where I is identity matrix. Generally \\(AB \\neq BA\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Transpose Properties: \\((A^T)^T = A\\), \\((A + B)^T = A^T + B^T\\), \\((AB)^T = B^T A^T\\), \\((kA)^T = kA^T\\). Symmetric matrix: \\(A^T = A\\). Skew-symmetric: \\(A^T = -A\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Determinant of 2×2 Matrix: \\(\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix} = ad - bc\\). Determinant of 3×3 Matrix: \\(\\begin{vmatrix} a_1 & b_1 & c_1 \\\\ a_2 & b_2 & c_2 \\\\ a_3 & b_3 & c_3 \\end{vmatrix} = a_1(b_2c_3 - b_3c_2) - b_1(a_2c_3 - a_3c_2) + c_1(a_2b_3 - a_3b_2)\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Determinant Properties: \\(\\det(AB) = \\det(A) \\det(B)\\), \\(\\det(A^T) = \\det(A)\\), \\(\\det(kA) = k^n \\det(A)\\) for n×n matrix. If any row/column is zero, \\(\\det(A) = 0\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Cofactor and Adjoint: Cofactor \\(C_{ij} = (-1)^{i+j} M_{ij}\\) where \\(M_{ij}\\) is minor. Adjoint \\(\\text{adj}(A) = [C_{ij}]^T\\). Property: \\(A \\cdot \\text{adj}(A) = \\det(A) \\cdot I\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Matrix Inverse: \\(A^{-1} = \\frac{1}{\\det(A)} \\text{adj}(A)\\) when \\(\\det(A) \\neq 0\\). Properties: \\((A^{-1})^{-1} = A\\), \\((AB)^{-1} = B^{-1}A^{-1}\\), \\((A^T)^{-1} = (A^{-1})^T\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Cramer's Rule: For system \\(AX = B\\), solution is \\(x_i = \\frac{\\det(A_i)}{\\det(A)}\\) where \\(A_i\\) is matrix A with i-th column replaced by B. Valid when \\(\\det(A) \\neq 0\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Rank of Matrix: Rank is maximum number of linearly independent rows/columns. \\(\\text{rank}(A) = \\text{rank}(A^T)\\), \\(\\text{rank}(AB) \\leq \\min(\\text{rank}(A), \\text{rank}(B))\\)."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "text": "Eigenvalues and Eigenvectors: For \\(AX = \\lambda X\\), \\(\\lambda\\) is eigenvalue and X is eigenvector. Characteristic equation: \\(\\det(A - \\lambda I) = 0\\). Sum of eigenvalues = trace of A, product = determinant of A."
+          }
+        ]
+      }
+    ],
+    "subjects": [{"documentId": "g8ftn6180xn6v3rfpysjmipv"}],
+    "topic": {"name": "Matrices and Determinants"}
+  }
+}
