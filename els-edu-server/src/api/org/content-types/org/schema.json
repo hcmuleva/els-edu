@@ -59,12 +59,6 @@
       "target": "api::pricing.pricing",
       "mappedBy": "orgs"
     },
-    "org_metadatum": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::org-metadata.org-metadata",
-      "inversedBy": "org"
-    },
     "address": {
       "type": "relation",
       "relation": "oneToOne",

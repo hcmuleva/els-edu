@@ -3,6 +3,7 @@ import { useDataProvider } from "react-admin";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { renderDescriptionBlocks } from "../../utils/blockRenderer";
 import {
   PlayCircle,
   FileText,
@@ -83,35 +84,6 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
     }
     return content;
   }, [topic, searchQuery]);
-
-  // Helper for safe description rendering
-  const getDescriptionText = () => {
-    const desc =
-      contentDetails?.json_description ||
-      selectedContent?.json_description ||
-      selectedContent?.description;
-
-    if (typeof desc === "string") return desc;
-
-    // Handle Strapi Blocks JSON: Extract text from blocks to form a Markdown string
-    if (Array.isArray(desc)) {
-      try {
-        return desc
-          .map((block) => {
-            if (block.children && Array.isArray(block.children)) {
-              return block.children.map((child) => child.text).join("");
-            }
-            return "";
-          })
-          .join("\n");
-      } catch (e) {
-        console.error("Error parsing description blocks:", e);
-        return "*Error loading description.*";
-      }
-    }
-
-    return "*No description available.*";
-  };
 
   // Infinite Scroll / Load More
   const visibleContent = filteredContent.slice(0, visibleCount);
@@ -238,97 +210,24 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
                   Description
                 </h3>
 
-                {/* Description with Markdown & See More */}
+                {/* Description with Book Style Rendering */}
                 <div
                   className={`relative overflow-hidden transition-all duration-500 ${
                     isDescriptionExpanded ? "max-h-full" : "max-h-24"
                   }`}
                 >
-                  <div className="prose prose-sm max-w-none text-gray-600 text-left">
-                    {loadingDetails ? (
-                      <div className="space-y-2 animate-pulse">
-                        <div className="h-4 bg-gray-100 rounded w-3/4" />
-                        <div className="h-4 bg-gray-100 rounded w-1/2" />
-                      </div>
-                    ) : (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                        components={{
-                          h1: ({ node, ...props }) => (
-                            <h1
-                              className="text-xl font-bold text-gray-800 mt-4 mb-2"
-                              {...props}
-                            />
-                          ),
-                          h2: ({ node, ...props }) => (
-                            <h2
-                              className="text-lg font-bold text-gray-800 mt-3 mb-2"
-                              {...props}
-                            />
-                          ),
-                          h3: ({ node, ...props }) => (
-                            <h3
-                              className="text-base font-bold text-gray-800 mt-3 mb-1"
-                              {...props}
-                            />
-                          ),
-                          p: ({ node, ...props }) => (
-                            <p className="mb-2 leading-relaxed" {...props} />
-                          ),
-                          a: ({ node, ...props }) => (
-                            <a
-                              className="text-primary hover:underline font-medium"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              {...props}
-                            />
-                          ),
-                          ul: ({ node, ...props }) => (
-                            <ul
-                              className="list-disc pl-5 mb-2 space-y-1"
-                              {...props}
-                            />
-                          ),
-                          ol: ({ node, ...props }) => (
-                            <ol
-                              className="list-decimal pl-5 mb-2 space-y-1"
-                              {...props}
-                            />
-                          ),
-                          li: ({ node, ...props }) => (
-                            <li className="" {...props} />
-                          ),
-                          blockquote: ({ node, ...props }) => (
-                            <blockquote
-                              className="border-l-4 border-primary/20 pl-4 italic text-gray-500 my-2"
-                              {...props}
-                            />
-                          ),
-                          code: ({ node, ...props }) => (
-                            <code
-                              className="bg-gray-800 text-gray-100 px-1.5 py-0.5 rounded text-sm font-mono"
-                              {...props}
-                            />
-                          ),
-                          pre: ({ node, ...props }) => (
-                            <pre
-                              className="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto my-3 text-sm"
-                              {...props}
-                            />
-                          ),
-                          img: ({ node, ...props }) => (
-                            <img
-                              className="rounded-lg shadow-sm my-3 max-w-full"
-                              {...props}
-                            />
-                          ),
-                        }}
-                      >
-                        {getDescriptionText()}
-                      </ReactMarkdown>
-                    )}
-                  </div>
+                  {loadingDetails ? (
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-4 bg-gray-100 rounded w-3/4" />
+                      <div className="h-4 bg-gray-100 rounded w-1/2" />
+                    </div>
+                  ) : (
+                    renderDescriptionBlocks(
+                      contentDetails?.json_description ||
+                      selectedContent?.json_description ||
+                      selectedContent?.description
+                    )
+                  )}
 
                   {/* Gradient Overlay when collapsed */}
                   {!isDescriptionExpanded && !loadingDetails && (

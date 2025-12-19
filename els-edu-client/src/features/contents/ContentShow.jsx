@@ -10,7 +10,7 @@ import {
   Video,
   Download,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { renderDescriptionBlocks } from "../../utils/blockRenderer";
 
 export const ContentShow = () => {
   const { id } = useParams();
@@ -21,20 +21,6 @@ export const ContentShow = () => {
     id,
     meta: { populate: ["topic", "subjects", "multimedia", "creator"] },
   });
-
-  // Helper to extract text from blocks for Markdown
-  const descriptionMarkdown = useMemo(() => {
-    if (!record?.json_description || !Array.isArray(record.json_description))
-      return "";
-    return record.json_description
-      .map((block) => {
-        if (block.type === "paragraph" && block.children) {
-          return block.children.map((child) => child.text).join("");
-        }
-        return "";
-      })
-      .join("\n\n");
-  }, [record]);
 
   if (isLoading) return <Loading />;
   if (!record) return null;
@@ -108,8 +94,8 @@ export const ContentShow = () => {
                 Description
               </h2>
               <div className="prose prose-sm max-w-none text-gray-600">
-                {descriptionMarkdown ? (
-                  <ReactMarkdown>{descriptionMarkdown}</ReactMarkdown>
+                {record.json_description ? (
+                  renderDescriptionBlocks(record.json_description)
                 ) : (
                   <p className="italic text-gray-400">
                     No description provided.

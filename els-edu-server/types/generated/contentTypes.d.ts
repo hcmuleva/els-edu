@@ -991,39 +991,6 @@ export interface ApiOfferOffer extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiOrgMetadataOrgMetadata extends Struct.CollectionTypeSchema {
-  collectionName: 'org_metadatas';
-  info: {
-    displayName: 'org-metadata';
-    pluralName: 'org-metadatas';
-    singularName: 'org-metadata';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    docker_token: Schema.Attribute.Text;
-    docker_username: Schema.Attribute.String;
-    github_token: Schema.Attribute.Text;
-    github_username: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::org-metadata.org-metadata'
-    > &
-      Schema.Attribute.Private;
-    org: Schema.Attribute.Relation<'oneToOne', 'api::org.org'>;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    vercel_token: Schema.Attribute.Text;
-  };
-}
-
 export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
   collectionName: 'orgs';
   info: {
@@ -1051,10 +1018,6 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::org.org'> &
       Schema.Attribute.Private;
     logo: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
-    org_metadatum: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::org-metadata.org-metadata'
-    >;
     org_name: Schema.Attribute.String;
     org_status: Schema.Attribute.Enumeration<['ACTIVE', 'INACTIVE']> &
       Schema.Attribute.DefaultTo<'ACTIVE'>;
@@ -2626,7 +2589,6 @@ declare module '@strapi/strapi' {
       'api::invoice-payment.invoice-payment': ApiInvoicePaymentInvoicePayment;
       'api::invoice.invoice': ApiInvoiceInvoice;
       'api::offer.offer': ApiOfferOffer;
-      'api::org-metadata.org-metadata': ApiOrgMetadataOrgMetadata;
       'api::org.org': ApiOrgOrg;
       'api::pricing-offer.pricing-offer': ApiPricingOfferPricingOffer;
       'api::pricing.pricing': ApiPricingPricing;
