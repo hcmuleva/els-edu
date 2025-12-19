@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { useLogin, useNotify } from "react-admin";
 import { Link } from "react-router-dom";
+import {
+  addUserToDefaultOrg,
+  updateUserData,
+  DEFAULT_ORG_NAME,
+} from "../../services/org";
+import { refreshUser } from "../../api/authProvider";
 
 const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
@@ -29,6 +35,7 @@ const RegisterPage = () => {
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
 
     try {
+      // Step 1: Register the user (this must be a direct API call since we're not authenticated yet)
       const response = await fetch(`${apiUrl}/auth/local/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,11 +52,44 @@ const RegisterPage = () => {
       }
 
       const data = await response.json();
+      const token = data.jwt;
+      const user = data.user;
 
-      // Auto login after registration
+      // Store auth data immediately so dataProvider can use it for authenticated requests
       localStorage.setItem("auth", JSON.stringify(data));
-      localStorage.setItem("token", data.jwt);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", user.id);
+      localStorage.setItem("userDocumentId", user.documentId);
+
+      // Step 2: Assign user to default org (Edu Org) using dataProvider
+      try {
+        await addUserToDefaultOrg(user.id);
+        console.log(`User assigned to default org: ${DEFAULT_ORG_NAME}`);
+      } catch (orgError) {
+        console.warn("Failed to assign user to default org:", orgError);
+        // Continue even if org assignment fails - user can be assigned later
+      }
+
+      // Step 3: Set default user_role and assigned_roles using dataProvider
+      try {
+        await updateUserData(user.id, {
+          user_role: "STUDENT",
+          assigned_roles: [{ role: "STUDENT" }],
+        });
+        console.log("User default role set to STUDENT");
+      } catch (roleError) {
+        console.warn("Failed to set default role:", roleError);
+      }
+
+      // Step 4: Refresh user data to get all populated fields
+      try {
+        const refreshedUser = await refreshUser();
+        localStorage.setItem("user", JSON.stringify(refreshedUser));
+      } catch (refreshError) {
+        // Fallback: store basic user data
+        console.warn("Failed to refresh user data:", refreshError);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
 
       notify("Registration successful! Welcome.", { type: "success" });
       // Redirect to dashboard with base path (hash routing for React Admin)

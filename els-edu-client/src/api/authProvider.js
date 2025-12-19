@@ -1,6 +1,8 @@
+import { PERMISSIONS_BY_ROLE, getHighestRole } from "../utils/constants";
+
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
 
-// Helper to normalize permissions similar to reference
+// Helper to normalize permissions similar to reference implementation
 const normalizePermissions = (user) => {
   if (!user) return [];
   // If user has specific permissions array
@@ -9,8 +11,77 @@ const normalizePermissions = (user) => {
       .map((p) => (typeof p === "string" ? p : p?.name || p?.id || ""))
       .filter(Boolean);
   }
-  // Fallback: return the role as a permission
-  return user.user_role || "STUDENT";
+  // Fallback: use PERMISSIONS_BY_ROLE constant based on user_role
+  return (
+    PERMISSIONS_BY_ROLE[user.user_role] || PERMISSIONS_BY_ROLE["STUDENT"] || []
+  );
+};
+
+// Helper to fetch full user data with specific relations populated
+// Uses /users/me endpoint which returns the authenticated user's full data
+const fetchFullUserData = async (token) => {
+  if (!token) return null;
+
+  try {
+    // Use /users/me endpoint with specific populate for org, role, and profile_picture
+    // Using populate[relation][fields] to get only specific fields
+    const populateParams = new URLSearchParams({
+      "populate[org][fields][0]": "documentId",
+      "populate[org][fields][1]": "org_name",
+      "populate[role][fields][0]": "id",
+      "populate[role][fields][1]": "name",
+      "populate[role][fields][2]": "type",
+      "populate[profile_picture][fields][0]": "url",
+      "populate[profile_picture][fields][1]": "formats",
+    });
+
+    const response = await fetch(
+      `${apiUrl}/users/me?${populateParams.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Failed to fetch user data:", response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching full user data:", error);
+    return null;
+  }
+};
+
+// Export refreshUser function so it can be called from outside authProvider
+export const refreshUser = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+
+  const user = await fetchFullUserData(token);
+  if (!user) {
+    throw new Error("Failed to fetch user data");
+  }
+
+  // Normalize permissions
+  user.permissions = normalizePermissions(user);
+
+  // Update localStorage
+  localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("userId", user.id);
+  if (user.documentId) {
+    localStorage.setItem("userDocumentId", user.documentId);
+  }
+
+  console.log("refreshUser - User data refreshed:", user);
+  return user;
 };
 
 export const authProvider = {
@@ -35,28 +106,15 @@ export const authProvider = {
       const user = auth.user;
       const token = auth.jwt;
 
-      // Fetch full user data with populate to get profile_picture and other relations
-      try {
-        const userResponse = await fetch(`${apiUrl}/users/me?populate=*`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (userResponse.ok) {
-          const fullUser = await userResponse.json();
-          console.log("Full user data from /users/me:", fullUser);
-          console.log("profile_picture from API:", fullUser.profile_picture);
-          // Merge full user data (with profile_picture) with auth user data
-          Object.assign(user, fullUser);
-          console.log("Merged user data:", user);
-          console.log("profile_picture after merge:", user.profile_picture);
-        }
-      } catch (fetchError) {
-        // If fetching full user fails, continue with basic user data
-        console.warn("Failed to fetch full user data:", fetchError);
+      // Fetch full user data for complete content population
+      const fullUser = await fetchFullUserData(token);
+      if (fullUser) {
+        console.log("Full user data fetched:", fullUser);
+        console.log("profile_picture:", fullUser.profile_picture);
+        console.log("role:", fullUser.role);
+        console.log("assigned_roles:", fullUser.assigned_roles);
+        // Merge full user data with auth user data
+        Object.assign(user, fullUser);
       }
 
       // Ensure permissions are set
@@ -65,8 +123,9 @@ export const authProvider = {
       localStorage.setItem("auth", JSON.stringify(auth));
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-      // Reference stores userId separately too
+      // Store documentId for refresh fetching
       localStorage.setItem("userId", user.id);
+      localStorage.setItem("userDocumentId", user.documentId);
 
       return Promise.resolve();
     } catch (error) {
@@ -79,65 +138,58 @@ export const authProvider = {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userId");
+    localStorage.removeItem("userDocumentId");
+    localStorage.removeItem("activeRoleId");
+    localStorage.removeItem("activeRole");
     // Force redirect to login page with base path (hash routing for React Admin)
     window.location.href = "/els-kids/#/login";
     return Promise.resolve();
   },
   checkAuth: async () => {
     const token = localStorage.getItem("token");
+    const userDocumentId = localStorage.getItem("userDocumentId");
+
     if (!token) {
       return Promise.reject({ redirectTo: "/login" });
     }
 
-    // Validate token by fetching current user from Strapi with populate to get profile_picture
+    // Refresh user data on every checkAuth (page refresh/navigation)
     try {
-      const response = await fetch(`${apiUrl}/users/me?populate=*`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      // Fetch fresh user data with full populate
+      const user = await fetchFullUserData(token);
 
-      if (response.status === 401 || response.status === 403) {
-        // Token is invalid, clear storage and reject
+      if (!user) {
+        // Token is invalid or user not found, clear storage and reject
         localStorage.removeItem("auth");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
+        localStorage.removeItem("userDocumentId");
         return Promise.reject({ redirectTo: "/login" });
       }
 
-      if (!response.ok) {
-        // Other error, clear and reject
-        localStorage.removeItem("auth");
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("userId");
-        return Promise.reject({ redirectTo: "/login" });
-      }
-
-      const user = await response.json();
-      
-      console.log("checkAuth - user from /users/me:", user);
+      console.log("checkAuth - Refreshed user data:", user);
       console.log("checkAuth - profile_picture:", user.profile_picture);
+      console.log("checkAuth - role:", user.role);
+      console.log("checkAuth - assigned_roles:", user.assigned_roles);
 
-      // Update stored user data in case it changed (now includes profile_picture)
+      // Update stored user data with fresh data
       user.permissions = normalizePermissions(user);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("userId", user.id);
-      
-      // Verify it was stored correctly
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      console.log("checkAuth - stored user profile_picture:", storedUser?.profile_picture);
+      if (user.documentId) {
+        localStorage.setItem("userDocumentId", user.documentId);
+      }
 
       return Promise.resolve();
     } catch (error) {
+      console.error("checkAuth error:", error);
       // Network error or other issue, clear and reject
       localStorage.removeItem("auth");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("userId");
+      localStorage.removeItem("userDocumentId");
       return Promise.reject({ redirectTo: "/login" });
     }
   },
@@ -149,6 +201,9 @@ export const authProvider = {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("userId");
+      localStorage.removeItem("userDocumentId");
+      localStorage.removeItem("activeRoleId");
+      localStorage.removeItem("activeRole");
       return Promise.reject({ redirectTo: "/login" });
     }
     return Promise.resolve();
@@ -174,47 +229,53 @@ export const authProvider = {
     const userStr = localStorage.getItem("user");
     if (!userStr) return Promise.reject();
     const user = JSON.parse(userStr);
-    
+
     // Helper to get profile picture URL from Strapi v5 structure
     // Structure: { id, documentId, url: "https://...", formats: {...}, ... }
     const getAvatarUrl = () => {
       if (!user.profile_picture) {
         return null;
       }
-      
+
       // If it's already a URL string
-      if (typeof user.profile_picture === 'string') {
-        return user.profile_picture.startsWith('http') 
-          ? user.profile_picture 
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:1337'}${user.profile_picture}`;
+      if (typeof user.profile_picture === "string") {
+        return user.profile_picture.startsWith("http")
+          ? user.profile_picture
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              user.profile_picture
+            }`;
       }
-      
+
       // Strapi v5 structure: profile_picture object with direct url property
       // The url is already absolute (from S3), so return as-is
       if (user.profile_picture.url) {
         return user.profile_picture.url;
       }
-      
+
       // Fallback: try nested structures (for other Strapi versions)
       if (user.profile_picture.data?.url) {
-        return user.profile_picture.data.url.startsWith('http')
+        return user.profile_picture.data.url.startsWith("http")
           ? user.profile_picture.data.url
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:1337'}${user.profile_picture.data.url}`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              user.profile_picture.data.url
+            }`;
       }
-      
+
       if (user.profile_picture.attributes?.url) {
-        return user.profile_picture.attributes.url.startsWith('http')
+        return user.profile_picture.attributes.url.startsWith("http")
           ? user.profile_picture.attributes.url
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:1337'}${user.profile_picture.attributes.url}`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              user.profile_picture.attributes.url
+            }`;
       }
-      
+
       return null;
     };
-    
+
     const avatarUrl = getAvatarUrl();
     console.log("getIdentity - user.profile_picture:", user.profile_picture);
     console.log("getIdentity - avatarUrl:", avatarUrl);
-    
+
     return Promise.resolve({
       id: user.id,
       fullName:
@@ -223,8 +284,8 @@ export const authProvider = {
       avatar: avatarUrl,
       documentId: user.documentId,
       user_role: user.user_role,
-      user_roles: user.user_roles || user.user_permissions,
-      assigned_roles: user.assigned_roles, // Include assigned_roles from user object
+      role: user.role, // users-permissions role relation
+      assigned_roles: user.assigned_roles, // JSON array of roles (replaces user_roles)
       profile_picture: user.profile_picture, // Also include raw profile_picture for debugging
     });
   },
