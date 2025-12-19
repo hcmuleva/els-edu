@@ -2545,7 +2545,6 @@ export interface PluginUsersPermissionsUser
     user_experience_level: Schema.Attribute.Enumeration<
       ['SCHOOL', 'COLLEGE', 'PROFESSIONAL']
     >;
-    user_permissions: Schema.Attribute.JSON;
     user_profiles: Schema.Attribute.Relation<
       'oneToMany',
       'api::user-profile.user-profile'

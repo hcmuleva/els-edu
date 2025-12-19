@@ -162,9 +162,6 @@
     "assigned_roles": {
       "type": "json"
     },
-    "user_permissions": {
-      "type": "json"
-    },
     "usersubscriptions": {
       "type": "relation",
       "relation": "oneToMany",

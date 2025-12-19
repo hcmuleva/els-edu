@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronUp,
   FileText,
+  Building2,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useLocation } from "react-router-dom";
@@ -301,30 +302,35 @@ const AppMenu = (props) => {
   );
 
   if (isLoading) return null;
-  
+
   // Parse assigned_roles from JSON field
   // assigned_roles can be: JSON string, array of strings, or array of objects
   const parseAssignedRoles = (assignedRoles) => {
     if (!assignedRoles) return [];
-    
+
     try {
       // If it's a string, parse it
-      let parsed = typeof assignedRoles === 'string' 
-        ? JSON.parse(assignedRoles) 
-        : assignedRoles;
-      
+      let parsed =
+        typeof assignedRoles === "string"
+          ? JSON.parse(assignedRoles)
+          : assignedRoles;
+
       // If it's an array
       if (Array.isArray(parsed)) {
         // If array contains objects with 'role' property
-        if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0].role) {
+        if (
+          parsed.length > 0 &&
+          typeof parsed[0] === "object" &&
+          parsed[0].role
+        ) {
           return parsed.map((r) => r.role);
         }
         // If array contains strings directly
-        if (parsed.length > 0 && typeof parsed[0] === 'string') {
+        if (parsed.length > 0 && typeof parsed[0] === "string") {
           return parsed;
         }
       }
-      
+
       return [];
     } catch (e) {
       console.error("Error parsing assigned_roles:", e);
@@ -334,18 +340,18 @@ const AppMenu = (props) => {
 
   // Get roles from assigned_roles JSON field
   const assignedRolesArray = parseAssignedRoles(identity?.assigned_roles);
-  
+
   // Combine with current permissions
   const availableRoles = [...assignedRolesArray];
   if (permissions && !availableRoles.includes(permissions)) {
     availableRoles.push(permissions);
   }
-  
+
   // Also include user_role if it exists and is not already in the list
   if (identity?.user_role && !availableRoles.includes(identity.user_role)) {
     availableRoles.push(identity.user_role);
   }
-  console.log("identity",identity)
+  console.log("identity", identity);
   const uniqueRoles = [...new Set(availableRoles)];
 
   const handleRoleSwitch = async (newRole) => {
@@ -439,6 +445,14 @@ const AppMenu = (props) => {
             leftIcon={<Settings size={20} />}
             isOpen={open}
           />
+          {permissions === "SUPERADMIN" && (
+            <CustomMenuItem
+              to="/admin/orgs"
+              primaryText="All Orgs"
+              leftIcon={<Building2 size={20} />}
+              isOpen={open}
+            />
+          )}
           <CustomMenuItem
             to="/users"
             primaryText="Users"
