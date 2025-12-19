@@ -60,6 +60,44 @@ const CourseViewModal = ({ course, onClose }) => {
     );
   };
 
+  // Helper to get cover image URL
+  const getCoverImageUrl = () => {
+    if (!course.cover) return null;
+    
+    // Handle different cover structures
+    if (typeof course.cover === 'string') {
+      return course.cover;
+    }
+    
+    // Strapi v5 structure: cover object with url property
+    if (course.cover.url) {
+      return course.cover.url;
+    }
+    
+    // Try nested formats
+    if (course.cover.formats?.large?.url) {
+      return course.cover.formats.large.url;
+    }
+    if (course.cover.formats?.medium?.url) {
+      return course.cover.formats.medium.url;
+    }
+    if (course.cover.formats?.small?.url) {
+      return course.cover.formats.small.url;
+    }
+    if (course.cover.formats?.thumbnail?.url) {
+      return course.cover.formats.thumbnail.url;
+    }
+    
+    // Try data.url structure
+    if (course.cover.data?.url) {
+      return course.cover.data.url;
+    }
+    
+    return null;
+  };
+
+  const coverImageUrl = getCoverImageUrl();
+
   // Helper to get description content
   const descriptionContent = useMemo(() => {
     if (!course.description) return { content: "", isHTML: false };
@@ -139,6 +177,17 @@ const CourseViewModal = ({ course, onClose }) => {
         </div>
 
         <div className="p-8 space-y-8">
+          {/* Cover Image */}
+          {coverImageUrl && (
+            <div className="rounded-2xl overflow-hidden border border-border/50 shadow-sm">
+              <ImagePreview
+                src={coverImageUrl}
+                alt={course.name || "Course Cover"}
+                className="w-full h-64"
+              />
+            </div>
+          )}
+
           {/* Course Name */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-2">
@@ -365,12 +414,8 @@ export const CoursesTab = () => {
   } = useGetList("courses", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-   
     meta: {
-      populate: {
-        cover: { fields: ["url"] },
-        subjects: { fields: ["name"] },
-      },
+      populate: "*", // Populate all relations including cover
     },
   });
 
@@ -688,9 +733,14 @@ export const CoursesTab = () => {
                       <td className="px-6 py-4 align-middle">
                         <ImagePreview
                           src={
-                            item.cover?.url ||
-                            item.cover?.formats?.thumbnail?.url ||
-                            item.cover
+                            // Handle Strapi v5 cover object structure
+                            typeof item.cover === 'string' 
+                              ? item.cover 
+                              : item.cover?.url || 
+                                item.cover?.formats?.thumbnail?.url || 
+                                item.cover?.formats?.small?.url ||
+                                item.cover?.data?.url ||
+                                null
                           }
                           alt={item.name}
                           className="w-16 h-12"

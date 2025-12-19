@@ -37,7 +37,12 @@
       "type": "enumeration",
       "required": false,
       "default": "standalone",
-      "enum": ["standalone", "subject", "topic", "content"]
+      "enum": [
+        "standalone",
+        "subject",
+        "topic",
+        "content"
+      ]
     },
     "relatedType": {
       "type": "string",
@@ -46,7 +51,11 @@
     "difficulty": {
       "type": "enumeration",
       "default": "beginner",
-      "enum": ["beginner", "intermediate", "advanced"]
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
     },
     "timeLimit": {
       "type": "integer",
@@ -76,7 +85,11 @@
     "showCorrectAnswers": {
       "type": "enumeration",
       "default": "after-submission",
-      "enum": ["immediately", "after-submission", "never"]
+      "enum": [
+        "immediately",
+        "after-submission",
+        "never"
+      ]
     },
     "allowReview": {
       "type": "boolean",
