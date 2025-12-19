@@ -103,6 +103,13 @@ const ManagePage = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [updatingUser, setUpdatingUser] = useState(false);
 
+  // Org filter - for SUPERADMIN can select any org, others use their org
+  const canSelectOrg = currentUserRole === "SUPERADMIN";
+  const currentUserOrgId = storedUser?.org?.id || storedUser?.org || null;
+  const [orgs, setOrgs] = useState([]);
+  const [orgFilter, setOrgFilter] = useState(""); // documentId or empty for "all"
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -196,7 +203,34 @@ const ManagePage = () => {
 
   useEffect(() => {
     loadTabData(activeTab, page);
-  }, [activeTab, page, searchQuery, roleFilter, statusFilter]);
+  }, [activeTab, page, searchQuery, roleFilter, statusFilter, orgFilter]);
+
+  // Fetch orgs for SUPERADMIN org selector
+  useEffect(() => {
+    if (canSelectOrg) {
+      setLoadingOrgs(true);
+      api
+        .get("orgs", {
+          params: {
+            "pagination[limit]": 100,
+            "fields[0]": "id",
+            "fields[1]": "org_name",
+            "fields[2]": "documentId",
+          },
+        })
+        .then((res) => {
+          const orgData = res.data?.data || res.data || [];
+          setOrgs(orgData);
+        })
+        .catch((err) => {
+          console.error("Error fetching orgs:", err);
+          setOrgs([]);
+        })
+        .finally(() => {
+          setLoadingOrgs(false);
+        });
+    }
+  }, [canSelectOrg]);
 
   const loadTabData = async (tab, currentPage = 1) => {
     try {
@@ -204,11 +238,25 @@ const ManagePage = () => {
       setActiveTab(tab);
       let res;
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const orgId =
-        storedUser?.org?.id ||
-        storedUser?.org ||
-        storedUser?.organization?.id ||
-        storedUser?.organization;
+
+      // Determine which org to filter by
+      let filterOrgId = null;
+      if (canSelectOrg) {
+        // SUPERADMIN can select org - use orgFilter if set
+        if (orgFilter) {
+          // orgFilter is documentId, find the numeric id from orgs list
+          const selectedOrg = orgs.find((o) => o.documentId === orgFilter);
+          filterOrgId = selectedOrg?.id || null;
+        }
+        // If no org selected, SUPERADMIN sees all users (filterOrgId stays null)
+      } else {
+        // Non-SUPERADMIN users see only their org
+        filterOrgId =
+          storedUser?.org?.id ||
+          storedUser?.org ||
+          storedUser?.organization?.id ||
+          storedUser?.organization;
+      }
 
       let params = {};
 
@@ -216,9 +264,14 @@ const ManagePage = () => {
         params = {
           start: (currentPage - 1) * pageSize,
           limit: pageSize,
-          populate: "org",
+          // Populate org with only needed fields
+          "populate[org][fields][0]": "org_name",
+          "populate[org][fields][1]": "documentId",
         };
-        if (orgId) params["filters[org][id][$eq]"] = orgId;
+        // Apply org filter if set
+        if (filterOrgId) {
+          params["filters[org][id][$eq]"] = filterOrgId;
+        }
         if (searchQuery) {
           params["filters[$or][0][username][$contains]"] = searchQuery;
           params["filters[$or][1][email][$contains]"] = searchQuery;
@@ -251,7 +304,8 @@ const ManagePage = () => {
               (u.blocked ? "BLOCKED" : u.confirmed ? "APPROVED" : "PENDING"),
             experience: u.user_experience_level || "-",
             joinedAt: u.createdAt,
-            organization: u.org?.name || u.organization?.name || "-",
+            organization: u.org?.org_name || u.org?.name || "-",
+            orgDocumentId: u.org?.documentId || null,
             raw: u,
           }))
         );
@@ -505,9 +559,26 @@ const ManagePage = () => {
             Manage learning space
           </h1>
           <p className="text-sm text-muted-foreground">
+            {storedUser?.org?.org_name ? (
+              <>
+                Organization:{" "}
+                <span className="font-semibold text-primary">
+                  {storedUser.org.org_name}
+                </span>{" "}
+                •{" "}
+              </>
+            ) : null}
             Overview of organisations, courses, subjects and key users.
           </p>
         </div>
+        {storedUser?.org?.org_name && (
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/5 border border-primary/20">
+            <Layers3 className="w-5 h-5 text-primary" />
+            <span className="font-semibold text-primary">
+              {storedUser.org.org_name}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Top stats cards */}
@@ -565,14 +636,16 @@ const ManagePage = () => {
             </TabButton>
           </div>
           <div className="flex items-center gap-3">
-            {activeTab === "users" && (
-              <button
-                onClick={() => navigate("/users/create")}
-                className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 shadow-sm transition-all"
-              >
-                + Add User
-              </button>
-            )}
+            {activeTab === "users" &&
+              (currentUserRole === "ADMIN" ||
+                currentUserRole === "SUPERADMIN") && (
+                <button
+                  onClick={() => navigate("/users/create")}
+                  className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 shadow-sm transition-all"
+                >
+                  + Add User
+                </button>
+              )}
             {loading && (
               <span className="text-xs text-muted-foreground font-medium animate-pulse">
                 Loading...
@@ -626,6 +699,28 @@ const ManagePage = () => {
             </select>
           )}
 
+          {/* Org selector - SUPERADMIN only */}
+          {activeTab === "users" && canSelectOrg && (
+            <select
+              className="px-4 py-2 bg-background border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer"
+              value={orgFilter}
+              onChange={(e) => {
+                setOrgFilter(e.target.value);
+                setPage(1);
+              }}
+              disabled={loadingOrgs}
+            >
+              <option value="">
+                {loadingOrgs ? "Loading orgs..." : "All Organizations"}
+              </option>
+              {orgs.map((org) => (
+                <option key={org.documentId || org.id} value={org.documentId}>
+                  {org.org_name || org.name}
+                </option>
+              ))}
+            </select>
+          )}
+
           <select
             className="px-4 py-2 bg-background border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer"
             value={statusFilter}
@@ -656,6 +751,7 @@ const ManagePage = () => {
               setSearchQuery("");
               setRoleFilter("");
               setStatusFilter("");
+              setOrgFilter("");
               setPage(1);
             }}
             className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left sm:text-center"

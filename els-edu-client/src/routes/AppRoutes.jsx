@@ -7,6 +7,8 @@ import SubjectDetailPage from "../pages/subjects/SubjectDetailPage";
 import QuizPlayer from "../pages/quiz/QuizPlayer";
 import ProgressPage from "../pages/progress/ProgressPage";
 import ManagePage from "../pages/manage/ManagePage";
+import SuperAdminOrgsPage from "../pages/admin/SuperAdminOrgsPage";
+import OrgManagePage from "../pages/admin/OrgManagePage";
 
 const AppRoutes = () => (
   <>
@@ -20,6 +22,8 @@ const AppRoutes = () => (
       <Route path="/quiz/:id/play" element={<QuizPlayer />} />
       <Route path="/progress" element={<ProgressPage />} />
       <Route path="/manage" element={<ManagePage />} />
+      <Route path="/admin/orgs" element={<SuperAdminOrgsPage />} />
+      <Route path="/admin/org/:documentId" element={<OrgManagePage />} />
     </CustomRoutes>
   </>
 );
