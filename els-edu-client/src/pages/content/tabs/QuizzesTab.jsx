@@ -21,9 +21,13 @@ import {
   X,
   CheckCircle,
   RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import { CustomSelect } from "../../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
+import CountListModal from "../../../components/studio/CountListModal";
 
 const QuizViewModal = ({ quiz, onClose }) => {
   if (!quiz) return null;
@@ -38,7 +42,7 @@ const QuizViewModal = ({ quiz, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
+      className="fixed inset-y-0 right-0 left-64 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -90,7 +94,7 @@ const QuizViewModal = ({ quiz, onClose }) => {
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Type
               </span>
-              <span className="font-bold text-gray-900 capitalize">
+              <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border border-purple-200 bg-purple-50 text-purple-700 capitalize whitespace-nowrap w-fit">
                 {quiz.quizType}
               </span>
             </div>
@@ -99,7 +103,7 @@ const QuizViewModal = ({ quiz, onClose }) => {
                 Difficulty
               </span>
               <span
-                className={`font-bold capitalize inline-flex items-center px-2 py-0.5 rounded-lg w-fit text-sm ${getDifficultyColor(
+                className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap w-fit capitalize ${getDifficultyColor(
                   quiz.difficulty
                 )}`}
               >
@@ -200,26 +204,37 @@ export const QuizzesTab = () => {
 
   // Sorting
   const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("DESC");
+  const [sortOrder, setSortOrder] = useState("ASC");
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   // View State
   const [viewingQuiz, setViewingQuiz] = useState(null);
-  const [viewMode, setViewMode] = useState("category"); // 'table' or 'category'
+  const [activeCountItems, setActiveCountItems] = useState(null);
+  const [activeCountTitle, setActiveCountTitle] = useState("");
 
   const {
     data: quizzes,
+    total,
     isLoading,
     refetch,
   } = useGetList("quizzes", {
-    pagination: { page: 1, perPage: 20 },
+    pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
     filter: userId ? { creator: userId } : {},
-    meta: { populate: ["topic", "subject", "questions"] },
+    meta: {
+      populate: {
+        topic: { fields: ["name"] },
+        subject: { fields: ["name"] },
+        content: { fields: ["title"] },
+        questions: { fields: ["questionText"] },
+      },
+    },
   });
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId]);
+  }, [sortField, sortOrder, userId, page]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -318,6 +333,15 @@ export const QuizzesTab = () => {
         />
       )}
 
+      {activeCountItems && (
+        <CountListModal
+          title={activeCountTitle}
+          items={activeCountItems}
+          nameField="questionText"
+          onClose={() => setActiveCountItems(null)}
+        />
+      )}
+
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
         <div className="flex flex-wrap items-center gap-4">
@@ -409,353 +433,264 @@ export const QuizzesTab = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-b-3xl p-6">
-          {/* View Toggle */}
-          <div className="flex justify-end mb-4">
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+        <div className="flex-1 bg-white rounded-b-3xl flex flex-col min-h-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0">
+              <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-20">
+                <tr>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort("id")}
+                  >
+                    <div className="flex items-center gap-2">
+                      ID
+                      <SortIcon field="id" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[200px]">
+                    Title
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Difficulty
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Time
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Pass %
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Attempts
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Active
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Questions
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Subject
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Topic
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Content
+                  </th>
+                  <th
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort("createdAt")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Created
+                      <SortIcon field="createdAt" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider sticky right-0 z-20 bg-gray-50 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)] w-[150px] min-w-[150px]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30 bg-white">
+                {quizzes?.map((item, index) => {
+                  const itemId = item.documentId || item.id;
+                  const displayId =
+                    sortOrder === "ASC"
+                      ? (page - 1) * perPage + index + 1
+                      : (total || 0) - ((page - 1) * perPage + index);
+                  return (
+                    <tr
+                      key={itemId}
+                      className="hover:bg-gray-50/50 transition-colors group"
+                    >
+                      <td className="px-6 py-4 align-middle">
+                        <div className="text-sm font-bold text-gray-700">
+                          {displayId}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle">
+                        <div className="max-w-md">
+                          <p
+                            className="text-sm font-bold text-gray-900 line-clamp-1"
+                            title={item.title}
+                          >
+                            {item.title}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border border-purple-200 bg-purple-50 text-purple-700 capitalize whitespace-nowrap">
+                          {item.quizType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span
+                          className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getDifficultyColor(
+                            item.difficulty
+                          )}`}
+                        >
+                          {item.difficulty?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span className="text-sm font-bold text-gray-700">
+                          {item.timeLimit}m
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center text-sm font-bold text-emerald-600">
+                        {item.passingScore}%
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center text-sm font-bold text-gray-700">
+                        {item.maxAttempts}
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span
+                          className={`inline-block w-3 h-3 rounded-full ${
+                            item.isActive
+                              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                              : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                          }`}
+                        />
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Questions in ${item.title}`);
+                            setActiveCountItems(item.questions || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                        >
+                          {item.questions?.length || 0} Questions
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 align-middle">
+                        <div className="text-sm font-bold text-gray-700">
+                          {item.subject?.name || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle">
+                        <div className="text-sm font-bold text-gray-700">
+                          {item.topic?.name || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle">
+                        <div className="text-sm font-bold text-gray-700">
+                          {item.content?.title || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle">
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle sticky right-0 z-10 bg-white group-hover:bg-gray-50 transition-colors shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)]">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingQuiz(item);
+                            }}
+                            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors group/btn"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              redirect("edit", "quizzes", itemId);
+                            }}
+                            className="p-2 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors group/btn"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(itemId);
+                            }}
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors group/btn"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination */}
+          <div className="p-4 border-t border-border/30 bg-gray-50/30 flex items-center justify-between">
+            <p className="text-xs font-bold text-gray-500">
+              Showing {(page - 1) * perPage + 1} to{" "}
+              {Math.min(page * perPage, total || 0)} of {total || 0} quizzes
+            </p>
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setViewMode("table")}
-                className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${
-                  viewMode === "table"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-border/50 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Table View
+                <ChevronLeft className="w-4 h-4" />
               </button>
+              <div className="flex items-center gap-1">
+                {[...Array(Math.ceil((total || 0) / perPage))]
+                  .map((_, i) => {
+                    const p = i + 1;
+                    if (
+                      p === 1 ||
+                      p === Math.ceil((total || 0) / perPage) ||
+                      Math.abs(p - page) <= 1
+                    ) {
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
+                            page === p
+                              ? "bg-primary text-white border-primary shadow-sm"
+                              : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    } else if (
+                      p === 2 ||
+                      p === Math.ceil((total || 0) / perPage) - 1
+                    ) {
+                      return (
+                        <span key={p} className="text-gray-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })
+                  .filter(Boolean)
+                  .reduce((acc, curr, i, arr) => {
+                    if (curr.type === "span" && arr[i - 1]?.type === "span")
+                      return acc;
+                    return [...acc, curr];
+                  }, [])}
+              </div>
               <button
-                onClick={() => setViewMode("category")}
-                className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${
-                  viewMode === "category"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= Math.ceil((total || 0) / perPage)}
+                className="p-2 rounded-lg border border-border/50 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Category View
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
-
-          {viewMode === "table" ? (
-            /* Table View */
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-10">
-                  <tr>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort("id")}
-                    >
-                      <div className="flex items-center gap-2">
-                        ID
-                        <SortIcon field="id" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Quiz Title
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Difficulty
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Time (min)
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Pass Score
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Active
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Subject
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Topic
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort("createdAt")}
-                    >
-                      <div className="flex items-center gap-2">
-                        Created
-                        <SortIcon field="createdAt" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30 bg-white">
-                  {filteredContent.map((item, index) => {
-                    const itemId = item.documentId || item.id;
-                    return (
-                      <tr
-                        key={itemId}
-                        className="hover:bg-gray-50/50 transition-colors"
-                      >
-                        <td className="px-6 py-4 align-middle">
-                          <div className="text-sm font-bold text-gray-700">
-                            {index + 1}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <div className="max-w-md">
-                            <p
-                              className="text-sm font-bold text-gray-900 truncate"
-                              title={item.title}
-                            >
-                              {item.title}
-                            </p>
-                            {item.description && (
-                              <p className="text-xs text-muted-foreground truncate max-w-xs">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <div className="flex justify-center">
-                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold border border-purple-200 bg-purple-50 text-purple-700 capitalize">
-                              {item.quizType}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <div className="flex justify-center">
-                            <span
-                              className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap text-center ${getDifficultyColor(
-                                item.difficulty
-                              )}`}
-                            >
-                              {item.difficulty || "medium"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-middle text-center font-medium text-gray-700">
-                          {item.timeLimit}m
-                        </td>
-                        <td className="px-6 py-4 align-middle text-center font-bold text-green-600">
-                          {item.passingScore}%
-                        </td>
-                        <td className="px-6 py-4 align-middle text-center">
-                          <span
-                            className={`inline-block w-3 h-3 rounded-full ${
-                              item.isActive ? "bg-green-500" : "bg-red-500"
-                            }`}
-                          />
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <span className="text-sm text-gray-500">
-                            <ReferenceField
-                              record={item}
-                              source="subject.id"
-                              reference="subjects"
-                              link={false}
-                            >
-                              <TextField source="name" />
-                            </ReferenceField>
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <span className="text-sm text-gray-500">
-                            <ReferenceField
-                              record={item}
-                              source="topic.id"
-                              reference="topics"
-                              link={false}
-                            >
-                              <TextField source="name" />
-                            </ReferenceField>
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            {new Date(item.createdAt).toLocaleDateString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 align-middle">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => setViewingQuiz(item)}
-                              className="p-2 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
-                              title="View Quiz"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => redirect(`/quizzes/${itemId}`)}
-                              className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(itemId)}
-                              className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            /* Category View */
-            <div className="space-y-6 max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {(() => {
-                // Group quizzes by subject, then by topic
-                const grouped = {};
-                filteredContent.forEach((quiz) => {
-                  const subjectId =
-                    quiz.subject?.id || quiz.subject || "unassigned";
-                  const subjectName =
-                    quiz.subject?.name || "Unassigned Subject";
-                  const topicId = quiz.topic?.id || quiz.topic || "unassigned";
-                  const topicName = quiz.topic?.name || "Unassigned Topic";
-
-                  if (!grouped[subjectId]) {
-                    grouped[subjectId] = {
-                      name: subjectName,
-                      topics: {},
-                    };
-                  }
-
-                  if (!grouped[subjectId].topics[topicId]) {
-                    grouped[subjectId].topics[topicId] = {
-                      name: topicName,
-                      quizzes: [],
-                    };
-                  }
-
-                  grouped[subjectId].topics[topicId].quizzes.push(quiz);
-                });
-
-                return Object.entries(grouped).map(
-                  ([subjectId, subjectData]) => (
-                    <div
-                      key={subjectId}
-                      className="border border-border/50 rounded-2xl overflow-hidden bg-gray-50"
-                    >
-                      <div className="bg-gradient-to-r from-primary to-secondary p-4">
-                        <h3 className="text-lg font-black text-white">
-                          {subjectData.name}
-                        </h3>
-                        <p className="text-sm text-white/80">
-                          {Object.values(subjectData.topics).reduce(
-                            (sum, topic) => sum + topic.quizzes.length,
-                            0
-                          )}{" "}
-                          quizzes
-                        </p>
-                      </div>
-                      <div className="p-4 space-y-4">
-                        {Object.entries(subjectData.topics).map(
-                          ([topicId, topicData]) => (
-                            <div
-                              key={topicId}
-                              className="bg-white rounded-xl p-4 border border-border/30"
-                            >
-                              <h4 className="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                <BookOpen className="w-4 h-4 text-primary" />
-                                {topicData.name}
-                                <span className="text-xs text-gray-500 font-normal">
-                                  ({topicData.quizzes.length})
-                                </span>
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {topicData.quizzes.map((quiz) => {
-                                  const itemId = quiz.documentId || quiz.id;
-                                  return (
-                                    <div
-                                      key={itemId}
-                                      className="bg-gray-50 border border-border/30 rounded-xl p-4 hover:shadow-md transition-all"
-                                    >
-                                      <div className="flex items-start justify-between mb-2">
-                                        <h5 className="text-sm font-bold text-gray-900 line-clamp-2 flex-1">
-                                          {quiz.title}
-                                        </h5>
-                                        <span
-                                          className={`inline-block w-2 h-2 rounded-full ml-2 mt-1 flex-shrink-0 ${
-                                            quiz.isActive
-                                              ? "bg-green-500"
-                                              : "bg-red-500"
-                                          }`}
-                                        />
-                                      </div>
-                                      {quiz.description && (
-                                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
-                                          {quiz.description}
-                                        </p>
-                                      )}
-                                      <div className="flex flex-wrap gap-2 mb-3">
-                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold border border-purple-200 bg-purple-50 text-purple-700 capitalize">
-                                          {quiz.quizType}
-                                        </span>
-                                        <span
-                                          className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold border capitalize ${getDifficultyColor(
-                                            quiz.difficulty
-                                          )}`}
-                                        >
-                                          {quiz.difficulty || "medium"}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between text-xs text-gray-600 mb-3">
-                                        <span>⏱️ {quiz.timeLimit}m</span>
-                                        <span className="font-bold text-green-600">
-                                          ✓ {quiz.passingScore}%
-                                        </span>
-                                        <span>
-                                          📝 {quiz.questions?.length || 0}
-                                        </span>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <button
-                                          onClick={() => setViewingQuiz(quiz)}
-                                          className="flex-1 p-2 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors text-xs font-bold"
-                                          title="View"
-                                        >
-                                          <Eye className="w-3 h-3 mx-auto" />
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            redirect(`/quizzes/${itemId}`)
-                                          }
-                                          className="flex-1 p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-xs font-bold"
-                                          title="Edit"
-                                        >
-                                          <Edit2 className="w-3 h-3 mx-auto" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleDelete(itemId)}
-                                          className="flex-1 p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-xs font-bold"
-                                          title="Delete"
-                                        >
-                                          <Trash2 className="w-3 h-3 mx-auto" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )
-                );
-              })()}
-            </div>
-          )}
         </div>
       )}
     </div>

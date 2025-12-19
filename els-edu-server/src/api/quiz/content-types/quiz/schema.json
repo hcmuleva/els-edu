@@ -37,12 +37,7 @@
       "type": "enumeration",
       "required": false,
       "default": "standalone",
-      "enum": [
-        "standalone",
-        "subject",
-        "topic",
-        "content"
-      ]
+      "enum": ["standalone", "subject", "topic", "content"]
     },
     "relatedType": {
       "type": "string",
@@ -51,11 +46,7 @@
     "difficulty": {
       "type": "enumeration",
       "default": "beginner",
-      "enum": [
-        "beginner",
-        "intermediate",
-        "advanced"
-      ]
+      "enum": ["beginner", "intermediate", "advanced"]
     },
     "timeLimit": {
       "type": "integer",
@@ -85,11 +76,7 @@
     "showCorrectAnswers": {
       "type": "enumeration",
       "default": "after-submission",
-      "enum": [
-        "immediately",
-        "after-submission",
-        "never"
-      ]
+      "enum": ["immediately", "after-submission", "never"]
     },
     "allowReview": {
       "type": "boolean",
@@ -144,6 +131,12 @@
       "relation": "manyToOne",
       "target": "api::content.content",
       "inversedBy": "quizzes"
+    },
+    "quizResults": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-result.quiz-result",
+      "mappedBy": "quiz"
     }
   }
 }

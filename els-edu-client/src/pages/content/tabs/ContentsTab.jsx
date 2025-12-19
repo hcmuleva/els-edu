@@ -25,9 +25,12 @@ import {
   Image,
   FileVideo,
   BookText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { CustomSelect } from "../../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
+import CountListModal from "../../../components/studio/CountListModal";
 
 const ContentViewModal = ({ content, onClose }) => {
   if (!content) return null;
@@ -61,7 +64,7 @@ const ContentViewModal = ({ content, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
+      className="fixed inset-y-0 right-0 left-64 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -131,7 +134,13 @@ const ContentViewModal = ({ content, onClose }) => {
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Type
               </span>
-              <span className="font-bold text-gray-900">{content.type}</span>
+              <span
+                className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap w-fit ${getTypeColor(
+                  content.type
+                )}`}
+              >
+                {content.type}
+              </span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -183,25 +192,37 @@ export const ContentsTab = () => {
 
   // Sorting
   const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("DESC");
+  const [sortOrder, setSortOrder] = useState("ASC");
 
   // View State
   const [viewingContent, setViewingContent] = useState(null);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+  const [activeCountTitle, setActiveCountTitle] = useState("");
+  const [activeCountItems, setActiveCountItems] = useState([]);
 
   const {
     data: contents,
+    total,
     isLoading,
     refetch,
   } = useGetList("contents", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
     filter: userId ? { creator: userId } : {},
-    meta: { populate: ["topic", "subjects", "multimedia"] },
+    meta: {
+      populate: {
+        topic: { fields: ["name"] },
+        subjects: { fields: ["name"] },
+        quizzes: { fields: ["title"] },
+        resources: { fields: ["name"] },
+      },
+    },
   });
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId]);
+  }, [sortField, sortOrder, userId, page]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -307,13 +328,23 @@ export const ContentsTab = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 flex flex-col h-full min-h-0">
       {viewingContent && (
         <ContentViewModal
           content={viewingContent}
           onClose={() => setViewingContent(null)}
         />
       )}
+
+      <CountListModal
+        isOpen={!!activeCountItems.length}
+        onClose={() => {
+          setActiveCountItems([]);
+          setActiveCountTitle("");
+        }}
+        title={activeCountTitle}
+        items={activeCountItems}
+      />
 
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
@@ -373,11 +404,11 @@ export const ContentsTab = () => {
 
       {/* Table or Empty State */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64 bg-white rounded-b-3xl">
+        <div className="flex-1 flex items-center justify-center bg-white rounded-b-3xl min-h-[400px]">
           <Loading />
         </div>
       ) : filteredContent.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-6 bg-white rounded-b-3xl">
+        <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-6 bg-white rounded-b-3xl min-h-[400px]">
           <div className="bg-gray-50 p-6 rounded-full mb-4">
             <FileText className="w-12 h-12 text-gray-300" />
           </div>
@@ -387,17 +418,18 @@ export const ContentsTab = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-b-3xl">
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-10">
+        <div className="flex-1 bg-white rounded-b-3xl flex flex-col min-h-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0">
+              <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-20">
                 <tr>
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleSort("id")}
                   >
                     <div className="flex items-center gap-2">
-                      #<SortIcon field="id" />
+                      ID
+                      <SortIcon field="id" />
                     </div>
                   </th>
                   <th
@@ -415,8 +447,14 @@ export const ContentsTab = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Topic
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Subjects
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Quizzes
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Resources
                   </th>
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
@@ -427,7 +465,7 @@ export const ContentsTab = () => {
                       <SortIcon field="createdAt" />
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider sticky right-0 z-20 bg-gray-50 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)] w-[150px] min-w-[150px]">
                     Actions
                   </th>
                 </tr>
@@ -435,98 +473,116 @@ export const ContentsTab = () => {
               <tbody className="divide-y divide-border/30 bg-white">
                 {filteredContent.map((item, index) => {
                   const itemId = item.documentId || item.id;
+                  const displayId =
+                    sortOrder === "ASC"
+                      ? (page - 1) * perPage + index + 1
+                      : (total || 0) - ((page - 1) * perPage + index);
                   return (
                     <tr
                       key={itemId}
-                      className="hover:bg-gray-50/50 transition-colors"
+                      className="hover:bg-gray-50/50 transition-colors group"
                     >
                       <td className="px-6 py-4 align-middle">
                         <div className="text-sm font-bold text-gray-700">
-                          {index + 1}
+                          {displayId}
                         </div>
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="max-w-md">
                           <p
-                            className="text-sm font-semibold text-gray-900 truncate"
+                            className="text-sm font-bold text-gray-900 truncate"
                             title={item.title}
                           >
                             {item.title || "Untitled Content"}
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex justify-center">
-                          <span
-                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap text-center ${getTypeColor(
-                              item.type
-                            )}`}
-                          >
-                            {item.type}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-middle">
-                        <span className="text-sm text-gray-500">
-                          <ReferenceField
-                            record={item}
-                            source="topic.id"
-                            reference="topics"
-                            link={false}
-                          >
-                            <TextField source="name" />
-                          </ReferenceField>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span
+                          className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getTypeColor(
+                            item.type
+                          )}`}
+                        >
+                          {item.type}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {item.subjects && item.subjects.length > 0 ? (
-                            item.subjects.slice(0, 2).map((s, i) => (
-                              <span
-                                key={i}
-                                className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs border border-amber-100"
-                              >
-                                {typeof s === "object" ? s.name : s}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-gray-400">-</span>
-                          )}
-                          {item.subjects && item.subjects.length > 2 && (
-                            <span className="text-xs text-gray-400">
-                              +{item.subjects.length - 2}
-                            </span>
-                          )}
-                        </div>
+                        <span className="inline-block max-w-[150px] truncate text-[10px] font-bold text-indigo-600 px-2 py-1 bg-indigo-50 rounded-md border border-indigo-100">
+                          {item.topic?.name || "-"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Subjects for ${item.title}`);
+                            setActiveCountItems(item.subjects || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                        >
+                          {item.subjects?.length || 0} Subjects
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Quizzes for ${item.title}`);
+                            setActiveCountItems(item.quizzes || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                        >
+                          {item.quizzes?.length || 0} Quizzes
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Resources for ${item.title}`);
+                            setActiveCountItems(item.resources || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                        >
+                          {item.resources?.length || 0} Resources
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Calendar className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-xs text-gray-500 font-medium whitespace-nowrap">
                           {new Date(item.createdAt).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-4 align-middle sticky right-0 z-10 bg-white group-hover:bg-gray-50 transition-colors shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)]">
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => setViewingContent(item)}
-                            className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                            title="View"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingContent(item);
+                            }}
+                            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors group/btn"
+                            title="View Details"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           </button>
                           <button
-                            onClick={() => redirect(`/contents/${itemId}`)}
-                            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              redirect("edit", "contents", itemId);
+                            }}
+                            className="p-2 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors group/btn"
                             title="Edit"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           </button>
                           <button
-                            onClick={() => handleDelete(itemId)}
-                            className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(itemId);
+                            }}
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors group/btn"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           </button>
                         </div>
                       </td>
@@ -535,6 +591,71 @@ export const ContentsTab = () => {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="p-4 border-t border-border/30 bg-gray-50/30 flex items-center justify-between mt-auto">
+            <p className="text-xs font-bold text-gray-500">
+              Showing {(page - 1) * perPage + 1} to{" "}
+              {Math.min(page * perPage, total || 0)} of {total || 0} contents
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-border/50 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(Math.ceil((total || 0) / perPage))]
+                  .map((_, i) => {
+                    const p = i + 1;
+                    if (
+                      p === 1 ||
+                      p === Math.ceil((total || 0) / perPage) ||
+                      Math.abs(p - page) <= 1
+                    ) {
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
+                            page === p
+                              ? "bg-primary text-white border-primary shadow-sm"
+                              : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    } else if (
+                      p === 2 ||
+                      p === Math.ceil((total || 0) / perPage) - 1
+                    ) {
+                      return (
+                        <span key={p} className="text-gray-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })
+                  .filter(Boolean)
+                  .reduce((acc, curr, i, arr) => {
+                    if (curr.type === "span" && arr[i - 1]?.type === "span")
+                      return acc;
+                    return [...acc, curr];
+                  }, [])}
+              </div>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= Math.ceil((total || 0) / perPage)}
+                className="p-2 rounded-lg border border-border/50 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

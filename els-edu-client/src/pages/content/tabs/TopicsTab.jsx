@@ -22,15 +22,18 @@ import {
   Calendar,
   RotateCcw,
   FileQuestion,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
+import CountListModal from "../../../components/studio/CountListModal";
 
 const TopicViewModal = ({ topic, onClose }) => {
   if (!topic) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
+      className="fixed inset-y-0 right-0 left-64 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -160,25 +163,37 @@ export const TopicsTab = () => {
 
   // Sorting
   const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("DESC");
+  const [sortOrder, setSortOrder] = useState("ASC");
 
   // View State
   const [viewingTopic, setViewingTopic] = useState(null);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+  const [activeCountTitle, setActiveCountTitle] = useState("");
+  const [activeCountItems, setActiveCountItems] = useState([]);
 
   const {
     data: topics,
+    total,
     isLoading,
     refetch,
   } = useGetList("topics", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
     filter: userId ? { creator: userId } : {},
-    meta: { populate: ["subject", "quizzes", "questions"] },
+    meta: {
+      populate: {
+        subject: { fields: ["name"] },
+        quizzes: { fields: ["title"] },
+        contents: { fields: ["title"] },
+        questions: { fields: ["questionText"] },
+      },
+    },
   });
 
   useEffect(() => {
-    refetch();
-  }, [sortField, sortOrder]);
+    if (userId) refetch();
+  }, [sortField, sortOrder, userId, page]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -242,13 +257,23 @@ export const TopicsTab = () => {
   const filteredContent = getFilteredContent();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 flex flex-col h-full min-h-0">
       {viewingTopic && (
         <TopicViewModal
           topic={viewingTopic}
           onClose={() => setViewingTopic(null)}
         />
       )}
+
+      <CountListModal
+        isOpen={!!activeCountItems.length}
+        onClose={() => {
+          setActiveCountItems([]);
+          setActiveCountTitle("");
+        }}
+        title={activeCountTitle}
+        items={activeCountItems}
+      />
 
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
@@ -288,11 +313,11 @@ export const TopicsTab = () => {
 
       {/* Table or Empty State */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64 bg-white rounded-b-3xl">
+        <div className="flex-1 flex items-center justify-center bg-white rounded-b-3xl min-h-[400px]">
           <Loading />
         </div>
       ) : filteredContent.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-6 bg-white rounded-b-3xl">
+        <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-6 bg-white rounded-b-3xl min-h-[400px]">
           <div className="bg-gray-50 p-6 rounded-full mb-4">
             <FolderTree className="w-12 h-12 text-gray-300" />
           </div>
@@ -302,17 +327,18 @@ export const TopicsTab = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-b-3xl">
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-10">
+        <div className="flex-1 bg-white rounded-b-3xl flex flex-col min-h-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0">
+              <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-20">
                 <tr>
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleSort("id")}
                   >
                     <div className="flex items-center gap-2">
-                      #<SortIcon field="id" />
+                      ID
+                      <SortIcon field="id" />
                     </div>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -337,7 +363,7 @@ export const TopicsTab = () => {
                     Quizzes
                   </th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Questions
+                    Contents
                   </th>
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
@@ -348,7 +374,7 @@ export const TopicsTab = () => {
                       <SortIcon field="createdAt" />
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider sticky right-0 z-20 bg-gray-50 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)] w-[150px] min-w-[150px]">
                     Actions
                   </th>
                 </tr>
@@ -356,25 +382,29 @@ export const TopicsTab = () => {
               <tbody className="divide-y divide-border/30 bg-white">
                 {filteredContent.map((item, index) => {
                   const itemId = item.documentId || item.id;
+                  const displayId =
+                    sortOrder === "ASC"
+                      ? (page - 1) * perPage + index + 1
+                      : (total || 0) - ((page - 1) * perPage + index);
                   return (
                     <tr
                       key={itemId}
-                      className="hover:bg-gray-50/50 transition-colors"
+                      className="hover:bg-gray-50/50 transition-colors group"
                     >
                       <td className="px-6 py-4 align-middle">
                         <div className="text-sm font-bold text-gray-700">
-                          {index + 1}
+                          {displayId}
                         </div>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-xl">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-xl shadow-sm border border-indigo-100/50">
                           {item.icon || "📁"}
                         </div>
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="max-w-md">
                           <p
-                            className="text-sm font-semibold text-gray-900 truncate"
+                            className="text-sm font-bold text-gray-900 truncate"
                             title={item.name}
                           >
                             {item.name || "Untitled Topic"}
@@ -382,69 +412,78 @@ export const TopicsTab = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <div className="max-w-xs">
-                          <p
-                            className="text-sm text-gray-600 truncate"
-                            title={item.description}
-                          >
-                            {item.description || "-"}
-                          </p>
-                        </div>
+                        <p
+                          className="text-xs text-gray-500 line-clamp-2 max-w-xs"
+                          title={item.description}
+                        >
+                          {item.description || "-"}
+                        </p>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <span className="text-sm text-gray-500">
-                          <ReferenceField
-                            record={item}
-                            source="subject.id"
-                            reference="subjects"
-                            link={false}
-                          >
-                            <TextField source="name" />
-                          </ReferenceField>
+                        <span className="inline-block max-w-[150px] truncate text-[10px] font-bold text-indigo-600 px-2 py-1 bg-indigo-50 rounded-md border border-indigo-100">
+                          {item.subject?.name || "-"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex justify-center">
-                          <span className="text-sm font-bold text-gray-700">
-                            {item.quizzes?.length || 0}
-                          </span>
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Quizzes in ${item.name}`);
+                            setActiveCountItems(item.quizzes || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                        >
+                          {item.quizzes?.length || 0} Quizzes
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Contents in ${item.name}`);
+                            setActiveCountItems(item.contents || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                        >
+                          {item.contents?.length || 0} Contents
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <div className="flex justify-center">
-                          <span className="text-sm font-bold text-gray-700">
-                            {item.questions?.length || 0}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Calendar className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-xs text-gray-500 font-medium whitespace-nowrap">
                           {new Date(item.createdAt).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-4 align-middle sticky right-0 z-10 bg-white group-hover:bg-gray-50 transition-colors shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)]">
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => setViewingTopic(item)}
-                            className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                            title="View"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingTopic(item);
+                            }}
+                            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors group/btn"
+                            title="View Details"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           </button>
                           <button
-                            onClick={() => redirect(`/topics/${itemId}`)}
-                            className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              redirect("edit", "topics", itemId);
+                            }}
+                            className="p-2 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors group/btn"
                             title="Edit"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           </button>
                           <button
-                            onClick={() => handleDelete(itemId)}
-                            className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(itemId);
+                            }}
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors group/btn"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                           </button>
                         </div>
                       </td>
@@ -453,6 +492,71 @@ export const TopicsTab = () => {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="p-4 border-t border-border/30 bg-gray-50/30 flex items-center justify-between mt-auto">
+            <p className="text-xs font-bold text-gray-500">
+              Showing {(page - 1) * perPage + 1} to{" "}
+              {Math.min(page * perPage, total || 0)} of {total || 0} topics
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-border/50 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(Math.ceil((total || 0) / perPage))]
+                  .map((_, i) => {
+                    const p = i + 1;
+                    if (
+                      p === 1 ||
+                      p === Math.ceil((total || 0) / perPage) ||
+                      Math.abs(p - page) <= 1
+                    ) {
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
+                            page === p
+                              ? "bg-primary text-white border-primary shadow-sm"
+                              : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    } else if (
+                      p === 2 ||
+                      p === Math.ceil((total || 0) / perPage) - 1
+                    ) {
+                      return (
+                        <span key={p} className="text-gray-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })
+                  .filter(Boolean)
+                  .reduce((acc, curr, i, arr) => {
+                    if (curr.type === "span" && arr[i - 1]?.type === "span")
+                      return acc;
+                    return [...acc, curr];
+                  }, [])}
+              </div>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= Math.ceil((total || 0) / perPage)}
+                className="p-2 rounded-lg border border-border/50 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -89,7 +89,8 @@ const QuizPlayer = () => {
               {
                 filter: {
                   user: identity.id,
-                  quiz: data.documentId || data.id,
+                  // Use numeric ID for relation filter - Strapi v5 requires numeric IDs
+                  quiz: data.id,
                 },
                 pagination: { page: 1, perPage: 100 },
                 sort: { field: "createdAt", order: "DESC" },
@@ -221,11 +222,18 @@ const QuizPlayer = () => {
       }));
 
       const quizResultData = {
-        quiz: quiz.documentId || quiz.id,
+        // Use numeric ID for relations - Strapi v5 requires numeric IDs, not documentId strings
+        quiz: quiz.id,
         user: identity.id,
-        subject: quiz.subject?.id || quiz.subject,
-        topic: quiz.topic?.id || quiz.topic,
-        questions: questions.map((q) => q.documentId || q.id), // Add question IDs for relation
+        // For subject/topic relations, use numeric ID
+        subject:
+          quiz.subject?.id ||
+          (typeof quiz.subject === "number" ? quiz.subject : null),
+        topic:
+          quiz.topic?.id ||
+          (typeof quiz.topic === "number" ? quiz.topic : null),
+        // For questions relation, use numeric IDs
+        questions: questions.map((q) => q.id),
         score: score.correct,
         totalQuestions: score.total,
         percentage: score.percentage,

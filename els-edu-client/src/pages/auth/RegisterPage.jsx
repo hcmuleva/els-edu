@@ -1,146 +1,159 @@
-
-import React, { useState } from 'react';
-import { useLogin, useNotify } from 'react-admin';
-import { Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { useLogin, useNotify } from "react-admin";
+import { Link } from "react-router-dom";
 
 const RegisterPage = () => {
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-    });
-    
-    const login = useLogin();
-    const notify = useNotify();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+  const login = useLogin();
+  const notify = useNotify();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            notify('Passwords do not match', { type: 'warning' });
-            return;
-        }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        setLoading(true);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
-        
-        try {
-            const response = await fetch(`${apiUrl}/auth/local/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: formData.username,
-                    email: formData.email,
-                    password: formData.password
-                }),
-            }); 
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Registration failed');
-            }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      notify("Passwords do not match", { type: "warning" });
+      return;
+    }
 
-            const data = await response.json();
-            
-            // Auto login after registration
-            localStorage.setItem('auth', JSON.stringify(data));
-            localStorage.setItem('token', data.jwt);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            notify('Registration successful! Welcome.', { type: 'success' });
-            // Redirect via window reload or let the auth provider handle state check next render
-             window.location.href = '/'; 
+    setLoading(true);
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
 
-        } catch (error) {
-            notify(error.message, { type: 'error' });
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      const response = await fetch(`${apiUrl}/auth/local/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-             <div className="w-full max-w-md bg-card p-8 rounded-3xl border border-border/50 shadow-xl animate-in fade-in zoom-in duration-300">
-                <div className="text-center mb-8">
-                     <h2 className="text-3xl font-black text-foreground font-heading mb-2">Create Account</h2>
-                     <p className="text-muted-foreground">Join the learning adventure today</p>
-                </div>
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-foreground mb-2">Username</label>
-                        <input
-                            name="username"
-                            type="text"
-                            required
-                            value={formData.username}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                            placeholder="Pick a username"
-                        />
-                    </div>
-                     <div>
-                        <label className="block text-sm font-bold text-foreground mb-2">Email</label>
-                        <input
-                            name="email"
-                            type="email"
-                            required
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                            placeholder="you@example.com"
-                        />
-                    </div>
-                    <div>
-                         <label className="block text-sm font-bold text-foreground mb-2">Password</label>
-                        <input
-                            name="password"
-                            type="password"
-                            required
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                            placeholder="••••••••"
-                        />
-                    </div>
-                     <div>
-                         <label className="block text-sm font-bold text-foreground mb-2">Confirm Password</label>
-                        <input
-                            name="confirmPassword"
-                            type="password"
-                            required
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                            placeholder="••••••••"
-                        />
-                    </div>
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || "Registration failed");
+      }
 
-                    <button 
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'Creating Account...' : 'Sign Up'}
-                    </button>
-                    
-                     <div className="text-center mt-6">
-                        <p className="text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <Link to="/login" className="text-primary font-bold hover:underline">
-                                Sign In
-                            </Link>
-                        </p>
-                    </div>
-                </form>
-             </div>
+      const data = await response.json();
+
+      // Auto login after registration
+      localStorage.setItem("auth", JSON.stringify(data));
+      localStorage.setItem("token", data.jwt);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      notify("Registration successful! Welcome.", { type: "success" });
+      // Redirect to dashboard with base path (hash routing for React Admin)
+      window.location.href = "/els-kids/#/";
+    } catch (error) {
+      notify(error.message, { type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md bg-card p-8 rounded-3xl border border-border/50 shadow-xl animate-in fade-in zoom-in duration-300">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-foreground font-heading mb-2">
+            Create Account
+          </h2>
+          <p className="text-muted-foreground">
+            Join the learning adventure today
+          </p>
         </div>
-    );
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-foreground mb-2">
+              Username
+            </label>
+            <input
+              name="username"
+              type="text"
+              required
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              placeholder="Pick a username"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-foreground mb-2">
+              Email
+            </label>
+            <input
+              name="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-foreground mb-2">
+              Password
+            </label>
+            <input
+              name="password"
+              type="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              placeholder="••••••••"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-foreground mb-2">
+              Confirm Password
+            </label>
+            <input
+              name="confirmPassword"
+              type="password"
+              required
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? "Creating Account..." : "Sign Up"}
+          </button>
+
+          <div className="text-center mt-6">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-primary font-bold hover:underline"
+              >
+                Sign In
+              </Link>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default RegisterPage;

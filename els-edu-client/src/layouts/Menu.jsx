@@ -326,7 +326,7 @@ const AppMenu = (props) => {
   const handleLogout = async () => {
     try {
       await authProvider.logout();
-      notify("Logged out successfully", { type: "info" });
+      // No notification needed - redirect happens immediately
     } catch (error) {
       notify("Error logging out", { type: "error" });
     }

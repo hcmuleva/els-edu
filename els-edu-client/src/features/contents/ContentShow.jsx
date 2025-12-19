@@ -151,8 +151,8 @@ export const ContentShow = () => {
                       {file.mime?.startsWith("image/") ? (
                         <img
                           src={`${
-                            import.meta.env.VITE_API_URL ||
-                            "http://localhost:1337"
+                            import.meta.env.VITE_API_URL?.replace("/api", "") ||
+                            ""
                           }${file.url}`}
                           alt={file.name}
                           className="w-full h-32 object-cover"
@@ -167,8 +167,8 @@ export const ContentShow = () => {
                       )}
                       <a
                         href={`${
-                          import.meta.env.VITE_API_URL ||
-                          "http://localhost:1337"
+                          import.meta.env.VITE_API_URL?.replace("/api", "") ||
+                          ""
                         }${file.url}`}
                         target="_blank"
                         rel="noopener noreferrer"

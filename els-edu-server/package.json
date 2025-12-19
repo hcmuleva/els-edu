@@ -1,5 +1,5 @@
 {
-  "name": "elsserver",
+  "name": "els-edu-server",
   "version": "0.1.27",
   "private": true,
   "description": "A Strapi application",

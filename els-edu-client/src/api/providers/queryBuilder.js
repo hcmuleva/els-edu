@@ -35,7 +35,11 @@ export const buildFilters = (resource, filters) => {
     } else if (
       key === "creator" ||
       key === "topic" ||
+      key === "subject" ||
       key === "subjectRef" ||
+      key === "quiz" ||
+      key === "user" ||
+      key === "questions" ||
       typeof value === "number"
     ) {
       // For relation fields and numeric values, use $eq
