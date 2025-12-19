@@ -71,12 +71,6 @@
       "target": "api::quiz.quiz",
       "mappedBy": "subject"
     },
-    "quiz_results": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::quiz-result.quiz-result",
-      "mappedBy": "subject"
-    },
     "quizResults": {
       "type": "relation",
       "relation": "oneToMany",
@@ -123,6 +117,9 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
+    },
+    "description": {
+      "type": "richtext"
     }
   }
 }

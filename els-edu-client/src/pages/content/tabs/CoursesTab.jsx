@@ -62,7 +62,6 @@ const CourseViewModal = ({ course, onClose }) => {
 
   // Helper to get cover image URL
   const getCoverImageUrl = () => {
-    console.log(course, "course.cover");
     if (!course.cover) return null;
     
     // Handle different cover structures
@@ -98,7 +97,7 @@ const CourseViewModal = ({ course, onClose }) => {
   };
 
   const coverImageUrl = getCoverImageUrl();
-  console.log(coverImageUrl, "coverImageUrl");
+
   // Helper to get description content
   const descriptionContent = useMemo(() => {
     if (!course.description) return { content: "", isHTML: false };

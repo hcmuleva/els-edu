@@ -1674,6 +1674,7 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    description: Schema.Attribute.RichText;
     grade: Schema.Attribute.Enumeration<
       [
         'PLAYSCHOOL',
@@ -1718,10 +1719,6 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
       'plugin::users-permissions.user'
     >;
     questions: Schema.Attribute.Relation<'oneToMany', 'api::question.question'>;
-    quiz_results: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-result.quiz-result'
-    >;
     quizResults: Schema.Attribute.Relation<
       'oneToMany',
       'api::quiz-result.quiz-result'
@@ -1861,10 +1858,6 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     questions: Schema.Attribute.Relation<'oneToMany', 'api::question.question'>;
-    quiz_results: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-result.quiz-result'
-    >;
     quizResults: Schema.Attribute.Relation<
       'oneToMany',
       'api::quiz-result.quiz-result'
