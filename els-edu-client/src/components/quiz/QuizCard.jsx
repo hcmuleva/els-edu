@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, Award } from "lucide-react";
+import { PlayCircle, Clock, Award, Layers } from "lucide-react";
 
 const DIFFICULTY_COLORS = {
   beginner: "bg-green-100 text-green-700 border-green-200",
@@ -8,15 +8,24 @@ const DIFFICULTY_COLORS = {
   advanced: "bg-red-100 text-red-700 border-red-200",
 };
 
-const QuizCard = ({ quiz }) => {
+const QuizCard = ({
+  quiz,
+  questionCount: propQuestionCount,
+  attemptsUsed = 0,
+}) => {
   const navigate = useNavigate();
-  const questionCount = quiz?.questions?.length || 0;
+  // Use prop if provided, else calculate from questions array
+  const questionCount = propQuestionCount ?? quiz?.questions?.length ?? 0;
+  const maxAttempts = quiz?.maxAttempts ?? 0;
+  const isUnlimited = maxAttempts === 0;
   const difficultyColor =
     DIFFICULTY_COLORS[quiz?.difficulty] ||
     "bg-gray-100 text-gray-700 border-gray-200";
 
   const handleStartQuiz = () => {
-    navigate(`/quiz/${quiz.id}/play`);
+    // Use documentId if available, fallback to id
+    const quizId = quiz.documentId || quiz.id;
+    navigate(`/quiz/${quizId}/play`);
   };
 
   return (
@@ -45,7 +54,7 @@ const QuizCard = ({ quiz }) => {
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-3 text-sm">
           <div
             className={`px-3 py-1 rounded-full border-2 font-bold ${difficultyColor}`}
           >
@@ -54,15 +63,31 @@ const QuizCard = ({ quiz }) => {
 
           <div className="flex items-center gap-1.5 text-gray-600">
             <Award className="w-4 h-4" />
-            <span className="font-semibold">{questionCount} Questions</span>
+            <span className="font-semibold">{questionCount} Q</span>
           </div>
 
           {quiz.timeLimit && (
             <div className="flex items-center gap-1.5 text-gray-600">
               <Clock className="w-4 h-4" />
-              <span className="font-semibold">{quiz.timeLimit} min</span>
+              <span className="font-semibold">{quiz.timeLimit}m</span>
             </div>
           )}
+
+          {/* Attempts Display */}
+          <div className="flex items-center gap-1.5 text-gray-600">
+            <Layers className="w-4 h-4" />
+            <span className="font-semibold">
+              {isUnlimited ? (
+                <span className="text-green-600">∞ Unlimited</span>
+              ) : (
+                <span
+                  className={attemptsUsed >= maxAttempts ? "text-red-500" : ""}
+                >
+                  {attemptsUsed}/{maxAttempts}
+                </span>
+              )}
+            </span>
+          </div>
         </div>
 
         {/* Passing Score */}
@@ -76,10 +101,17 @@ const QuizCard = ({ quiz }) => {
         {/* Action Button */}
         <button
           onClick={handleStartQuiz}
-          className="w-full px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-black rounded-2xl hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
+          disabled={!isUnlimited && attemptsUsed >= maxAttempts}
+          className={`w-full px-6 py-3 font-black rounded-2xl transition-all flex items-center justify-center gap-2 ${
+            !isUnlimited && attemptsUsed >= maxAttempts
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:scale-105"
+          }`}
         >
           <PlayCircle className="w-5 h-5" />
-          Start Quiz
+          {!isUnlimited && attemptsUsed >= maxAttempts
+            ? "No Attempts Left"
+            : "Start Quiz"}
         </button>
       </div>
     </div>

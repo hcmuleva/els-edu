@@ -468,8 +468,14 @@ const AppMenu = (props) => {
 
           <SectionHeader title="Learning" isOpen={open} />
           <CustomMenuItem
-            to="/browse-subjects"
-            primaryText="Browse Subjects"
+            to="/my-subscriptions"
+            primaryText="My Subscriptions"
+            leftIcon={<GraduationCap size={20} />}
+            isOpen={open}
+          />
+          <CustomMenuItem
+            to="/browse-courses"
+            primaryText="Browse Courses"
             leftIcon={<BookOpen size={20} />}
             isOpen={open}
           />

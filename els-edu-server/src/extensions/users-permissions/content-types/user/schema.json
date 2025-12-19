@@ -166,7 +166,7 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::usersubscription.usersubscription",
-      "mappedBy": "users_permissions_user"
+      "mappedBy": "user"
     },
     "published_courses": {
       "type": "relation",

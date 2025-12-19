@@ -94,6 +94,7 @@ const App = () => (
     <Resource name="offers" />
     <Resource name="invoice-items" />
     <Resource name="invoice-payments" />
+    <Resource name="usersubscriptions" />
   </Admin>
 );
 

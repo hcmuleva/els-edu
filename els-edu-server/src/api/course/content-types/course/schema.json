@@ -17,12 +17,7 @@
     "cover": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "publisher": {
       "type": "relation",
@@ -91,51 +86,31 @@
     },
     "condition": {
       "type": "enumeration",
-      "enum": [
-        "DRAFT",
-        "REVIEW",
-        "REJECT",
-        "APPROVED",
-        "PUBLISH",
-        "RETIRED"
-      ]
+      "enum": ["DRAFT", "REVIEW", "REJECT", "APPROVED", "PUBLISH", "RETIRED"]
     },
     "privacy": {
       "type": "enumeration",
-      "enum": [
-        "PUBLIC",
-        "PRIVATE",
-        "ORG",
-        "OPEN"
-      ]
+      "enum": ["PUBLIC", "PRIVATE", "ORG", "OPEN"]
     },
     "visibility": {
       "type": "enumeration",
-      "enum": [
-        "GLOBAL",
-        "ORG",
-        "OTHER"
-      ]
+      "enum": ["GLOBAL", "ORG", "OTHER"]
     },
     "coverphoto": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "previewvideo": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    },
+    "pricings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::pricing.pricing",
+      "mappedBy": "course"
     }
   }
 }

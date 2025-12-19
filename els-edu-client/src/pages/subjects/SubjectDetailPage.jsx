@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Title, useDataProvider } from "react-admin";
+import { Title, useDataProvider, useGetIdentity } from "react-admin";
 import {
   ArrowLeft,
   BookOpen,
@@ -16,6 +16,7 @@ const SubjectDetailPage = () => {
   const { id } = useParams(); // This could be documentId or id
   const navigate = useNavigate();
   const dataProvider = useDataProvider();
+  const { data: identity } = useGetIdentity();
 
   const [subject, setSubject] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -23,33 +24,25 @@ const SubjectDetailPage = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("topics");
 
-  // Fetch Subject Metadata Only (Optimization)
+  // Separate quizzes state for lazy loading
+  const [quizzes, setQuizzes] = useState([]);
+  const [quizzesLoading, setQuizzesLoading] = useState(false);
+  const [quizAttempts, setQuizAttempts] = useState({}); // Map of quizId -> attempts used
+  const [quizzesLoaded, setQuizzesLoaded] = useState(false);
+
+  // Fetch Subject Metadata Only (Optimization - no quizzes)
   useEffect(() => {
     const fetchSubject = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Fetch Subject with light population
+        // Fetch Subject with light population - NO QUIZZES
         const { data } = await dataProvider.getOne("subjects", {
           id,
           meta: {
             populate: {
               topics: {
                 fields: ["name", "description", "icon", "documentId", "id"],
-              },
-              quizzes: {
-                fields: [
-                  "title",
-                  "difficulty",
-                  "timeLimit",
-                  "documentId",
-                  "id",
-                ],
-                populate: {
-                  questions: {
-                    fields: ["id", "documentId"], // Return array of IDs so .length works in QuizCard
-                  },
-                },
               },
               contents: {
                 fields: ["title", "documentId", "id"], // Fetch for count display
@@ -126,13 +119,89 @@ const SubjectDetailPage = () => {
     }
   }, [selectedTopic, dataProvider]);
 
+  // Lazy Load Quizzes when tab is clicked
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      // Need subject to be loaded to get numeric id for filter
+      if (
+        quizzesLoaded ||
+        quizzesLoading ||
+        activeTab !== "quizzes" ||
+        !subject?.id
+      )
+        return;
+
+      try {
+        setQuizzesLoading(true);
+        // Filter quizzes by subject using NUMERIC id (not documentId)
+        const { data } = await dataProvider.getList("quizzes", {
+          filter: { subject: subject.id }, // Use numeric id
+          pagination: { page: 1, perPage: 100 },
+          sort: { field: "title", order: "ASC" },
+          meta: {
+            populate: {
+              questions: {
+                fields: ["id", "documentId"], // Only IDs for count
+              },
+            },
+          },
+        });
+        console.log("Quizzes fetched:", data);
+        setQuizzes(data || []);
+
+        // Fetch user's quiz attempts for these quizzes
+        if (identity?.id && data?.length > 0) {
+          try {
+            const { data: results } = await dataProvider.getList(
+              "quiz-results",
+              {
+                filter: { user: identity.id },
+                pagination: { page: 1, perPage: 500 },
+                meta: {
+                  populate: { quiz: { fields: ["id", "documentId"] } },
+                },
+              }
+            );
+            // Count attempts per quiz
+            const attemptsByQuiz = {};
+            results?.forEach((result) => {
+              const quizId = result.quiz?.id || result.quiz?.documentId;
+              if (quizId) {
+                attemptsByQuiz[quizId] = (attemptsByQuiz[quizId] || 0) + 1;
+              }
+            });
+            setQuizAttempts(attemptsByQuiz);
+            console.log("Quiz attempts:", attemptsByQuiz);
+          } catch (e) {
+            console.error("Error fetching quiz attempts:", e);
+          }
+        }
+
+        setQuizzesLoaded(true);
+      } catch (err) {
+        console.error("Error fetching quizzes:", err);
+        setQuizzesLoaded(true); // Prevent infinite retry
+      } finally {
+        setQuizzesLoading(false);
+      }
+    };
+
+    fetchQuizzes();
+  }, [activeTab, subject?.id, quizzesLoaded, quizzesLoading, dataProvider]);
+
   const handleQuizStart = (quiz) => {
     const quizId = quiz.documentId || quiz.id;
     navigate(`/quiz/${quizId}/play`);
   };
 
   const handleBack = () => {
-    navigate("/browse-subjects");
+    // Use browser history to go back to previous page
+    // This allows returning to either /browse-subjects or /my-subscriptions
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/browse-subjects");
+    }
   };
 
   if (loading) {
@@ -159,7 +228,7 @@ const SubjectDetailPage = () => {
             onClick={handleBack}
             className="mt-4 px-6 py-3 bg-primary text-white font-bold rounded-2xl hover:shadow-lg transition-all"
           >
-            Back to Browse
+            Go Back
           </button>
         </div>
       </div>
@@ -168,7 +237,7 @@ const SubjectDetailPage = () => {
 
   const topicCount = subject.topics?.length || 0;
   const contentCount = subject.contents?.length || 0;
-  const quizCount = subject.quizzes?.length || 0;
+  const quizCount = quizzes.length; // Use lazy loaded quizzes
 
   return (
     <div className="p-6 space-y-6">
@@ -180,7 +249,7 @@ const SubjectDetailPage = () => {
         className="flex items-center gap-2 text-gray-600 hover:text-primary font-bold transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
-        Back to Browse
+        Back
       </button>
 
       {/* Subject Header (Compact) */}
@@ -330,9 +399,26 @@ const SubjectDetailPage = () => {
 
           {activeTab === "quizzes" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quizCount > 0 ? (
-                subject.quizzes.map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} />
+              {quizzesLoading ? (
+                // Loading skeleton
+                [...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-gray-100 rounded-3xl h-48 animate-pulse"
+                  />
+                ))
+              ) : quizzes.length > 0 ? (
+                quizzes.map((quiz) => (
+                  <QuizCard
+                    key={quiz.documentId || quiz.id}
+                    quiz={quiz}
+                    questionCount={quiz.questions?.length || 0}
+                    attemptsUsed={
+                      quizAttempts[quiz.id] ||
+                      quizAttempts[quiz.documentId] ||
+                      0
+                    }
+                  />
                 ))
               ) : (
                 <div className="col-span-full text-center py-12 text-gray-400">
