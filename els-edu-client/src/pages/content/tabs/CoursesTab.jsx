@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -25,12 +25,86 @@ import {
   ChevronRight,
   Layers,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import ImagePreview from "../../../components/studio/ImagePreview";
 import CountListModal from "../../../components/studio/CountListModal";
 import { CustomSelect } from "../../../components/common/CustomSelect";
 
 const CourseViewModal = ({ course, onClose }) => {
   if (!course) return null;
+
+  // Helper to check if string contains HTML tags
+  const containsHTML = (str) => {
+    if (typeof str !== "string") return false;
+    return /<[a-z][\s\S]*>/i.test(str);
+  };
+
+  // Helper to process HTML and ensure links open in new tabs
+  const processHTML = (html) => {
+    if (!html || typeof html !== "string") return html;
+    
+    // Add target="_blank" and rel="noopener noreferrer" to links that don't have them
+    return html.replace(
+      /<a\s+([^>]*?)>/gi,
+      (match, attributes) => {
+        // Check if target already exists
+        if (/target\s*=/i.test(attributes)) {
+          return match; // Already has target, return as is
+        }
+        // Add target and rel if href exists
+        if (/href\s*=/i.test(attributes)) {
+          return `<a ${attributes} target="_blank" rel="noopener noreferrer">`;
+        }
+        return match;
+      }
+    );
+  };
+
+  // Helper to get description content
+  const descriptionContent = useMemo(() => {
+    if (!course.description) return { content: "", isHTML: false };
+    
+    // If it's already a string
+    if (typeof course.description === "string") {
+      const isHTML = containsHTML(course.description);
+      const content = isHTML ? processHTML(course.description) : course.description;
+      return { content, isHTML };
+    }
+    
+    // If it's an array (blocks format), convert to markdown
+    if (Array.isArray(course.description)) {
+      try {
+        const markdown = course.description
+          .map((block) => {
+            if (block.type === "paragraph" && block.children) {
+              return block.children.map((child) => child.text || "").join("");
+            }
+            if (block.type === "heading" && block.children) {
+              const level = block.level || 1;
+              const prefix = "#".repeat(level) + " ";
+              return prefix + block.children.map((child) => child.text || "").join("");
+            }
+            if (block.type === "list" && block.children) {
+              return block.children
+                .map((item, index) => {
+                  const prefix = block.format === "ordered" ? `${index + 1}. ` : "- ";
+                  return prefix + (item.children?.map((c) => c.text || "").join("") || "");
+                })
+                .join("\n");
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join("\n\n");
+        return { content: markdown, isHTML: false };
+      } catch (e) {
+        console.error("Error parsing description blocks:", e);
+        return { content: "", isHTML: false };
+      }
+    }
+    
+    return { content: "", isHTML: false };
+  }, [course.description]);
 
   return (
     <div
@@ -80,17 +154,82 @@ const CourseViewModal = ({ course, onClose }) => {
           </div>
 
           {/* Description */}
-          {course.description && (
+          {descriptionContent.content && (
             <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-1">
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">
                     Description
                   </h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.description}
-                  </p>
+                  {descriptionContent.isHTML ? (
+                    <div
+                      className="prose prose-sm max-w-none text-gray-600 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2 [&_p]:leading-relaxed [&_p]:text-gray-600 [&_a]:text-blue-600 [&_a]:hover:text-blue-800 [&_a]:hover:underline [&_a]:font-medium [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:space-y-1 [&_ul]:text-gray-600 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_ol]:space-y-1 [&_ol]:text-gray-600 [&_li]:text-gray-600 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_blockquote]:my-2 [&_strong]:font-bold [&_strong]:text-gray-900 [&_em]:italic"
+                      dangerouslySetInnerHTML={{ __html: descriptionContent.content }}
+                    />
+                  ) : (
+                    <div className="prose prose-sm max-w-none text-gray-600">
+                      <ReactMarkdown
+                        components={{
+                          h1: ({ node, ...props }) => (
+                            <h1 className="text-xl font-bold text-gray-900 mt-4 mb-2" {...props} />
+                          ),
+                          h2: ({ node, ...props }) => (
+                            <h2 className="text-lg font-bold text-gray-900 mt-3 mb-2" {...props} />
+                          ),
+                          h3: ({ node, ...props }) => (
+                            <h3 className="text-base font-bold text-gray-900 mt-3 mb-1" {...props} />
+                          ),
+                          p: ({ node, ...props }) => (
+                            <p className="mb-2 leading-relaxed text-gray-600" {...props} />
+                          ),
+                          a: ({ node, ...props }) => (
+                            <a
+                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              {...props}
+                            />
+                          ),
+                          ul: ({ node, ...props }) => (
+                            <ul className="list-disc pl-5 mb-2 space-y-1 text-gray-600" {...props} />
+                          ),
+                          ol: ({ node, ...props }) => (
+                            <ol className="list-decimal pl-5 mb-2 space-y-1 text-gray-600" {...props} />
+                          ),
+                          li: ({ node, ...props }) => (
+                            <li className="text-gray-600" {...props} />
+                          ),
+                          blockquote: ({ node, ...props }) => (
+                            <blockquote
+                              className="border-l-4 border-gray-300 pl-4 italic text-gray-500 my-2"
+                              {...props}
+                            />
+                          ),
+                          code: ({ node, ...props }) => (
+                            <code
+                              className="bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono"
+                              {...props}
+                            />
+                          ),
+                          pre: ({ node, ...props }) => (
+                            <pre
+                              className="bg-gray-200 text-gray-800 p-3 rounded-lg overflow-x-auto my-3 text-sm"
+                              {...props}
+                            />
+                          ),
+                          strong: ({ node, ...props }) => (
+                            <strong className="font-bold text-gray-900" {...props} />
+                          ),
+                          em: ({ node, ...props }) => (
+                            <em className="italic" {...props} />
+                          ),
+                        }}
+                      >
+                        {descriptionContent.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -226,7 +365,7 @@ export const CoursesTab = () => {
   } = useGetList("courses", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter: userId ? { creator: userId } : {},
+   
     meta: {
       populate: {
         cover: { fields: ["url"] },
