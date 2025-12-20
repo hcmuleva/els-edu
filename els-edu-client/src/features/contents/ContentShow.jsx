@@ -111,9 +111,8 @@ export const ContentShow = () => {
                   <iframe
                     width="100%"
                     height="100%"
-                    src={`https://www.youtube.com/embed/${
-                      record.youtubeurl.split("v=")[1]?.split("&")[0]
-                    }`}
+                    src={`https://www.youtube.com/embed/${record.youtubeurl.split("v=")[1]?.split("&")[0]
+                      }`}
                     title="YouTube video player"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -136,10 +135,9 @@ export const ContentShow = () => {
                     >
                       {file.mime?.startsWith("image/") ? (
                         <img
-                          src={`${
-                            import.meta.env.VITE_API_URL?.replace("/api", "") ||
+                          src={`${import.meta.env.VITE_API_URL?.replace("/api", "") ||
                             ""
-                          }${file.url}`}
+                            }${file.url}`}
                           alt={file.name}
                           className="w-full h-32 object-cover"
                         />
@@ -152,10 +150,9 @@ export const ContentShow = () => {
                         </div>
                       )}
                       <a
-                        href={`${
-                          import.meta.env.VITE_API_URL?.replace("/api", "") ||
+                        href={`${import.meta.env.VITE_API_URL?.replace("/api", "") ||
                           ""
-                        }${file.url}`}
+                          }${file.url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"

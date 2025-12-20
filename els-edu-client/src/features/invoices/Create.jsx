@@ -65,7 +65,7 @@ const LineItemInput = () => {
 export const InvoiceCreate = () => {
   const notify = useNotify();
   const redirect = useRedirect();
-  
+
   const [targetType, setTargetType] = useState('ORG');
   const [categoryType, setCategoryType] = useState('course');
 
@@ -74,7 +74,7 @@ export const InvoiceCreate = () => {
     const subtotal = data.lineItems?.reduce((sum, item) => {
       return sum + (item.quantity * item.unitPrice);
     }, 0) || 0;
-    
+
     const tax = subtotal * 0.18; // 18% GST for INR
     const discount = 0;
     const total = subtotal + tax - discount;
@@ -109,7 +109,7 @@ export const InvoiceCreate = () => {
               <Typography variant="h6" className="mb-4 font-semibold">
                 Create New Invoice
               </Typography>
-              
+
               {/* Basic Information */}
               <Box className="mb-6">
                 <Typography variant="subtitle1" className="mb-3 font-medium">

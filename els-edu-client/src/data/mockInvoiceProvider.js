@@ -34,10 +34,10 @@ const setDataForResource = (resource, data) => {
 
 const applyFilters = (data, filters) => {
   let filtered = [...data];
-  
+
   Object.entries(filters).forEach(([key, value]) => {
     if (value === null || value === undefined || value === '') return;
-    
+
     if (key === 'dateFrom') {
       filtered = filtered.filter(item => new Date(item.date) >= new Date(value));
     } else if (key === 'dateTo') {
@@ -52,17 +52,17 @@ const applyFilters = (data, filters) => {
       });
     }
   });
-  
+
   return filtered;
 };
 
 const applySort = (data, sort) => {
   if (!sort || !sort.field) return data;
-  
+
   return [...data].sort((a, b) => {
     const aVal = a[sort.field];
     const bVal = b[sort.field];
-    
+
     if (aVal < bVal) return sort.order === 'ASC' ? -1 : 1;
     if (aVal > bVal) return sort.order === 'ASC' ? 1 : -1;
     return 0;
@@ -75,125 +75,125 @@ export const mockInvoiceProvider = {
     const { page = 1, perPage = 25 } = params.pagination || {};
     const { field, order } = params.sort || {};
     const filters = params.filter || {};
-    
+
     // Apply filters
     let filtered = applyFilters(data, filters);
-    
+
     // Apply sorting
     if (field && order) {
       filtered = applySort(filtered, { field, order });
     }
-    
+
     // Apply pagination
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
     const paginatedData = filtered.slice(startIndex, endIndex);
-    
+
     return Promise.resolve({
       data: paginatedData,
       total: filtered.length,
     });
   },
-  
+
   getOne: (resource, params) => {
     const data = getDataForResource(resource);
     const item = data.find(item => item.id == params.id);
-    
+
     if (!item) {
       return Promise.reject(new Error(`${resource} not found`));
     }
-    
+
     return Promise.resolve({ data: item });
   },
-  
+
   getMany: (resource, params) => {
     const data = getDataForResource(resource);
     const items = data.filter(item => params.ids.includes(item.id));
-    
+
     return Promise.resolve({ data: items });
   },
-  
+
   getManyReference: (resource, params) => {
     const data = getDataForResource(resource);
     const { page = 1, perPage = 25 } = params.pagination || {};
     const { field, order } = params.sort || {};
     const filters = { ...params.filter, [params.target]: params.id };
-    
+
     // Apply filters
     let filtered = applyFilters(data, filters);
-    
+
     // Apply sorting
     if (field && order) {
       filtered = applySort(filtered, { field, order });
     }
-    
+
     // Apply pagination
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
     const paginatedData = filtered.slice(startIndex, endIndex);
-    
+
     return Promise.resolve({
       data: paginatedData,
       total: filtered.length,
     });
   },
-  
+
   create: (resource, params) => {
     const data = getDataForResource(resource);
     const newId = Math.max(...data.map(item => parseInt(item.id)), 0) + 1;
     const newItem = { ...params.data, id: newId };
-    
+
     const updatedData = [...data, newItem];
     setDataForResource(resource, updatedData);
-    
+
     return Promise.resolve({ data: newItem });
   },
-  
+
   update: (resource, params) => {
     const data = getDataForResource(resource);
     const index = data.findIndex(item => item.id == params.id);
-    
+
     if (index === -1) {
       return Promise.reject(new Error(`${resource} not found`));
     }
-    
+
     const updatedItem = { ...data[index], ...params.data };
     const updatedData = [...data];
     updatedData[index] = updatedItem;
     setDataForResource(resource, updatedData);
-    
+
     return Promise.resolve({ data: updatedItem });
   },
-  
+
   updateMany: (resource, params) => {
     const data = getDataForResource(resource);
-    const updatedData = data.map(item => 
+    const updatedData = data.map(item =>
       params.ids.includes(item.id) ? { ...item, ...params.data } : item
     );
     setDataForResource(resource, updatedData);
-    
+
     return Promise.resolve({ data: params.ids });
   },
-  
+
   delete: (resource, params) => {
     const data = getDataForResource(resource);
     const item = data.find(item => item.id == params.id);
-    
+
     if (!item) {
       return Promise.reject(new Error(`${resource} not found`));
     }
-    
+
     const updatedData = data.filter(item => item.id != params.id);
     setDataForResource(resource, updatedData);
-    
+
     return Promise.resolve({ data: item });
   },
-  
+
   deleteMany: (resource, params) => {
     const data = getDataForResource(resource);
     const updatedData = data.filter(item => !params.ids.includes(item.id));
     setDataForResource(resource, updatedData);
-    
+
     return Promise.resolve({ data: params.ids });
   },
 };

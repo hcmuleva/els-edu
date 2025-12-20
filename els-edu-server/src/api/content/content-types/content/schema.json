@@ -70,6 +70,16 @@
       "relation": "oneToMany",
       "target": "api::resource.resource",
       "mappedBy": "content"
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "TIPSTRICS",
+        "FORMULA",
+        "CONTENT",
+        "READING",
+        "OTHER"
+      ]
     }
   }
 }
