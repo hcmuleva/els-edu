@@ -274,6 +274,213 @@ export const syncUserSubscriptions = async (
   return { created, deleted };
 };
 
+/**
+ * Initiate payment and handle Cashfree checkout
+ *
+ * @param {string} authToken - User auth token
+ * @param {Object} paymentData - { coursePricingId, subjectPricingId, type }
+ * @returns {Promise<void>}
+ */
+export const initiatePayment = async (
+  authToken,
+  { coursePricingId, subjectPricingId, type }
+) => {
+  try {
+    const baseUrl = (
+      import.meta.env.VITE_API_URL || "http://localhost:1337"
+    ).replace(/\/api$/, "");
+    const response = await fetch(`${baseUrl}/api/payment/create-order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        coursePricingId,
+        subjectPricingId,
+        type,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || "Failed to create order");
+    }
+
+    if (data.success && data.paymentSessionId) {
+      const cashfree = await loadCashfree();
+      if (!cashfree) throw new Error("Cashfree SDK failed to load");
+
+      // Get the base URL including any app path (e.g., /els-kids)
+      const basePath = window.location.pathname
+        .split("#")[0]
+        .replace(/\/$/, "");
+      const baseUrl = `${window.location.origin}${basePath}`;
+
+      await cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        returnUrl: `${baseUrl}/#/payment/status?order_id=${data.orderId}`,
+        redirectTarget: "_self", // Use _self for full-page redirect to ensure returnUrl works
+      });
+    } else {
+      throw new Error("Invalid payment session recieved");
+    }
+  } catch (error) {
+    console.error("Payment initiation failed:", error);
+    throw error;
+  }
+};
+
+// Helper to load Cashfree
+const loadCashfree = async () => {
+  if (window.Cashfree) {
+    return new window.Cashfree({
+      mode: import.meta.env.VITE_CASHFREE_ENV || "production",
+    });
+  }
+  // Retry or wait logic could be added here if script loads async slow
+  return null;
+};
+
+/**
+ * Get payment order status
+ * @param {string} authToken
+ * @param {string} orderId
+ * @returns
+ */
+export const getOrderStatus = async (authToken, orderId) => {
+  const baseUrl = (
+    import.meta.env.VITE_API_URL || "http://localhost:1337"
+  ).replace(/\/api$/, "");
+  const response = await fetch(`${baseUrl}/api/payment/order/${orderId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch order status");
+  }
+
+  return await response.json();
+};
+
+/**
+ * Get purchase history
+ * @param {string} authToken
+ * @returns
+ */
+export const getPurchaseHistory = async (authToken) => {
+  const baseUrl = (
+    import.meta.env.VITE_API_URL || "http://localhost:1337"
+  ).replace(/\/api$/, "");
+  const response = await fetch(`${baseUrl}/api/payment/history`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch purchase history");
+  }
+
+  return await response.json();
+};
+
+/**
+ * Cancel a pending payment
+ * @param {string} authToken
+ * @param {string} orderId
+ * @returns
+ */
+export const cancelPayment = async (authToken, orderId) => {
+  const baseUrl = (
+    import.meta.env.VITE_API_URL || "http://localhost:1337"
+  ).replace(/\/api$/, "");
+  const response = await fetch(`${baseUrl}/api/payment/cancel`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ orderId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to cancel payment");
+  }
+
+  return await response.json();
+};
+
+/**
+ * Get pending payments (helper)
+ * @param {string} authToken
+ * @returns {Promise<Array>}
+ */
+export const getPendingPayments = async (authToken) => {
+  const history = await getPurchaseHistory(authToken);
+  const data = history.data || [];
+  return data.filter(
+    (p) =>
+      p.payments?.some((pay) => pay.payment_status === "PENDING") ||
+      p.invoice_status === "PENDING"
+  );
+};
+
+/**
+ * Resume/Retry a payment
+ * @param {string} authToken
+ * @param {string} orderId
+ * @returns {Promise<Object>}
+ */
+export const resumePayment = async (authToken, orderId) => {
+  const baseUrl = (
+    import.meta.env.VITE_API_URL || "http://localhost:1337"
+  ).replace(/\/api$/, "");
+  const response = await fetch(`${baseUrl}/api/payment/resume`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ orderId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to resume payment");
+  }
+
+  return await response.json();
+};
+
+/**
+ * Handle Cashfree Checkout directly with session ID
+ * @param {string} paymentSessionId
+ * @param {string} orderId
+ */
+export const checkout = async (paymentSessionId, orderId) => {
+  const cashfree = await loadCashfree();
+  if (!cashfree) throw new Error("Cashfree SDK failed to load");
+
+  // Get the base URL including any app path (e.g., /els-kids)
+  const basePath = window.location.pathname.split("#")[0].replace(/\/$/, "");
+  const baseUrl = `${window.location.origin}${basePath}`;
+
+  await cashfree.checkout({
+    paymentSessionId: paymentSessionId,
+    returnUrl: `${baseUrl}/#/payment/status?order_id=${orderId}`,
+    redirectTarget: "_self", // Use _self for full-page redirect
+  });
+};
+
 // Export as service object for convenience
 export const subscriptionService = {
   createSubscription,
@@ -284,6 +491,13 @@ export const subscriptionService = {
   updateSubscription,
   updateSubscriptionSubjects,
   syncUserSubscriptions,
+  initiatePayment,
+  checkout,
+  getOrderStatus,
+  getPurchaseHistory,
+  cancelPayment,
+  getPendingPayments,
+  resumePayment,
 };
 
 export default subscriptionService;

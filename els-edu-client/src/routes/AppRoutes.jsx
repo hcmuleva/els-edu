@@ -14,13 +14,19 @@ import OrgManagePage from "../pages/admin/OrgManagePage";
 import MySubscriptionsPage from "../pages/subscriptions/MySubscriptionsPage";
 import CourseSubjectsPage from "../pages/subscriptions/CourseSubjectsPage";
 
+import PaymentStatusPage from "../pages/payment/PaymentStatusPage";
+
+import PurchaseHistoryPage from "../pages/payment/PurchaseHistoryPage";
+
 const AppRoutes = () => (
   <>
     <CustomRoutes noLayout>
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/payment/status" element={<PaymentStatusPage />} />
     </CustomRoutes>
     <CustomRoutes>
       <Route path="/my-contents" element={<ContentPage />} />
+      <Route path="/purchase-history" element={<PurchaseHistoryPage />} />
       <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
       <Route
         path="/my-subscriptions/:courseId"

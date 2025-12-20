@@ -91,10 +91,16 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "usersubscriptions"
     },
-    "pricing": {
+    "course_pricing": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::pricing.pricing",
+      "target": "api::course-pricing.course-pricing",
+      "inversedBy": "usersubscriptions"
+    },
+    "subject_pricing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject-pricing.subject-pricing",
       "inversedBy": "usersubscriptions"
     },
     "course": {
@@ -105,9 +111,9 @@
     },
     "subjects": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::subject.subject",
-      "mappedBy": "usersubscription"
+      "mappedBy": "usersubscriptions"
     }
   }
 }

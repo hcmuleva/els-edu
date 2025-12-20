@@ -38,7 +38,10 @@ const BrowseCourseCard = ({
   isEnrolled = false,
   enrolledSubjectCount = 0,
   totalSubjectCount = 0,
+  pendingPayment = null,
   onEnroll,
+  onResumePayment,
+  onCancelPayment,
   onClick,
 }) => {
   const navigate = useNavigate();
@@ -77,8 +80,35 @@ const BrowseCourseCard = ({
     if (onEnroll) onEnroll(course);
   };
 
+  // Pending payment handling
+  const isPending = !!pendingPayment;
+
+  const handleResumeClick = (e) => {
+    e.stopPropagation();
+    console.log("REF_DEBUG: Resume button clicked for", pendingPayment);
+    if (onResumePayment && pendingPayment) {
+      onResumePayment(pendingPayment);
+    } else {
+      console.warn("REF_DEBUG: onResumePayment or pendingPayment missing", {
+        onResumePayment: !!onResumePayment,
+        pendingPayment,
+      });
+    }
+  };
+
+  const handleCancelClick = (e) => {
+    e.stopPropagation();
+    if (onCancelPayment && pendingPayment) onCancelPayment(pendingPayment);
+  };
+
   return (
-    <div className="group relative bg-white rounded-3xl border-2 border-gray-100 hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer">
+    <div
+      className={`group relative bg-white rounded-3xl border-2 hover:border-primary/30 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer ${
+        isPending
+          ? "border-orange-200 ring-2 ring-orange-100"
+          : "border-gray-100"
+      }`}
+    >
       {/* Cover Image */}
       <div
         onClick={() => onClick && onClick(course)}
@@ -107,17 +137,24 @@ const BrowseCourseCard = ({
           </div>
         )}
 
-        {/* Subscription Type Badge */}
+        {/* Subscription Type Badge - Hide if pending to show Pending badge instead */}
         <div className="absolute top-3 right-3">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-black ${badge.bg} ${badge.text} shadow-md`}
-          >
-            {badge.label}
-          </span>
+          {isPending ? (
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-100 text-orange-700 shadow-md flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+              PAYMENT PENDING
+            </span>
+          ) : (
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-black ${badge.bg} ${badge.text} shadow-md`}
+            >
+              {badge.label}
+            </span>
+          )}
         </div>
 
         {/* Enrolled Badge */}
-        {isEnrolled && (
+        {isEnrolled && !isPending && (
           <div className="absolute bottom-3 left-3">
             <span className="px-3 py-1 rounded-full text-xs font-black bg-primary text-white shadow-md">
               ✓ ENROLLED
@@ -155,33 +192,52 @@ const BrowseCourseCard = ({
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <button
-            onClick={handleDetailsClick}
-            className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-          >
-            Details
-          </button>
-          <button
-            onClick={handleDetailsClick}
-            disabled={isEnrolled}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${
-              isEnrolled
-                ? "bg-green-100 text-green-700 cursor-default"
-                : hasPartialEnrollment
-                ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                : subscriptionType === "FREE"
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-primary hover:bg-primary/90 text-white"
-            }`}
-          >
-            {isEnrolled
-              ? "✓ Enrolled"
-              : hasPartialEnrollment
-              ? `${enrolledSubjectCount}/${totalSubjectCount} Enrolled`
-              : isFree
-              ? "Enroll Free"
-              : `₹${priceAmount.toLocaleString()}`}
-          </button>
+          {isPending ? (
+            <>
+              <button
+                onClick={handleCancelClick}
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-red-50 hover:bg-red-100 text-red-600 transition-colors border border-red-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResumeClick}
+                className="flex-[1.5] py-2.5 rounded-xl font-bold text-sm bg-orange-500 hover:bg-orange-600 text-white transition-colors shadow-md shadow-orange-200"
+              >
+                Continue Payment
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleDetailsClick}
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              >
+                Details
+              </button>
+              <button
+                onClick={handleDetailsClick}
+                disabled={isEnrolled}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${
+                  isEnrolled
+                    ? "bg-green-100 text-green-700 cursor-default"
+                    : hasPartialEnrollment
+                    ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                    : subscriptionType === "FREE"
+                    ? "bg-green-500 hover:bg-green-600 text-white"
+                    : "bg-primary hover:bg-primary/90 text-white"
+                }`}
+              >
+                {isEnrolled
+                  ? "✓ Enrolled"
+                  : hasPartialEnrollment
+                  ? `${enrolledSubjectCount}/${totalSubjectCount} Enrolled`
+                  : isFree
+                  ? "Enroll Free"
+                  : `₹${priceAmount.toLocaleString()}`}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

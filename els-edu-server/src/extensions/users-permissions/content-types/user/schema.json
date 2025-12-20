@@ -221,6 +221,36 @@
       "relation": "oneToMany",
       "target": "api::user-profile.user-profile",
       "mappedBy": "user"
+    },
+    "published_courses_pricing": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course-pricing.course-pricing",
+      "mappedBy": "publisher"
+    },
+    "subjects_published_pricing": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::subject-pricing.subject-pricing",
+      "mappedBy": "publisher"
+    },
+    "created_pricing": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::pricing-offer.pricing-offer",
+      "mappedBy": "creator"
+    },
+    "created_offers": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::pricing-offer.pricing-offer",
+      "mappedBy": "target_publisher"
+    },
+    "created_items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice-item.invoice-item",
+      "mappedBy": "publisher"
     }
   }
 }

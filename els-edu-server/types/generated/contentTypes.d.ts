@@ -633,6 +633,10 @@ export interface ApiCoursePricingCoursePricing
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    usersubscriptions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::usersubscription.usersubscription'
+    >;
   };
 }
 
@@ -665,6 +669,14 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
     condition: Schema.Attribute.Enumeration<
       ['DRAFT', 'REVIEW', 'REJECT', 'APPROVED', 'PUBLISH', 'RETIRED']
     >;
+    course_invoices: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::invoice-item.invoice-item'
+    >;
+    courses_offers: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::pricing-offer.pricing-offer'
+    >;
     cover: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     coverphoto: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
@@ -690,7 +702,6 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
-    pricings: Schema.Attribute.Relation<'oneToMany', 'api::pricing.pricing'>;
     privacy: Schema.Attribute.Enumeration<['PUBLIC', 'PRIVATE', 'ORG', 'OPEN']>;
     publishedAt: Schema.Attribute.DateTime;
     publisher: Schema.Attribute.Relation<
@@ -921,6 +932,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
         'PARTIALLY_PAID',
         'OVERDUE',
         'CANCELLED',
+        'FAILED',
         'REFUNDED',
       ]
     > &
@@ -942,6 +954,10 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::invoice.invoice'
     >;
+    parent_invoices: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::invoice.invoice'
+    >;
     payment_terms: Schema.Attribute.String &
       Schema.Attribute.DefaultTo<'Net 30'>;
     payments: Schema.Attribute.Relation<
@@ -954,41 +970,6 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<0>;
     tax_amount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     total_amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiOfferOffer extends Struct.CollectionTypeSchema {
-  collectionName: 'offers';
-  info: {
-    description: 'Promotional offers and discounts for kits';
-    displayName: 'Offer';
-    pluralName: 'offers';
-    singularName: 'offer';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Text;
-    discount_type: Schema.Attribute.Enumeration<['PERCENTAGE', 'FIXED']> &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'PERCENTAGE'>;
-    discount_value: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    end_date: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::offer.offer'> &
-      Schema.Attribute.Private;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    pricings: Schema.Attribute.Relation<'manyToMany', 'api::pricing.pricing'>;
-    publishedAt: Schema.Attribute.DateTime;
-    start_date: Schema.Attribute.DateTime & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1018,14 +999,18 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Blocks;
+    invoices: Schema.Attribute.Relation<'oneToMany', 'api::invoice.invoice'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::org.org'> &
       Schema.Attribute.Private;
     logo: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     org_name: Schema.Attribute.String;
+    org_offers: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::pricing-offer.pricing-offer'
+    >;
     org_status: Schema.Attribute.Enumeration<['ACTIVE', 'INACTIVE']> &
       Schema.Attribute.DefaultTo<'ACTIVE'>;
-    pricings: Schema.Attribute.Relation<'manyToMany', 'api::pricing.pricing'>;
     publishedAt: Schema.Attribute.DateTime;
     teams: Schema.Attribute.Relation<'oneToMany', 'api::team.team'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -1066,13 +1051,13 @@ export interface ApiPricingOfferPricingOffer
     > &
       Schema.Attribute.DefaultTo<'ALL_COURSES'>;
     auto_apply: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    created_by: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    creator: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
     current_usage_count: Schema.Attribute.Integer &
       Schema.Attribute.DefaultTo<0>;
     description: Schema.Attribute.Text;
@@ -1137,74 +1122,6 @@ export interface ApiPricingOfferPricingOffer
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-  };
-}
-
-export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
-  collectionName: 'pricings';
-  info: {
-    description: 'Pricing plans for kits with discount support';
-    displayName: 'pricing';
-    pluralName: 'pricings';
-    singularName: 'pricing';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    cashfree_plan_id: Schema.Attribute.String;
-    course: Schema.Attribute.Relation<'manyToOne', 'api::course.course'>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    currency: Schema.Attribute.String & Schema.Attribute.DefaultTo<'INR'>;
-    description: Schema.Attribute.Blocks;
-    discount_percent: Schema.Attribute.Decimal &
-      Schema.Attribute.SetMinMax<
-        {
-          max: 100;
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    discount_valid_until: Schema.Attribute.DateTime;
-    duration: Schema.Attribute.Integer;
-    features: Schema.Attribute.JSON;
-    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    is_featured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::pricing.pricing'
-    > &
-      Schema.Attribute.Private;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    offers: Schema.Attribute.Relation<'manyToMany', 'api::offer.offer'>;
-    option: Schema.Attribute.Enumeration<
-      [
-        'ONETIME',
-        'DAILY',
-        'WEEKLY',
-        'MONTHLY',
-        'YEARLY',
-        'ORG',
-        'SPECIALORG',
-        'SOCIETY',
-      ]
-    > &
-      Schema.Attribute.DefaultTo<'ONETIME'>;
-    orgs: Schema.Attribute.Relation<'manyToMany', 'api::org.org'>;
-    publishedAt: Schema.Attribute.DateTime;
-    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    usersubscriptions: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::usersubscription.usersubscription'
-    >;
   };
 }
 
@@ -1611,6 +1528,10 @@ export interface ApiSubjectPricingSubjectPricing
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    usersubscriptions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::usersubscription.usersubscription'
+    >;
   };
 }
 
@@ -1682,7 +1603,6 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
-    pricings: Schema.Attribute.Relation<'oneToMany', 'api::pricing.pricing'>;
     publishedAt: Schema.Attribute.DateTime;
     publishers: Schema.Attribute.Relation<
       'manyToMany',
@@ -1694,12 +1614,20 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
       'api::quiz-result.quiz-result'
     >;
     quizzes: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
+    subject_invoices: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::invoice-item.invoice-item'
+    >;
+    subject_offers: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::pricing-offer.pricing-offer'
+    >;
     topics: Schema.Attribute.Relation<'oneToMany', 'api::topic.topic'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    usersubscription: Schema.Attribute.Relation<
-      'manyToOne',
+    usersubscriptions: Schema.Attribute.Relation<
+      'manyToMany',
       'api::usersubscription.usersubscription'
     >;
   };
@@ -1877,7 +1805,6 @@ export interface ApiUserPaymentUserPayment extends Struct.CollectionTypeSchema {
       ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED', 'CANCELLED']
     > &
       Schema.Attribute.DefaultTo<'PENDING'>;
-    pricing: Schema.Attribute.Relation<'manyToOne', 'api::pricing.pricing'>;
     pricing_name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     transaction_date: Schema.Attribute.DateTime;
@@ -1963,6 +1890,10 @@ export interface ApiUsersubscriptionUsersubscription
     cashfree_order_id: Schema.Attribute.String;
     cashfree_subscription_id: Schema.Attribute.String;
     course: Schema.Attribute.Relation<'manyToOne', 'api::course.course'>;
+    course_pricing: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-pricing.course-pricing'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1984,10 +1915,13 @@ export interface ApiUsersubscriptionUsersubscription
     paymentstatus: Schema.Attribute.Enumeration<
       ['ACTIVE', 'EXPIRED', 'CANCELLED', 'PENDING', 'FAILED']
     >;
-    pricing: Schema.Attribute.Relation<'manyToOne', 'api::pricing.pricing'>;
     publishedAt: Schema.Attribute.DateTime;
     startdate: Schema.Attribute.Date;
-    subjects: Schema.Attribute.Relation<'oneToMany', 'api::subject.subject'>;
+    subject_pricing: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::subject-pricing.subject-pricing'
+    >;
+    subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     subscription_type: Schema.Attribute.Enumeration<
       ['FREEMIUM', 'FREE', 'PAID', 'TRIAL']
     >;
@@ -2476,6 +2410,18 @@ export interface PluginUsersPermissionsUser
     >;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    created_items: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::invoice-item.invoice-item'
+    >;
+    created_offers: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pricing-offer.pricing-offer'
+    >;
+    created_pricing: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pricing-offer.pricing-offer'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2535,6 +2481,10 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::course.course'
     >;
+    published_courses_pricing: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::course-pricing.course-pricing'
+    >;
     published_subjects: Schema.Attribute.Relation<
       'manyToMany',
       'api::subject.subject'
@@ -2544,6 +2494,10 @@ export interface PluginUsersPermissionsUser
     role: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.role'
+    >;
+    subjects_published_pricing: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::subject-pricing.subject-pricing'
     >;
     team: Schema.Attribute.Relation<'manyToOne', 'api::team.team'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -2595,10 +2549,8 @@ declare module '@strapi/strapi' {
       'api::invoice-item.invoice-item': ApiInvoiceItemInvoiceItem;
       'api::invoice-payment.invoice-payment': ApiInvoicePaymentInvoicePayment;
       'api::invoice.invoice': ApiInvoiceInvoice;
-      'api::offer.offer': ApiOfferOffer;
       'api::org.org': ApiOrgOrg;
       'api::pricing-offer.pricing-offer': ApiPricingOfferPricingOffer;
-      'api::pricing.pricing': ApiPricingPricing;
       'api::question.question': ApiQuestionQuestion;
       'api::quiz-result.quiz-result': ApiQuizResultQuizResult;
       'api::quiz.quiz': ApiQuizQuiz;

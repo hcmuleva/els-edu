@@ -30,14 +30,14 @@
     },
     "payment_status": {
       "type": "enumeration",
+      "default": "PENDING",
       "enum": [
         "PENDING",
         "SUCCESS",
         "FAILED",
         "REFUNDED",
         "CANCELLED"
-      ],
-      "default": "PENDING"
+      ]
     },
     "payment_method": {
       "type": "string"
@@ -72,11 +72,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::org.org"
-    },
-    "pricing": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::pricing.pricing"
     }
   }
 }

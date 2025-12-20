@@ -17,12 +17,7 @@
     "coverpage": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "grade": {
       "type": "enumeration",
@@ -89,9 +84,9 @@
       "target": "api::course.course",
       "inversedBy": "subjects"
     },
-    "usersubscription": {
+    "usersubscriptions": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::usersubscription.usersubscription",
       "inversedBy": "subjects"
     },
@@ -121,10 +116,16 @@
     "description": {
       "type": "richtext"
     },
-    "pricings": {
+    "subject_offers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::pricing-offer.pricing-offer",
+      "inversedBy": "target_subjects"
+    },
+    "subject_invoices": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::pricing.pricing",
+      "target": "api::invoice-item.invoice-item",
       "mappedBy": "subject"
     }
   }

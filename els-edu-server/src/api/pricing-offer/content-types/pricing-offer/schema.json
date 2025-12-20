@@ -1,134 +1,139 @@
 {
-    "kind": "collectionType",
-    "collectionName": "pricing_offers",
-    "info": {
-        "singularName": "pricing-offer",
-        "pluralName": "pricing-offers",
-        "displayName": "Pricing Offer",
-        "description": "Multi-level offers: Publisher, Org, Special offers with priority system"
+  "kind": "collectionType",
+  "collectionName": "pricing_offers",
+  "info": {
+    "singularName": "pricing-offer",
+    "pluralName": "pricing-offers",
+    "displayName": "Pricing Offer",
+    "description": "Multi-level offers: Publisher, Org, Special offers with priority system"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
     },
-    "options": {
-        "draftAndPublish": true
+    "description": {
+      "type": "text"
     },
-    "pluginOptions": {},
-    "attributes": {
-        "name": {
-            "type": "string",
-            "required": true
-        },
-        "description": {
-            "type": "text"
-        },
-        "offer_type": {
-            "type": "enumeration",
-            "enum": [
-                "PUBLISHER_OFFER",
-                "ORG_LEVEL_OFFER",
-                "SPECIAL_OFFER",
-                "SEASONAL_OFFER",
-                "BULK_DISCOUNT",
-                "FIRST_TIME_USER"
-            ],
-            "required": true
-        },
-        "discount_type": {
-            "type": "enumeration",
-            "enum": [
-                "PERCENTAGE",
-                "FIXED_AMOUNT",
-                "BUY_X_GET_Y",
-                "TIERED"
-            ],
-            "default": "PERCENTAGE",
-            "required": true
-        },
-        "discount_value": {
-            "type": "decimal",
-            "required": true
-        },
-        "priority": {
-            "type": "integer",
-            "default": 1,
-            "min": 1,
-            "max": 10
-        },
-        "stackable": {
-            "type": "boolean",
-            "default": false
-        },
-        "start_date": {
-            "type": "datetime",
-            "required": true
-        },
-        "end_date": {
-            "type": "datetime",
-            "required": true
-        },
-        "is_active": {
-            "type": "boolean",
-            "default": true
-        },
-        "max_usage_per_user": {
-            "type": "integer",
-            "default": 1
-        },
-        "total_usage_limit": {
-            "type": "integer"
-        },
-        "current_usage_count": {
-            "type": "integer",
-            "default": 0
-        },
-        "min_purchase_amount": {
-            "type": "decimal",
-            "default": 0
-        },
-        "applicable_to": {
-            "type": "enumeration",
-            "enum": [
-                "ALL_COURSES",
-                "SPECIFIC_COURSES",
-                "SPECIFIC_SUBJECTS",
-                "PUBLISHER_COURSES",
-                "CATEGORY_COURSES"
-            ],
-            "default": "ALL_COURSES"
-        },
-        "target_courses": {
-            "type": "relation",
-            "relation": "manyToMany",
-            "target": "api::course.course"
-        },
-        "target_subjects": {
-            "type": "relation",
-            "relation": "manyToMany",
-            "target": "api::subject.subject"
-        },
-        "target_publisher": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "plugin::users-permissions.user"
-        },
-        "target_orgs": {
-            "type": "relation",
-            "relation": "manyToMany",
-            "target": "api::org.org"
-        },
-        "target_categories": {
-            "type": "json"
-        },
-        "offer_code": {
-            "type": "string",
-            "unique": true
-        },
-        "auto_apply": {
-            "type": "boolean",
-            "default": false
-        },
-        "created_by": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "plugin::users-permissions.user"
-        }
+    "offer_type": {
+      "type": "enumeration",
+      "required": true,
+      "enum": [
+        "PUBLISHER_OFFER",
+        "ORG_LEVEL_OFFER",
+        "SPECIAL_OFFER",
+        "SEASONAL_OFFER",
+        "BULK_DISCOUNT",
+        "FIRST_TIME_USER"
+      ]
+    },
+    "discount_type": {
+      "type": "enumeration",
+      "required": true,
+      "default": "PERCENTAGE",
+      "enum": [
+        "PERCENTAGE",
+        "FIXED_AMOUNT",
+        "BUY_X_GET_Y",
+        "TIERED"
+      ]
+    },
+    "discount_value": {
+      "type": "decimal",
+      "required": true
+    },
+    "priority": {
+      "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 10
+    },
+    "stackable": {
+      "type": "boolean",
+      "default": false
+    },
+    "start_date": {
+      "type": "datetime",
+      "required": true
+    },
+    "end_date": {
+      "type": "datetime",
+      "required": true
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "max_usage_per_user": {
+      "type": "integer",
+      "default": 1
+    },
+    "total_usage_limit": {
+      "type": "integer"
+    },
+    "current_usage_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "min_purchase_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "applicable_to": {
+      "type": "enumeration",
+      "default": "ALL_COURSES",
+      "enum": [
+        "ALL_COURSES",
+        "SPECIFIC_COURSES",
+        "SPECIFIC_SUBJECTS",
+        "PUBLISHER_COURSES",
+        "CATEGORY_COURSES"
+      ]
+    },
+    "target_courses": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::course.course",
+      "mappedBy": "courses_offers"
+    },
+    "target_subjects": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::subject.subject",
+      "mappedBy": "subject_offers"
+    },
+    "target_publisher": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "created_offers"
+    },
+    "target_orgs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::org.org",
+      "mappedBy": "org_offers"
+    },
+    "target_categories": {
+      "type": "json"
+    },
+    "offer_code": {
+      "type": "string",
+      "unique": true
+    },
+    "auto_apply": {
+      "type": "boolean",
+      "default": false
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "created_pricing"
     }
+  }
 }

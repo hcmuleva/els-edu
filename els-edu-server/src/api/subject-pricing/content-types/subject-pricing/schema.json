@@ -1,70 +1,77 @@
 {
-    "kind": "collectionType",
-    "collectionName": "subject_pricings",
-    "info": {
-        "singularName": "subject-pricing",
-        "pluralName": "subject-pricings",
-        "displayName": "Subject Pricing",
-        "description": "Individual pricing for subjects within courses"
+  "kind": "collectionType",
+  "collectionName": "subject_pricings",
+  "info": {
+    "singularName": "subject-pricing",
+    "pluralName": "subject-pricings",
+    "displayName": "Subject Pricing",
+    "description": "Individual pricing for subjects within courses"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
     },
-    "options": {
-        "draftAndPublish": true
+    "subject": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::subject.subject"
     },
-    "pluginOptions": {},
-    "attributes": {
-        "name": {
-            "type": "string",
-            "required": true
-        },
-        "subject": {
-            "type": "relation",
-            "relation": "oneToOne",
-            "target": "api::subject.subject"
-        },
-        "course_pricing": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "api::course-pricing.course-pricing",
-            "inversedBy": "subject_pricings"
-        },
-        "base_amount": {
-            "type": "decimal",
-            "required": true
-        },
-        "currency": {
-            "type": "string",
-            "default": "INR"
-        },
-        "publisher_commission_percent": {
-            "type": "decimal",
-            "default": 70,
-            "min": 0,
-            "max": 100
-        },
-        "platform_commission_percent": {
-            "type": "decimal",
-            "default": 30,
-            "min": 0,
-            "max": 100
-        },
-        "is_active": {
-            "type": "boolean",
-            "default": true
-        },
-        "publisher": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "plugin::users-permissions.user"
-        },
-        "complexity_multiplier": {
-            "type": "decimal",
-            "default": 1.0,
-            "min": 0.1
-        },
-        "content_count_multiplier": {
-            "type": "decimal",
-            "default": 1.0,
-            "min": 0.1
-        }
+    "course_pricing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course-pricing.course-pricing",
+      "inversedBy": "subject_pricings"
+    },
+    "base_amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "publisher_commission_percent": {
+      "type": "decimal",
+      "default": 70,
+      "min": 0,
+      "max": 100
+    },
+    "platform_commission_percent": {
+      "type": "decimal",
+      "default": 30,
+      "min": 0,
+      "max": 100
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "publisher": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "subjects_published_pricing"
+    },
+    "complexity_multiplier": {
+      "type": "decimal",
+      "default": 1,
+      "min": 0.1
+    },
+    "content_count_multiplier": {
+      "type": "decimal",
+      "default": 1,
+      "min": 0.1
+    },
+    "usersubscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::usersubscription.usersubscription",
+      "mappedBy": "subject_pricing"
     }
+  }
 }

@@ -1,18 +1,18 @@
 module.exports = {
   routes: [
     {
-      method: 'POST',
-      path: '/payment/create-order',
-      handler: 'payment.createOrder',
+      method: "POST",
+      path: "/payment/create-order",
+      handler: "payment.createOrder",
       config: {
         policies: [],
         middlewares: [],
       },
     },
     {
-      method: 'POST',
-      path: '/payment/webhook',
-      handler: 'payment.webhook',
+      method: "POST",
+      path: "/payment/webhook",
+      handler: "payment.webhook",
       config: {
         auth: false, // Webhook doesn't require authentication
         policies: [],
@@ -20,83 +20,46 @@ module.exports = {
       },
     },
     {
-      method: 'GET',
-      path: '/payment/order/:orderId',
-      handler: 'payment.getOrder',
+      method: "GET",
+      path: "/payment/order/:orderId",
+      handler: "payment.getOrderStatus",
       config: {
         policies: [],
         middlewares: [],
       },
     },
     {
-      method: 'GET',
-      path: '/payment/order/:orderId',
-      handler: 'payment.getOrder',
+      method: "GET",
+      path: "/payment/history",
+      handler: "payment.getPurchaseHistory",
       config: {
         policies: [],
         middlewares: [],
       },
     },
     {
-      method: 'POST',
-      path: '/payment/finalize-subscription',
-      handler: 'payment.finalizeSubscription',
+      method: "POST",
+      path: "/payment/cancel",
+      handler: "payment.cancelPayment",
       config: {
         policies: [],
         middlewares: [],
       },
     },
     {
-      method: 'POST',
-      path: '/payment/subscribe-free',
-      handler: 'payment.subscribeFree',
+      method: "POST",
+      path: "/payment/resume",
+      handler: "payment.resumePayment",
       config: {
         policies: [],
         middlewares: [],
       },
     },
     {
-      method: 'POST',
-      path: '/payment/cancel-subscription',
-      handler: 'payment.cancelSubscription',
+      method: "GET",
+      path: "/payment/my-subscriptions",
+      handler: "payment.mySubscriptions",
       config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'GET',
-      path: '/payment/my-subscriptions',
-      handler: 'payment.mySubscriptions',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'POST',
-      path: '/payment/cancel',
-      handler: 'payment.cancelPayment',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'GET',
-      path: '/payment/purchase-history',
-      handler: 'payment.getPurchaseHistory',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'POST',
-      path: '/payment/test-payment-success',
-      handler: 'payment.testPaymentSuccess',
-      config: {
-        auth: false, // Disable auth for testing
         policies: [],
         middlewares: [],
       },

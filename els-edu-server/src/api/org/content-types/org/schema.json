@@ -53,12 +53,6 @@
       "target": "api::course.course",
       "mappedBy": "organizations"
     },
-    "pricings": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::pricing.pricing",
-      "mappedBy": "orgs"
-    },
     "address": {
       "type": "relation",
       "relation": "oneToOne",
@@ -81,6 +75,18 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::usersubscription.usersubscription",
+      "mappedBy": "org"
+    },
+    "org_offers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::pricing-offer.pricing-offer",
+      "inversedBy": "target_orgs"
+    },
+    "invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
       "mappedBy": "org"
     }
   }

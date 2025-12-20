@@ -1,82 +1,82 @@
 {
-    "kind": "collectionType",
-    "collectionName": "invoice_payments",
-    "info": {
-        "singularName": "invoice-payment",
-        "pluralName": "invoice-payments",
-        "displayName": "Invoice Payment",
-        "description": "Payment records linked to invoices"
+  "kind": "collectionType",
+  "collectionName": "invoice_payments",
+  "info": {
+    "singularName": "invoice-payment",
+    "pluralName": "invoice-payments",
+    "displayName": "Invoice Payment",
+    "description": "Payment records linked to invoices"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "invoice": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::invoice.invoice",
+      "inversedBy": "payments"
     },
-    "options": {
-        "draftAndPublish": false
+    "payment_reference": {
+      "type": "string",
+      "required": true
     },
-    "pluginOptions": {},
-    "attributes": {
-        "invoice": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "api::invoice.invoice",
-            "inversedBy": "payments"
-        },
-        "payment_reference": {
-            "type": "string",
-            "required": true
-        },
-        "payment_gateway": {
-            "type": "enumeration",
-            "enum": [
-                "CASHFREE",
-                "RAZORPAY",
-                "STRIPE",
-                "PAYTM",
-                "UPI",
-                "NET_BANKING",
-                "WALLET",
-                "BANK_TRANSFER",
-                "CASH",
-                "CREDIT"
-            ]
-        },
-        "gateway_transaction_id": {
-            "type": "string"
-        },
-        "amount": {
-            "type": "decimal",
-            "required": true
-        },
-        "currency": {
-            "type": "string",
-            "default": "INR"
-        },
-        "payment_status": {
-            "type": "enumeration",
-            "enum": [
-                "PENDING",
-                "SUCCESS",
-                "FAILED",
-                "REFUNDED",
-                "CANCELLED"
-            ],
-            "default": "PENDING"
-        },
-        "payment_date": {
-            "type": "datetime"
-        },
-        "gateway_response": {
-            "type": "json"
-        },
-        "refund_amount": {
-            "type": "decimal",
-            "default": 0
-        },
-        "refund_date": {
-            "type": "datetime"
-        },
-        "refund_reason": {
-            "type": "text"
-        },
-        "payment_method_details": {
-            "type": "json"
-        }
+    "payment_gateway": {
+      "type": "enumeration",
+      "enum": [
+        "CASHFREE",
+        "RAZORPAY",
+        "STRIPE",
+        "PAYTM",
+        "UPI",
+        "NET_BANKING",
+        "WALLET",
+        "BANK_TRANSFER",
+        "CASH",
+        "CREDIT"
+      ]
+    },
+    "gateway_transaction_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "payment_status": {
+      "type": "enumeration",
+      "enum": [
+        "PENDING",
+        "SUCCESS",
+        "FAILED",
+        "REFUNDED",
+        "CANCELLED"
+      ],
+      "default": "PENDING"
+    },
+    "payment_date": {
+      "type": "datetime"
+    },
+    "gateway_response": {
+      "type": "json"
+    },
+    "refund_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "refund_date": {
+      "type": "datetime"
+    },
+    "refund_reason": {
+      "type": "text"
+    },
+    "payment_method_details": {
+      "type": "json"
     }
+  }
 }

@@ -14,7 +14,11 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { subscriptionService } from "../../services/subscriptionService";
+import {
+  subscriptionService,
+  getPendingPayments,
+  cancelPayment,
+} from "../../services/subscriptionService";
 import EnrollModal from "../../components/courses/EnrollModal";
 import SuccessModal from "../../components/courses/SuccessModal";
 
@@ -46,6 +50,117 @@ const CourseDetailPage = () => {
   // User subscription state
   const [existingSubscription, setExistingSubscription] = useState(null);
   const [enrolledSubjectIds, setEnrolledSubjectIds] = useState(new Set());
+  const [pendingPayment, setPendingPayment] = useState(null);
+
+  // Fetch Pending Payments
+  const fetchPending = async () => {
+    if (!identity?.documentId || !courseId) return;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const pending = await getPendingPayments(token);
+
+      const found = pending.find((p) => {
+        const item = p.invoice_items?.[0];
+
+        // Direct course match
+        const pCourseId = p.course?.documentId || item?.course?.documentId;
+        if (pCourseId === courseId) return true;
+
+        // Subject match - check if subject belongs to this course
+        // We can check if subject.course matches OR if subject ID is in our course's subject list
+        const pSubjectId = item?.subject?.documentId;
+        if (
+          pSubjectId &&
+          course?.subjects?.some((s) => s.documentId === pSubjectId)
+        ) {
+          return true;
+        }
+
+        // Deep check if subject.courses populated
+        const subjectCourses = item?.subject?.courses;
+        if (subjectCourses && Array.isArray(subjectCourses)) {
+          if (subjectCourses.some((c) => (c.documentId || c.id) === courseId)) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      setPendingPayment(found || null);
+    } catch (error) {
+      console.error("Error fetching pending payments:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (identity?.documentId && course) {
+      fetchPending();
+    }
+  }, [identity?.documentId, course]);
+
+  const handleResumePayment = async () => {
+    if (!pendingPayment) return;
+    try {
+      // pendingPayment is the INVOICE object. We need the valid payment record.
+      // Prioritize PENDING, fallback to FAILED/CANCELLED/Last to allow retry.
+      const payments = pendingPayment.payments || [];
+      const pendingPay =
+        payments.find((p) => p.payment_status === "PENDING") ||
+        payments.find((p) => p.payment_status === "FAILED") ||
+        payments.find((p) => p.payment_status === "CANCELLED") ||
+        payments[payments.length - 1];
+
+      const orderId = pendingPay?.payment_reference;
+
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      if (!orderId) {
+        alert("Error: No pending payment reference found.");
+        return;
+      }
+
+      // Call resume endpoint
+      const data = await subscriptionService.resumePayment(token, orderId);
+
+      if (data.status === "ALREADY_PAID") {
+        alert("Payment is already completed. Refreshing...");
+        fetchPending();
+        return;
+      }
+
+      if (data.paymentSessionId) {
+        await subscriptionService.checkout(
+          data.paymentSessionId,
+          data.orderId || orderId
+        );
+      }
+    } catch (error) {
+      console.error("Resume payment failed:", error);
+      alert("Failed to resume payment.");
+    }
+  };
+
+  const handleCancelPaymentAction = async () => {
+    if (
+      !window.confirm("Are you sure you want to cancel this pending payment?")
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      await cancelPayment(token, pendingPayment.payment_reference);
+      fetchPending();
+    } catch (error) {
+      console.error("Failed to cancel payment:", error);
+      alert("Failed to cancel payment");
+    }
+  };
 
   // Modal state
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
@@ -227,13 +342,31 @@ const CourseDetailPage = () => {
     try {
       setEnrolling(true);
       const org = identity.org?.documentId || null;
+      const token = localStorage.getItem("token");
 
+      // Helper to check payment requirement
+      // For bundle
       if (enrollingItem.isBundle) {
-        // Full course purchase - merge with existing subjects
+        if (!isBundleFree) {
+          if (!coursePricing?.documentId) {
+            console.error("No pricing found for course");
+            return;
+          }
+          // Paid Bundle
+          await subscriptionService.initiatePayment(token, {
+            coursePricingId: coursePricing.documentId,
+            type: "COURSE",
+          });
+          // Payment initiated, Cashfree will handle redirect.
+          // We can close modal or show "Processing..."
+          setEnrollModalOpen(false);
+          return;
+        }
+
+        // Free Bundle Logic (Existing)
         const allSubjectIds = subjects.map((s) => s.documentId);
 
         if (existingSubscription) {
-          // Merge: combine existing + new subjects
           const existingIds = (existingSubscription.subjects || []).map(
             (s) => s.documentId
           );
@@ -245,23 +378,39 @@ const CourseDetailPage = () => {
             mergedIds
           );
         } else {
-          // New subscription with all subjects
           await subscriptionService.createSubscription(dataProvider, {
             userDocumentId: identity.documentId,
             courseDocumentId: course.documentId,
             orgDocumentId: org,
-            subscriptionType: isBundleFree ? "FREE" : "PAID",
+            subscriptionType: "FREE",
             paymentStatus: "ACTIVE",
             subjectDocumentIds: allSubjectIds,
           });
         }
         setEnrolledItem({ course, subject: null });
       } else {
-        // Single subject purchase
+        // Single Subject
         const subjectId = enrollingItem.subject.documentId;
+        const subjectPricing = subjectPricings[subjectId];
+        const isFree =
+          !subjectPricing || (subjectPricing.base_amount || 0) === 0;
 
+        if (!isFree) {
+          if (!subjectPricing?.documentId) {
+            console.error("No pricing found for subject");
+            return;
+          }
+          // Paid Subject
+          await subscriptionService.initiatePayment(token, {
+            subjectPricingId: subjectPricing.documentId,
+            type: "SUBJECT",
+          });
+          setEnrollModalOpen(false);
+          return;
+        }
+
+        // Free Subject Logic (Existing)
         if (existingSubscription) {
-          // Append to existing
           const existingIds = (existingSubscription.subjects || []).map(
             (s) => s.documentId
           );
@@ -273,16 +422,11 @@ const CourseDetailPage = () => {
             );
           }
         } else {
-          // New subscription with 1 subject
-          const subjectPricing = subjectPricings[subjectId];
-          const isFree =
-            !subjectPricing || (subjectPricing.base_amount || 0) === 0;
-
           await subscriptionService.createSubscription(dataProvider, {
             userDocumentId: identity.documentId,
             courseDocumentId: course.documentId,
             orgDocumentId: org,
-            subscriptionType: isFree ? "FREE" : "PAID",
+            subscriptionType: "FREE",
             paymentStatus: "ACTIVE",
             subjectDocumentIds: [subjectId],
           });
@@ -290,7 +434,7 @@ const CourseDetailPage = () => {
         setEnrolledItem({ course, subject: enrollingItem.subject });
       }
 
-      // Refresh subscription
+      // Refresh subscription (Only reachable if Free flow, otherwise redirected)
       const updated = await subscriptionService.getSubscriptionByCourse(
         dataProvider,
         identity.documentId,
@@ -307,6 +451,7 @@ const CourseDetailPage = () => {
       setSuccessModalOpen(true);
     } catch (err) {
       console.error("Enrollment error:", err);
+      // Ensure specific error handling if needed
     } finally {
       setEnrolling(false);
     }
@@ -365,8 +510,27 @@ const CourseDetailPage = () => {
           </div>
         </div>
 
+        {/* Pending Payment Controls */}
+        {pendingPayment && !hasFullCourse && (
+          <div className="flex gap-2">
+            <button
+              onClick={handleCancelPaymentAction}
+              className="px-6 py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
+            >
+              Cancel Payment
+            </button>
+            <button
+              onClick={handleResumePayment}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 transition-colors animate-pulse"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              Continue Payment
+            </button>
+          </div>
+        )}
+
         {/* Buy Course Button */}
-        {!hasFullCourse && (
+        {!pendingPayment && !hasFullCourse && (
           <button
             onClick={handleBuyBundle}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-colors ${
@@ -571,6 +735,10 @@ const CourseDetailPage = () => {
                     <span className="flex items-center gap-1 text-green-600 text-sm font-bold">
                       <CheckCircle className="w-4 h-4" />
                       Enrolled
+                    </span>
+                  ) : pendingPayment ? (
+                    <span className="text-sm font-bold text-orange-500 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
+                      Payment Pending
                     </span>
                   ) : (
                     <button

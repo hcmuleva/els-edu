@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Title, useDataProvider, useGetIdentity } from "react-admin";
-import { GraduationCap, Search, RotateCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { GraduationCap, Search, RotateCcw, Receipt } from "lucide-react";
 import BrowseCourseCard from "../../components/courses/BrowseCourseCard";
 import CourseDetailsDrawer from "../../components/courses/CourseDetailsDrawer";
 import EnrollModal from "../../components/courses/EnrollModal";
 import SuccessModal from "../../components/courses/SuccessModal";
 import { CustomSelect } from "../../components/common/CustomSelect";
-import { subscriptionService } from "../../services/subscriptionService";
+import {
+  subscriptionService,
+  cancelPayment,
+  getPendingPayments,
+} from "../../services/subscriptionService";
 
 const CATEGORY_OPTIONS = [
   { id: null, name: "All Categories" },
@@ -23,6 +28,7 @@ const CATEGORY_OPTIONS = [
 
 const BrowseCoursesPage = () => {
   const dataProvider = useDataProvider();
+  const navigate = useNavigate();
   const { data: identity, isLoading: identityLoading } = useGetIdentity();
 
   // State
@@ -30,6 +36,9 @@ const BrowseCoursesPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // Pending payments state
+  const [pendingPayments, setPendingPayments] = useState({}); // Map of courseId -> paymentRecord
 
   // User subscriptions state
   const [userSubscriptions, setUserSubscriptions] = useState([]);
@@ -159,6 +168,144 @@ const BrowseCoursesPage = () => {
     }
   }, [dataProvider, identity?.documentId, identityLoading]);
 
+  // Fetch Pending Payments
+  const fetchPending = async () => {
+    if (!identity?.documentId) return;
+    try {
+      const token = localStorage.getItem("token"); // Need token for direct API call
+      if (!token) return;
+
+      const pending = await getPendingPayments(token);
+      console.log(
+        "REF_DEBUG: Fetched pending payments:",
+        pending.length,
+        pending
+      );
+
+      // Map pending payments by course ID
+      // Assuming invoice items have course/subject link or using metadata
+      const pendingMap = {};
+
+      pending.forEach((p) => {
+        // Find course ID from invoice items or metadata
+        const item = p.invoice_items?.[0];
+        console.log(
+          "REF_DEBUG: Processing invoice:",
+          p.documentId,
+          "Item:",
+          item
+        );
+
+        // Check for direct course link
+        let courseId = p.course?.documentId || item?.course?.documentId;
+
+        // If not found, check if subject belongs to a course
+        if (courseId) {
+          pendingMap[courseId] = p;
+        } else if (item?.subject?.courses) {
+          // Subject might belong to multiple courses
+          const subjectCourses = Array.isArray(item.subject.courses)
+            ? item.subject.courses
+            : [item.subject.courses];
+
+          subjectCourses.forEach((c) => {
+            const cId = c.documentId || c.id;
+            if (cId) pendingMap[cId] = p;
+          });
+        }
+      });
+
+      setPendingPayments(pendingMap);
+    } catch (error) {
+      console.error("Error fetching pending payments:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (identity?.documentId) {
+      fetchPending();
+    }
+  }, [identity?.documentId]);
+
+  // Payment Handlers
+  const handleResumePayment = async (paymentInvoice) => {
+    console.log("REF_DEBUG: handleResumePayment called with:", paymentInvoice);
+    try {
+      // paymentInvoice is the INVOICE object. We need to find a valid payment record.
+      // Prioritize PENDING, fallback to FAILED/CANCELLED/Last to allow retry.
+      const payments = paymentInvoice.payments || [];
+      const pendingPay =
+        payments.find((p) => p.payment_status === "PENDING") ||
+        payments.find((p) => p.payment_status === "FAILED") ||
+        payments.find((p) => p.payment_status === "CANCELLED") ||
+        payments[payments.length - 1];
+
+      const orderId = pendingPay?.payment_reference;
+      const token = localStorage.getItem("token");
+
+      console.log("REF_DEBUG: Resume Params:", {
+        orderId,
+        paymentStatus: pendingPay?.payment_status,
+        invoiceStatus: paymentInvoice.invoice_status,
+        hasToken: !!token,
+      });
+
+      if (!token) {
+        alert("Authentication error: No token found. Please login again.");
+        return;
+      }
+      if (!orderId) {
+        console.error("REF_DEBUG: Invoice has no payments?", paymentInvoice);
+        alert(
+          "Error: No payment reference found for this invoice. Please contact support."
+        );
+        return;
+      }
+
+      // Call resume endpoint to get new session or verify status
+      const data = await subscriptionService.resumePayment(token, orderId);
+      console.log("REF_DEBUG: Resume API Response:", data);
+
+      if (data.status === "ALREADY_PAID") {
+        alert("Payment is already completed. Refreshing...");
+        fetchPending();
+        return;
+      }
+
+      if (data.paymentSessionId) {
+        await subscriptionService.checkout(
+          data.paymentSessionId,
+          data.orderId || orderId
+        );
+      } else {
+        alert("Failed to get payment session from server.");
+      }
+    } catch (error) {
+      console.error("Failed to resume payment:", error);
+      alert(`Failed to resume payment: ${error.message}`);
+    }
+  };
+
+  const handleCancelPaymentAction = async (payment) => {
+    if (!window.confirm("Are you sure you want to cancel this payment?"))
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      await cancelPayment(token, payment.payment_reference); // Assuming payment_reference is orderId
+
+      // Refresh pending list
+      fetchPending();
+
+      // Also potentially refresh subscriptions if it affects anything (not usually for PENDING->CANCELLED)
+    } catch (error) {
+      console.error("Failed to cancel payment:", error);
+      alert("Failed to cancel payment. Please try again.");
+    }
+  };
+
   // Filtered courses
   const filteredCourses = useMemo(() => {
     let filtered = courses;
@@ -213,28 +360,67 @@ const BrowseCoursesPage = () => {
 
       const course = enrollingCourse || selectedCourse;
       const org = identity.org?.documentId || null;
+      const coursePricing = course.coursePricing;
 
       if (enrollingSubject) {
         // Single subject enrollment
-        await subscriptionService.createSubscription(dataProvider, {
-          userDocumentId: identity.documentId,
-          courseDocumentId: course.documentId,
-          orgDocumentId: org,
-          subscriptionType: "FREE",
-          paymentStatus: "ACTIVE",
-          subjectDocumentIds: [enrollingSubject.documentId],
-        });
-        setEnrolledItem({ course, subject: enrollingSubject });
+        // Find subject pricing
+        const subjectPricing = coursePricing?.subject_pricings?.find(
+          (sp) => sp.subject?.documentId === enrollingSubject.documentId
+        );
+        const amount = subjectPricing?.amount || 0;
+
+        if (amount > 0 && subjectPricing?.documentId) {
+          // PAID Subject
+          const token = localStorage.getItem("token");
+          if (!token) throw new Error("Authentication required");
+
+          await subscriptionService.initiatePayment(token, {
+            coursePricingId: coursePricing.documentId,
+            subjectPricingId: subjectPricing.documentId,
+            type: "SUBJECT",
+          });
+          // initiatePayment redirects, so we can stop here
+          return;
+        } else {
+          // FREE Subject
+          await subscriptionService.createSubscription(dataProvider, {
+            userDocumentId: identity.documentId,
+            courseDocumentId: course.documentId,
+            orgDocumentId: org,
+            subscriptionType: "FREE",
+            paymentStatus: "ACTIVE",
+            subjectDocumentIds: [enrollingSubject.documentId],
+          });
+          setEnrolledItem({ course, subject: enrollingSubject });
+        }
       } else {
         // Full course enrollment
-        await subscriptionService.createSubscription(dataProvider, {
-          userDocumentId: identity.documentId,
-          courseDocumentId: course.documentId,
-          orgDocumentId: org,
-          subscriptionType: "FREE",
-          paymentStatus: "ACTIVE",
-        });
-        setEnrolledItem({ course, subject: null });
+        const amount =
+          coursePricing?.final_amount || coursePricing?.base_amount || 0;
+
+        if (amount > 0 && coursePricing?.documentId) {
+          // PAID Course
+          const token = localStorage.getItem("token");
+          if (!token) throw new Error("Authentication required");
+
+          await subscriptionService.initiatePayment(token, {
+            coursePricingId: coursePricing.documentId,
+            type: "COURSE_BUNDLE",
+          });
+          // initiatePayment redirects
+          return;
+        } else {
+          // FREE Course
+          await subscriptionService.createSubscription(dataProvider, {
+            userDocumentId: identity.documentId,
+            courseDocumentId: course.documentId,
+            orgDocumentId: org,
+            subscriptionType: "FREE",
+            paymentStatus: "ACTIVE",
+          });
+          setEnrolledItem({ course, subject: null });
+        }
       }
 
       // Refresh subscriptions
@@ -244,15 +430,23 @@ const BrowseCoursesPage = () => {
       );
       setUserSubscriptions(subs);
 
-      const courseIds = new Set();
+      const courseSubjectsMap = new Map();
       const subjectIds = new Set();
       subs.forEach((sub) => {
-        if (sub.course?.documentId) courseIds.add(sub.course.documentId);
-        (sub.subjects || []).forEach((s) => {
-          if (s.documentId) subjectIds.add(s.documentId);
-        });
+        if (sub.course?.documentId) {
+          const courseId = sub.course.documentId;
+          if (!courseSubjectsMap.has(courseId)) {
+            courseSubjectsMap.set(courseId, new Set());
+          }
+          (sub.subjects || []).forEach((s) => {
+            if (s.documentId) {
+              courseSubjectsMap.get(courseId).add(s.documentId);
+              subjectIds.add(s.documentId);
+            }
+          });
+        }
       });
-      setEnrolledCourseIds(courseIds);
+      setEnrolledCourseIds(courseSubjectsMap);
       setEnrolledSubjectIds(subjectIds);
 
       // Close modals and show success
@@ -273,13 +467,22 @@ const BrowseCoursesPage = () => {
       <Title title="Browse Courses" />
 
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black text-gray-800 font-heading">
-          Browse Courses
-        </h1>
-        <p className="text-gray-500 font-medium">
-          Explore courses, enroll for free, and start learning
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-black text-gray-800 font-heading">
+            Browse Courses
+          </h1>
+          <p className="text-gray-500 font-medium">
+            Explore courses, enroll for free, and start learning
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/purchase-history")}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors"
+        >
+          <Receipt className="w-4 h-4" />
+          Purchase History
+        </button>
       </div>
 
       {/* Main Content Card */}
@@ -364,7 +567,10 @@ const BrowseCoursesPage = () => {
                     isEnrolled={isFullyEnrolled}
                     enrolledSubjectCount={enrolledSet.size}
                     totalSubjectCount={courseSubjectIds.length}
+                    pendingPayment={pendingPayments[course.documentId]}
                     onEnroll={handleEnrollCourse}
+                    onResumePayment={handleResumePayment}
+                    onCancelPayment={handleCancelPaymentAction}
                     onClick={handleCourseClick}
                   />
                 );

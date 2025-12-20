@@ -17,7 +17,12 @@
     "cover": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
     "publisher": {
       "type": "relation",
@@ -86,30 +91,62 @@
     },
     "condition": {
       "type": "enumeration",
-      "enum": ["DRAFT", "REVIEW", "REJECT", "APPROVED", "PUBLISH", "RETIRED"]
+      "enum": [
+        "DRAFT",
+        "REVIEW",
+        "REJECT",
+        "APPROVED",
+        "PUBLISH",
+        "RETIRED"
+      ]
     },
     "privacy": {
       "type": "enumeration",
-      "enum": ["PUBLIC", "PRIVATE", "ORG", "OPEN"]
+      "enum": [
+        "PUBLIC",
+        "PRIVATE",
+        "ORG",
+        "OPEN"
+      ]
     },
     "visibility": {
       "type": "enumeration",
-      "enum": ["GLOBAL", "ORG", "OTHER"]
+      "enum": [
+        "GLOBAL",
+        "ORG",
+        "OTHER"
+      ]
     },
     "coverphoto": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
     "previewvideo": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
-    "pricings": {
+    "courses_offers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::pricing-offer.pricing-offer",
+      "inversedBy": "target_courses"
+    },
+    "course_invoices": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::pricing.pricing",
+      "target": "api::invoice-item.invoice-item",
       "mappedBy": "course"
     }
   }

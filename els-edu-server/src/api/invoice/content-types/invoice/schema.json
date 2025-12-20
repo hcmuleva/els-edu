@@ -1,124 +1,133 @@
 {
-    "kind": "collectionType",
-    "collectionName": "invoices",
-    "info": {
-        "singularName": "invoice",
-        "pluralName": "invoices",
-        "displayName": "Invoice",
-        "description": "Invoices for course purchases with itemized billing"
+  "kind": "collectionType",
+  "collectionName": "invoices",
+  "info": {
+    "singularName": "invoice",
+    "pluralName": "invoices",
+    "displayName": "Invoice",
+    "description": "Invoices for course purchases with itemized billing"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "invoice_number": {
+      "type": "string",
+      "required": true,
+      "unique": true
     },
-    "options": {
-        "draftAndPublish": false
+    "invoice_type": {
+      "type": "enumeration",
+      "required": true,
+      "enum": [
+        "CONSUMER_INVOICE",
+        "PUBLISHER_INVOICE",
+        "ORG_INVOICE",
+        "REFUND_INVOICE"
+      ]
     },
-    "pluginOptions": {},
-    "attributes": {
-        "invoice_number": {
-            "type": "string",
-            "required": true,
-            "unique": true
-        },
-        "invoice_type": {
-            "type": "enumeration",
-            "enum": [
-                "CONSUMER_INVOICE",
-                "PUBLISHER_INVOICE",
-                "ORG_INVOICE",
-                "REFUND_INVOICE"
-            ],
-            "required": true
-        },
-        "invoice_status": {
-            "type": "enumeration",
-            "enum": [
-                "DRAFT",
-                "PENDING",
-                "PAID",
-                "PARTIALLY_PAID",
-                "OVERDUE",
-                "CANCELLED",
-                "REFUNDED"
-            ],
-            "default": "DRAFT"
-        },
-        "customer": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "plugin::users-permissions.user"
-        },
-        "org": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "api::org.org"
-        },
-        "course": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "api::course.course"
-        },
-        "subtotal": {
-            "type": "decimal",
-            "required": true,
-            "default": 0
-        },
-        "tax_amount": {
-            "type": "decimal",
-            "default": 0
-        },
-        "discount_amount": {
-            "type": "decimal",
-            "default": 0
-        },
-        "total_amount": {
-            "type": "decimal",
-            "required": true
-        },
-        "currency": {
-            "type": "string",
-            "default": "INR"
-        },
-        "due_date": {
-            "type": "datetime"
-        },
-        "paid_date": {
-            "type": "datetime"
-        },
-        "payment_terms": {
-            "type": "string",
-            "default": "Net 30"
-        },
-        "notes": {
-            "type": "text"
-        },
-        "billing_address": {
-            "type": "json"
-        },
-        "invoice_items": {
-            "type": "relation",
-            "relation": "oneToMany",
-            "target": "api::invoice-item.invoice-item",
-            "mappedBy": "invoice"
-        },
-        "applied_offers": {
-            "type": "relation",
-            "relation": "manyToMany",
-            "target": "api::pricing-offer.pricing-offer"
-        },
-        "payments": {
-            "type": "relation",
-            "relation": "oneToMany",
-            "target": "api::invoice-payment.invoice-payment",
-            "mappedBy": "invoice"
-        },
-        "parent_invoice": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "api::invoice.invoice"
-        },
-        "child_invoices": {
-            "type": "relation",
-            "relation": "oneToMany",
-            "target": "api::invoice.invoice",
-            "mappedBy": "parent_invoice"
-        }
+    "invoice_status": {
+      "type": "enumeration",
+      "default": "DRAFT",
+      "enum": [
+        "DRAFT",
+        "PENDING",
+        "PAID",
+        "PARTIALLY_PAID",
+        "OVERDUE",
+        "CANCELLED",
+        "FAILED",
+        "REFUNDED"
+      ]
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "org": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org",
+      "inversedBy": "invoices"
+    },
+    "course": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course.course"
+    },
+    "subtotal": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "tax_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "total_amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "due_date": {
+      "type": "datetime"
+    },
+    "paid_date": {
+      "type": "datetime"
+    },
+    "payment_terms": {
+      "type": "string",
+      "default": "Net 30"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "billing_address": {
+      "type": "json"
+    },
+    "invoice_items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice-item.invoice-item",
+      "mappedBy": "invoice"
+    },
+    "applied_offers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::pricing-offer.pricing-offer"
+    },
+    "payments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice-payment.invoice-payment",
+      "mappedBy": "invoice"
+    },
+    "parent_invoice": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::invoice.invoice",
+      "inversedBy": "parent_invoices"
+    },
+    "child_invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
+      "mappedBy": "parent_invoice"
+    },
+    "parent_invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
+      "mappedBy": "parent_invoice"
     }
+  }
 }
