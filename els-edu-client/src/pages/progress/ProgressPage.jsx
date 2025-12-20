@@ -147,9 +147,14 @@ const ProgressPage = () => {
   };
 
   const filteredByStatus = getFilteredByStatus(quizResults);
-  const filteredResults = filteredByStatus.filter((result) =>
-    result.quiz?.title?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredResults = filteredByStatus.filter((result) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    // Search in quiz title or subject name
+    const quizTitle = result.quiz?.title?.toLowerCase() || "";
+    const subjectName = result.subject?.name?.toLowerCase() || "";
+    return quizTitle.includes(query) || subjectName.includes(query);
+  });
 
   // Calculate analytics from filtered results
   const stats = {
@@ -491,9 +496,11 @@ const ProgressPage = () => {
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <div className="flex-1">
                           <h3 className="text-lg font-bold text-gray-800 mb-1">
-                            {record.quiz?.title || "Untitled Quiz"}
+                            {record.quiz?.title ||
+                              record.subject?.name ||
+                              "Quiz Attempt"}
                           </h3>
-                          {record.subject && (
+                          {record.subject && record.quiz?.title && (
                             <p className="text-sm text-gray-500">
                               {record.subject.name}
                             </p>

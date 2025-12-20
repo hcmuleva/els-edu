@@ -84,6 +84,18 @@
       "relation": "oneToMany",
       "target": "api::usersubscription.usersubscription",
       "mappedBy": "pricing"
+    },
+    "course": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course.course",
+      "inversedBy": "pricings"
+    },
+    "subject": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject.subject",
+      "inversedBy": "pricings"
     }
   }
 }

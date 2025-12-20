@@ -687,6 +687,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
+    pricings: Schema.Attribute.Relation<'oneToMany', 'api::pricing.pricing'>;
     privacy: Schema.Attribute.Enumeration<['PUBLIC', 'PRIVATE', 'ORG', 'OPEN']>;
     publishedAt: Schema.Attribute.DateTime;
     publisher: Schema.Attribute.Relation<
@@ -1150,6 +1151,7 @@ export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
   attributes: {
     amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
     cashfree_plan_id: Schema.Attribute.String;
+    course: Schema.Attribute.Relation<'manyToOne', 'api::course.course'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1192,6 +1194,7 @@ export interface ApiPricingPricing extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<'ONETIME'>;
     orgs: Schema.Attribute.Relation<'manyToMany', 'api::org.org'>;
     publishedAt: Schema.Attribute.DateTime;
+    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1440,11 +1443,11 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetMinMax<
         {
           max: 10;
-          min: 1;
+          min: 0;
         },
         number
       > &
-      Schema.Attribute.DefaultTo<3>;
+      Schema.Attribute.DefaultTo<0>;
     passingScore: Schema.Attribute.Decimal &
       Schema.Attribute.SetMinMax<
         {
@@ -1676,6 +1679,7 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
+    pricings: Schema.Attribute.Relation<'oneToMany', 'api::pricing.pricing'>;
     publishedAt: Schema.Attribute.DateTime;
     publishers: Schema.Attribute.Relation<
       'manyToMany',
@@ -1988,7 +1992,7 @@ export interface ApiUsersubscriptionUsersubscription
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    users_permissions_user: Schema.Attribute.Relation<
+    user: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
     >;

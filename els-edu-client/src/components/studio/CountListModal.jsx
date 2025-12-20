@@ -16,7 +16,9 @@ const CountListModal = ({
   if (!items) return null;
 
   const filteredItems = items.filter((item) =>
-    (item[nameField] || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (item[nameField] || item.title || item.name || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -78,7 +80,10 @@ const CountListModal = ({
                     <Info className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-gray-700 truncate">
-                    {item[nameField] || "Untitled Item"}
+                    {item[nameField] ||
+                      item.title ||
+                      item.name ||
+                      "Untitled Item"}
                   </span>
                 </div>
               ))}

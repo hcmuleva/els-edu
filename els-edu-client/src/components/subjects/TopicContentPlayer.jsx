@@ -137,29 +137,126 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Player (2/3 width) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-black rounded-3xl overflow-hidden shadow-lg aspect-video relative group border border-border/50">
-            {selectedContent && youtubeId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
-                title={selectedContent.title}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-8 text-center">
-                <PlayCircle className="w-16 h-16 mb-4 opacity-50" />
-                <h3 className="text-xl font-bold mb-2">
-                  {selectedContent ? selectedContent.title : "Select a video"}
-                </h3>
-                {!youtubeId && selectedContent && (
-                  <p className="text-gray-400">
-                    Video format not supported or URL missing
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Main Player - Only show for video/media content types */}
+          {(() => {
+            // Determine if we should show the media player
+            const contentType = selectedContent?.type;
+            const hasYoutube = youtubeId;
+            const hasMultimedia =
+              contentDetails?.multimedia &&
+              contentDetails.multimedia.length > 0;
+
+            // Content types that need media player
+            const isYoutubeType = contentType === "YOUTUBE" || hasYoutube;
+            const isVideoType = contentType === "VIDEO";
+            const isImageType = contentType === "IMAGE";
+            const isDocumentType =
+              contentType === "DOCUMENT" || contentType === "DOWNLOAD";
+
+            // Text-only content types - don't show media player
+            const isTextOnly = contentType === "TEXT" || contentType === "MD";
+
+            // If text-only or no media at all, don't render player
+            if (isTextOnly || (!hasYoutube && !hasMultimedia)) {
+              return null;
+            }
+
+            // YouTube Video
+            if (isYoutubeType && hasYoutube) {
+              return (
+                <div className="bg-black rounded-3xl overflow-hidden shadow-lg aspect-video relative group border border-border/50">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
+                    title={selectedContent.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              );
+            }
+
+            // Native Video from multimedia
+            if ((isVideoType || !contentType) && hasMultimedia) {
+              const video = contentDetails.multimedia.find((m) =>
+                m.mime?.startsWith("video/")
+              );
+              if (video) {
+                return (
+                  <div className="bg-black rounded-3xl overflow-hidden shadow-lg aspect-video relative group border border-border/50">
+                    <video
+                      src={video.url}
+                      controls
+                      className="w-full h-full object-contain"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                );
+              }
+            }
+
+            // Image from multimedia
+            if (isImageType && hasMultimedia) {
+              const image = contentDetails.multimedia.find((m) =>
+                m.mime?.startsWith("image/")
+              );
+              if (image) {
+                return (
+                  <div className="bg-gray-100 rounded-3xl overflow-hidden shadow-sm border border-border/50">
+                    <img
+                      src={image.url}
+                      alt={selectedContent.title}
+                      className="w-full h-auto max-h-[500px] object-contain mx-auto"
+                    />
+                  </div>
+                );
+              }
+            }
+
+            // Document/PDF from multimedia
+            if (isDocumentType && hasMultimedia) {
+              const doc = contentDetails.multimedia.find(
+                (m) =>
+                  m.mime === "application/pdf" || m.mime?.includes("document")
+              );
+              if (doc) {
+                return (
+                  <div className="bg-gray-50 rounded-3xl border border-border/50 shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between p-4 bg-white border-b border-border/50">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-8 h-8 text-red-500" />
+                        <div>
+                          <h4 className="font-bold text-gray-800">
+                            {selectedContent.title}
+                          </h4>
+                          <p className="text-sm text-gray-500">Document</p>
+                        </div>
+                      </div>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                      >
+                        Open Document
+                      </a>
+                    </div>
+                    {doc.mime === "application/pdf" && (
+                      <iframe
+                        src={`${doc.url}#toolbar=1`}
+                        title={selectedContent.title}
+                        className="w-full h-[400px]"
+                      />
+                    )}
+                  </div>
+                );
+              }
+            }
+
+            // Fallback - no media to show
+            return null;
+          })()}
 
           {/* Content Details */}
           {selectedContent && (
@@ -224,8 +321,8 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
                   ) : (
                     renderDescriptionBlocks(
                       contentDetails?.json_description ||
-                      selectedContent?.json_description ||
-                      selectedContent?.description
+                        selectedContent?.json_description ||
+                        selectedContent?.description
                     )
                   )}
 

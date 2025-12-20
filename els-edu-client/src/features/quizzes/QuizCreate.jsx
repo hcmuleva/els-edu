@@ -131,7 +131,7 @@ export const QuizCreate = () => {
         quizType: quizDataLoaded.quizType || "standalone",
         difficulty: quizDataLoaded.difficulty || "beginner",
         timeLimit: quizDataLoaded.timeLimit || 30,
-        maxAttempts: quizDataLoaded.maxAttempts || 3,
+        maxAttempts: quizDataLoaded.maxAttempts ?? 3, // Preserve 0 for infinite
         passingScore: quizDataLoaded.passingScore || 70,
         isActive: quizDataLoaded.isActive ?? true,
         isRandomized: quizDataLoaded.isRandomized ?? false,
@@ -519,15 +519,23 @@ export const QuizCreate = () => {
                     </label>
                     <input
                       type="number"
+                      min="0"
                       value={formData.maxAttempts}
                       onChange={(e) =>
                         updateFormData(
                           "maxAttempts",
-                          parseInt(e.target.value) || 1
+                          Math.max(0, parseInt(e.target.value) || 0)
                         )
                       }
                       className="w-full px-4 py-2.5 rounded-xl border border-border/50 focus:border-primary outline-none text-center font-bold"
                     />
+                    <p className="text-xs text-gray-400 text-center">
+                      {formData.maxAttempts === 0
+                        ? "∞ Unlimited"
+                        : `${formData.maxAttempts} attempt${
+                            formData.maxAttempts === 1 ? "" : "s"
+                          }`}
+                    </p>
                   </div>
                 </div>
 

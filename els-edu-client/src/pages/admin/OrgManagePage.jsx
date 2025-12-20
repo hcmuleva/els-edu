@@ -458,6 +458,11 @@ const OrgManagePage = () => {
   // Success notification
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Course edit drawer
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [courseDrawerOpen, setCourseDrawerOpen] = useState(false);
+  const [updatingCourse, setUpdatingCourse] = useState(false);
+
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const currentUserRole = storedUser?.user_role || "STUDENT";
 
@@ -721,11 +726,11 @@ const OrgManagePage = () => {
       });
       const available = orgCoursesRes.data?.data || orgCoursesRes.data || [];
 
-      // Fetch user subscriptions
+      // Fetch user subscriptions using user documentId
       const subsRes = await api.get("usersubscriptions", {
         params: {
           "pagination[limit]": 200,
-          "filters[users_permissions_user][id][$eq]": user.id,
+          "filters[user][documentId][$eq]": user.documentId,
           "populate[course][fields][0]": "name",
           "populate[course][fields][1]": "documentId",
           "populate[course][fields][2]": "id",
@@ -757,11 +762,11 @@ const OrgManagePage = () => {
     try {
       setSavingUserCourses(true);
 
-      // Get current user subscriptions
+      // Get current user subscriptions using user documentId
       const subsRes = await api.get("usersubscriptions", {
         params: {
           "pagination[limit]": 200,
-          "filters[users_permissions_user][id][$eq]": selectedUser.id,
+          "filters[user][documentId][$eq]": selectedUser.documentId,
           "populate[course][fields][0]": "documentId",
         },
       });
@@ -781,16 +786,30 @@ const OrgManagePage = () => {
         }
       }
 
-      // Create new subscriptions
+      // Create new subscriptions with subjects
       for (const course of assignedCourses) {
         if (!currentCourseIds.has(course.documentId)) {
+          // Fetch course subjects
+          const courseRes = await api.get(`courses/${course.documentId}`, {
+            params: {
+              "populate[subjects][fields][0]": "documentId",
+              "populate[subjects][fields][1]": "name",
+            },
+          });
+          const courseData = courseRes.data?.data || courseRes.data;
+          const courseSubjects = courseData?.subjects || [];
+          const subjectDocIds = courseSubjects.map((s) => s.documentId);
+
           await api.post("usersubscriptions", {
             data: {
-              users_permissions_user: selectedUser.id,
+              user: selectedUser.documentId,
               course: course.documentId,
               org: documentId,
               subscription_type: "FREE",
               paymentstatus: "ACTIVE",
+              startdate: new Date().toISOString().split("T")[0],
+              auto_renew: false,
+              subjects: subjectDocIds,
             },
           });
         }
@@ -834,6 +853,9 @@ const OrgManagePage = () => {
         <th className="px-4 py-3 text-left">Subcategory</th>
         <th className="px-4 py-3 text-left">Status</th>
         <th className="px-4 py-3 text-left">Created At</th>
+        <th className="px-4 py-3 text-left sticky right-0 bg-card z-20 w-20">
+          Actions
+        </th>
       </tr>
     );
   };
@@ -941,6 +963,18 @@ const OrgManagePage = () => {
         </td>
         <td className="px-4 py-3 text-sm text-muted-foreground">
           {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-"}
+        </td>
+        <td className="px-4 py-3 text-sm sticky right-0 bg-card z-10 shadow-[-8px_0_8px_-6px_rgba(0,0,0,0.05)]">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedCourse(row);
+              setCourseDrawerOpen(true);
+            }}
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-xs hover:bg-muted hover:text-primary transition-all"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
         </td>
       </tr>
     );
@@ -1332,6 +1366,195 @@ const OrgManagePage = () => {
                   disabled={updatingUser}
                 >
                   {updatingUser ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Course Edit Drawer */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40",
+          courseDrawerOpen ? "pointer-events-auto" : "pointer-events-none"
+        )}
+      >
+        <div
+          className={cn(
+            "absolute inset-0 bg-black/20 transition-opacity",
+            courseDrawerOpen ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setCourseDrawerOpen(false)}
+        />
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 w-full max-w-md bg-card border-l shadow-2xl transform transition-transform duration-300",
+            courseDrawerOpen ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          {selectedCourse && (
+            <div className="flex flex-col h-full">
+              <div className="px-6 py-4 border-b flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold">Edit Course</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCourse.name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCourseDrawerOpen(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Name
+                  </h3>
+                  <input
+                    type="text"
+                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                    value={selectedCourse.name || ""}
+                    onChange={(e) =>
+                      setSelectedCourse((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Category
+                  </h3>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                    value={selectedCourse.category || ""}
+                    onChange={(e) =>
+                      setSelectedCourse((prev) => ({
+                        ...prev,
+                        category: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select category</option>
+                    <option value="KIDS">Kids</option>
+                    <option value="PRIMARY">Primary</option>
+                    <option value="MIDDLE">Middle</option>
+                    <option value="SCHOOL">School</option>
+                    <option value="COLLEGE">College</option>
+                    <option value="OLDAGE">Oldage</option>
+                    <option value="SANSKAR">Sanskar</option>
+                    <option value="COMPETION">Competition</option>
+                    <option value="PROJECT">Project</option>
+                    <option value="DIY">DIY</option>
+                    <option value="EDUCATION">Education</option>
+                  </select>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Subcategory
+                  </h3>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                    value={selectedCourse.subcategory || ""}
+                    onChange={(e) =>
+                      setSelectedCourse((prev) => ({
+                        ...prev,
+                        subcategory: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select subcategory</option>
+                    <option value="CREATIVITY">Creativity</option>
+                    <option value="COMPETION">Competition</option>
+                    <option value="ACADEMIC">Academic</option>
+                    <option value="ELECTROICS">Electronics</option>
+                    <option value="SOFTWARE">Software</option>
+                    <option value="DHARM">Dharm</option>
+                    <option value="SIKSHA">Siksha</option>
+                    <option value="GYAN">Gyan</option>
+                    <option value="SOCH">Soch</option>
+                  </select>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                    Status
+                  </h3>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+                    value={selectedCourse.status || ""}
+                    onChange={(e) =>
+                      setSelectedCourse((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select status</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="REVIEW">Review</option>
+                    <option value="REJECT">Reject</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="PUBLISH">Publish</option>
+                    <option value="RETIRED">Retired</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t flex justify-end gap-2">
+                <button
+                  onClick={() => setCourseDrawerOpen(false)}
+                  className="px-4 py-2 rounded-lg border text-sm"
+                  disabled={updatingCourse}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      setUpdatingCourse(true);
+                      await api.put(`courses/${selectedCourse.documentId}`, {
+                        data: {
+                          name: selectedCourse.name,
+                          category:
+                            selectedCourse.category === "-"
+                              ? null
+                              : selectedCourse.category,
+                          subcategory:
+                            selectedCourse.subcategory === "-"
+                              ? null
+                              : selectedCourse.subcategory,
+                          condition:
+                            selectedCourse.status === "N/A"
+                              ? null
+                              : selectedCourse.status,
+                        },
+                      });
+                      await loadTabData("courses");
+                      setCourseDrawerOpen(false);
+                      setSuccessMessage("Course updated successfully!");
+                      setTimeout(() => setSuccessMessage(""), 4000);
+                    } catch (e) {
+                      setError(
+                        e.response?.data?.error?.message ||
+                          "Failed to update course"
+                      );
+                    } finally {
+                      setUpdatingCourse(false);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60"
+                  disabled={updatingCourse}
+                >
+                  {updatingCourse ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>

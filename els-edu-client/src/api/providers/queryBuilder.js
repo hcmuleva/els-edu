@@ -16,6 +16,20 @@ export const buildFilters = (resource, filters) => {
     // Skip empty or undefined values
     if (value === undefined || value === null || value === "") return;
 
+    // Handle pre-formatted filter keys (e.g., 'filters[user][documentId][$eq]')
+    if (key.startsWith("filters[")) {
+      query[key] = value;
+      return;
+    }
+
+    // Handle nested relation filters with bracket notation (e.g., 'user[documentId]')
+    const bracketMatch = key.match(/^(\w+)\[(\w+)\]$/);
+    if (bracketMatch) {
+      const [, relation, field] = bracketMatch;
+      query[`filters[${relation}][${field}][$eq]`] = value;
+      return;
+    }
+
     if (key === "q") {
       // Global search - use appropriate field based on resource
       if (resource === "users") {
@@ -36,9 +50,9 @@ export const buildFilters = (resource, filters) => {
       key === "creator" ||
       key === "topic" ||
       key === "subject" ||
-      key === "subjectRef" ||
       key === "quiz" ||
       key === "user" ||
+      key === "course" ||
       key === "questions" ||
       typeof value === "number"
     ) {
