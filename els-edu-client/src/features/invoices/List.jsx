@@ -30,14 +30,14 @@ const ListActions = () => (
 
 const InvoiceExpand = () => {
   const record = useRecordContext();
-  
+
   if (!record) return null;
-  
+
   return (
-    <Box sx={{ 
-      p: 3, 
-      bgcolor: 'grey.50', 
-      borderLeft: 4, 
+    <Box sx={{
+      p: 3,
+      bgcolor: 'grey.50',
+      borderLeft: 4,
       borderColor: 'primary.main',
       mx: 1,
       borderRadius: 1
@@ -49,9 +49,9 @@ const InvoiceExpand = () => {
             <Box>
               <Typography variant="caption" color="text.secondary">CLIENT</Typography>
               <Typography variant="body1" fontWeight="medium">{record.org?.org_name || 'N/A'}</Typography>
-              <Chip 
-                label={record.invoice_type === 'ORG_INVOICE' ? 'Organization' : 'User'} 
-                size="small" 
+              <Chip
+                label={record.invoice_type === 'ORG_INVOICE' ? 'Organization' : 'User'}
+                size="small"
                 variant="outlined"
                 sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
               />
@@ -61,9 +61,9 @@ const InvoiceExpand = () => {
             <Box>
               <Typography variant="caption" color="text.secondary">CATEGORY</Typography>
               <Typography variant="body1" fontWeight="medium">{record.course?.name || 'N/A'}</Typography>
-              <Chip 
-                label={record.course?.category || 'N/A'} 
-                size="small" 
+              <Chip
+                label={record.course?.category || 'N/A'}
+                size="small"
                 color="primary"
                 variant="outlined"
                 sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
@@ -91,26 +91,26 @@ const InvoiceExpand = () => {
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           Line Items
-          <Chip 
-            label={`${record.invoice_items?.length || 0} items`} 
-            size="small" 
-            color="info" 
+          <Chip
+            label={`${record.invoice_items?.length || 0} items`}
+            size="small"
+            color="info"
             sx={{ fontSize: '0.7rem', height: 18 }}
           />
         </Typography>
-        
-        <Box sx={{ 
-          bgcolor: 'background.paper', 
-          borderRadius: 1, 
+
+        <Box sx={{
+          bgcolor: 'background.paper',
+          borderRadius: 1,
           overflow: 'hidden',
           border: 1,
           borderColor: 'divider'
         }}>
           {/* Table Header */}
-          <Box sx={{ 
-            bgcolor: 'grey.100', 
-            p: 1.5, 
-            display: 'grid', 
+          <Box sx={{
+            bgcolor: 'grey.100',
+            p: 1.5,
+            display: 'grid',
             gridTemplateColumns: '1fr 80px 100px 100px',
             gap: 2,
             fontSize: '0.875rem',
@@ -121,12 +121,12 @@ const InvoiceExpand = () => {
             <Typography variant="caption" fontWeight="bold" textAlign="right">UNIT PRICE</Typography>
             <Typography variant="caption" fontWeight="bold" textAlign="right">TOTAL</Typography>
           </Box>
-          
+
           {/* Table Body */}
           {record.invoice_items?.map((item, index) => (
-            <Box key={index} sx={{ 
-              p: 1.5, 
-              display: 'grid', 
+            <Box key={index} sx={{
+              p: 1.5,
+              display: 'grid',
               gridTemplateColumns: '1fr 80px 100px 100px',
               gap: 2,
               borderBottom: index < record.invoice_items.length - 1 ? 1 : 0,
@@ -147,12 +147,12 @@ const InvoiceExpand = () => {
               </Typography>
             </Box>
           )) || (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No line items available
-              </Typography>
-            </Box>
-          )}
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No line items available
+                </Typography>
+              </Box>
+            )}
         </Box>
       </Box>
 
@@ -163,11 +163,11 @@ const InvoiceExpand = () => {
           {record.notes && (
             <>
               <Typography variant="subtitle2" gutterBottom>Notes</Typography>
-              <Box sx={{ 
-                bgcolor: 'background.paper', 
-                p: 2, 
-                borderRadius: 1, 
-                border: 1, 
+              <Box sx={{
+                bgcolor: 'background.paper',
+                p: 2,
+                borderRadius: 1,
+                border: 1,
                 borderColor: 'divider'
               }}>
                 <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
@@ -177,12 +177,12 @@ const InvoiceExpand = () => {
             </>
           )}
         </Box>
-        
+
         {/* Financial Summary */}
-        <Box sx={{ 
+        <Box sx={{
           minWidth: 280,
-          bgcolor: 'background.paper', 
-          p: 2, 
+          bgcolor: 'background.paper',
+          p: 2,
           borderRadius: 1,
           border: 1,
           borderColor: 'divider'

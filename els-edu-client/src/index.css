@@ -4,8 +4,10 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;    /* #f8fafc */
-    --foreground: 222 47% 11%;    /* #0f172a */
+    --background: 210 40% 98%;
+    /* #f8fafc */
+    --foreground: 222 47% 11%;
+    /* #0f172a */
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -13,16 +15,19 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 243 75% 59%;       /* #4f46e5 - Indigo 600 */
+    --primary: 243 75% 59%;
+    /* #4f46e5 - Indigo 600 */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 330 81% 60%;     /* #ec4899 - Pink 500 */
+    --secondary: 330 81% 60%;
+    /* #ec4899 - Pink 500 */
     --secondary-foreground: 210 40% 98%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 270 50% 96%;        /* Light Purple */
+    --accent: 270 50% 96%;
+    /* Light Purple */
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84.2% 60.2%;
@@ -40,10 +45,17 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading font-bold tracking-tight;
   }
 }
@@ -56,58 +68,58 @@
     line-height: 1.8;
     letter-spacing: 0.02em;
   }
-  
+
   .book-style-content .paragraph-block {
     @apply mb-6;
     text-align: justify;
     text-indent: 1.5em;
     hyphens: auto;
   }
-  
+
   .book-style-content .paragraph-block:first-child {
     text-indent: 0;
   }
-  
+
   /* Mathematical formulas styling */
   .book-style-content .katex {
     font-size: 1.2em;
     color: #1f2937;
     font-weight: 500;
   }
-  
+
   .book-style-content .katex-display {
     @apply my-6 p-4 bg-blue-50 rounded-lg border border-blue-100;
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
   }
-  
+
   /* Inline math styling */
   .book-style-content .katex:not(.katex-display) {
     @apply bg-blue-50 px-2 py-1 rounded border border-blue-100;
     margin: 0 4px;
     display: inline-block;
   }
-  
+
   /* Enhanced spacing for readability */
-  .book-style-content > * + * {
+  .book-style-content>*+* {
     @apply mt-6;
   }
-  
+
   /* Make formulas more prominent */
   .book-style-content p:has(.katex) {
     @apply leading-loose;
     margin: 1.5rem 0;
   }
-  
+
   /* Rule headings (like "Power Rule:", "Exponential Rule:") */
   .book-style-content strong,
   .book-style-content b {
     @apply font-bold text-gray-900;
     margin-right: 0.5rem;
   }
-  
+
   /* Spacing between rules */
-  .book-style-content br + strong,
-  .book-style-content br + b {
+  .book-style-content br+strong,
+  .book-style-content br+b {
     margin-top: 1rem;
     display: inline-block;
   }

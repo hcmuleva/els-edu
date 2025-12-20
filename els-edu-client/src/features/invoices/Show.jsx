@@ -129,8 +129,8 @@ export const InvoiceShow = () => (
                 <Typography variant="h6" className="font-semibold mb-3">
                   Line Items
                 </Typography>
-                <LineItemsTable 
-                  lineItems={record.lineItems} 
+                <LineItemsTable
+                  lineItems={record.lineItems}
                   currency={record.currency}
                 />
               </CardContent>
