@@ -65,6 +65,35 @@ module.exports = ({ strapi }) => ({
   }) {
     try {
       const userDocId = user.documentId || user.id || user;
+
+      // IDEMPOTENCY CHECK:
+      // Check if a subscription already exists for this transaction or order
+      // likely to happen if webhook fires multiple times
+      if (cashfreeOrderId || transactionId) {
+        const filters = {
+          $or: [],
+        };
+        if (cashfreeOrderId)
+          filters.$or.push({ cashfree_order_id: cashfreeOrderId });
+        if (transactionId) filters.$or.push({ transactionid: transactionId });
+
+        if (filters.$or.length > 0) {
+          const existingSub = await strapi
+            .documents("api::usersubscription.usersubscription")
+            .findFirst({
+              filters: filters,
+              populate: ["course", "subjects"],
+            });
+
+          if (existingSub) {
+            strapi.log.info(
+              `[createSubscription] Idempotency hit: Subscription ${existingSub.documentId} already exists for Order ${cashfreeOrderId}`
+            );
+            return existingSub;
+          }
+        }
+      }
+
       const courseId =
         pricing.course?.documentId || pricing.course?.id || pricing.course;
       const subjectId =

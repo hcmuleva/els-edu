@@ -48,6 +48,19 @@ const PaymentStatusPage = () => {
         item_name: data.item_name || "Enrolled Course",
         error: null,
       });
+
+      // If success, try to finalize subscription (ensure it's created)
+      if (data.payment_status === "SUCCESS") {
+        try {
+          console.log("Payment SUCCESS, finalizing subscription...");
+          await subscriptionService.finalizeSubscription(token, orderId);
+          console.log("Subscription finalization call complete.");
+        } catch (finalErr) {
+          console.error("Finalization warning:", finalErr);
+          // We don't block the UI here because usually the webhook handles it.
+          // This is just a backup.
+        }
+      }
     } catch (err) {
       console.error(err);
       setStatus((prev) => ({

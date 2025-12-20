@@ -64,5 +64,14 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: "POST",
+      path: "/payment/finalize-subscription",
+      handler: "payment.finalizeSubscription",
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
