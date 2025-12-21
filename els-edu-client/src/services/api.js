@@ -16,8 +16,8 @@ const api = axios.create({
 // Request Interceptor: Attach JWT token
 api.interceptors.request.use((config) => {
   // Try getting token from common storage keys
-  const token = 
-    localStorage.getItem("jwt") || 
+  const token =
+    localStorage.getItem("jwt") ||
     localStorage.getItem("token") ||
     JSON.parse(localStorage.getItem("auth") || "{}")?.token;
 

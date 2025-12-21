@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -15,6 +15,9 @@ const PaymentStatusPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const orderId = searchParams.get("order_id");
+
+  // Ref to track if finalize was already called for this orderId
+  const finalizeCalled = useRef(false);
 
   const [status, setStatus] = useState({
     loading: true,
@@ -50,7 +53,9 @@ const PaymentStatusPage = () => {
       });
 
       // If success, try to finalize subscription (ensure it's created)
-      if (data.payment_status === "SUCCESS") {
+      // Only call once per orderId to avoid duplicate calls
+      if (data.payment_status === "SUCCESS" && !finalizeCalled.current) {
+        finalizeCalled.current = true; // Mark as called immediately
         try {
           console.log("Payment SUCCESS, finalizing subscription...");
           await subscriptionService.finalizeSubscription(token, orderId);

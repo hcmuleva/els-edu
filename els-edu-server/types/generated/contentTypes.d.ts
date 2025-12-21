@@ -1936,6 +1936,49 @@ export interface ApiUsersubscriptionUsersubscription
   };
 }
 
+export interface ApiWebhookEventWebhookEvent
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'webhook_events';
+  info: {
+    description: 'Stores raw webhook payloads for replay testing and audit';
+    displayName: 'Webhook Event';
+    pluralName: 'webhook-events';
+    singularName: 'webhook-event';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    error_message: Schema.Attribute.Text;
+    event_id: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    event_type: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::webhook-event.webhook-event'
+    > &
+      Schema.Attribute.Private;
+    order_id: Schema.Attribute.String;
+    processed_at: Schema.Attribute.DateTime;
+    processing_status: Schema.Attribute.Enumeration<
+      ['STORED', 'PROCESSED', 'FAILED', 'SKIPPED']
+    > &
+      Schema.Attribute.DefaultTo<'STORED'>;
+    publishedAt: Schema.Attribute.DateTime;
+    raw_headers: Schema.Attribute.JSON;
+    raw_payload: Schema.Attribute.JSON;
+    replay_count: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginContentReleasesRelease
   extends Struct.CollectionTypeSchema {
   collectionName: 'strapi_releases';
@@ -2564,6 +2607,7 @@ declare module '@strapi/strapi' {
       'api::user-payment.user-payment': ApiUserPaymentUserPayment;
       'api::user-profile.user-profile': ApiUserProfileUserProfile;
       'api::usersubscription.usersubscription': ApiUsersubscriptionUsersubscription;
+      'api::webhook-event.webhook-event': ApiWebhookEventWebhookEvent;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

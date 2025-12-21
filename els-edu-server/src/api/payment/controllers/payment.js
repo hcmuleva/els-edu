@@ -246,6 +246,37 @@ module.exports = {
         `[${debugId}] Processing Webhook: ${type} for Order: ${orderId}`
       );
 
+      // ========== WEBHOOK EVENT STORAGE (for replay testing) ==========
+      // Generate unique event ID based on order + type + timestamp
+      const eventId = `${orderId}-${type}-${Date.now()}`;
+
+      // Store the webhook event
+      let webhookEvent = null;
+      try {
+        webhookEvent = await strapi
+          .documents("api::webhook-event.webhook-event")
+          .create({
+            data: {
+              event_id: eventId,
+              order_id: orderId,
+              event_type: type,
+              raw_payload: webhookData,
+              raw_headers: {
+                signature: ctx.request.headers["x-webhook-signature"],
+                timestamp: ctx.request.headers["x-webhook-timestamp"],
+              },
+              processing_status: "STORED",
+              replay_count: 0,
+            },
+          });
+        strapi.log.info(`[${debugId}] Stored webhook event: ${eventId}`);
+      } catch (storeError) {
+        // Don't fail the webhook if storage fails (e.g., duplicate key on rapid retries)
+        strapi.log.warn(
+          `[${debugId}] Could not store webhook event: ${storeError.message}`
+        );
+      }
+
       // Find Payment Record (Invoice Payment)
       const paymentRecord = await strapi
         .documents("api::invoice-payment.invoice-payment")
@@ -549,6 +580,26 @@ module.exports = {
         `[${debugId}] Finalizing subscription for order: ${orderId}`
       );
 
+      // IDEMPOTENCY CHECK: First check if subscription already exists for this order
+      const existingSub = await strapi
+        .documents("api::usersubscription.usersubscription")
+        .findFirst({
+          filters: { cashfree_order_id: orderId },
+          populate: ["course", "subjects"],
+        });
+
+      if (existingSub) {
+        strapi.log.info(
+          `[${debugId}] Subscription already exists for order ${orderId}: ${existingSub.documentId}`
+        );
+        return ctx.send({
+          success: true,
+          message: "Subscription already exists",
+          subscriptionId: existingSub.documentId,
+          alreadyExisted: true,
+        });
+      }
+
       // 1. Find the payment/invoice
       const payment = await strapi
         .documents("api::invoice-payment.invoice-payment")
@@ -580,7 +631,7 @@ module.exports = {
         const cashfreeService = strapi.service("api::payment.cashfree");
         try {
           const status = await cashfreeService.getOrderStatus(orderId);
-          if (status.order.payment_status === "PAID") {
+          if (status.order.order_status === "PAID") {
             // Update local status if needed (reuse invoice service logic ideally,
             // but here we just need to ensure subscription creation proceeds)
             strapi.log.info(
@@ -641,7 +692,7 @@ module.exports = {
         const subscriptionService = strapi.service("api::payment.subscription");
 
         const sub = await subscriptionService.createSubscription({
-          user: invoice.customer,
+          user: user, // Use the requesting user, NOT invoice.customer
           pricing: pricingData,
           invoice: invoice,
           type: purchaseType,
@@ -913,5 +964,331 @@ module.exports = {
     } catch (error) {
       return ctx.internalServerError(error);
     }
+  },
+
+  /**
+   * POST /api/payment/webhook/replay/:eventId
+   * Replay a stored webhook event for testing (TESTING ONLY)
+   */
+  async replayWebhook(ctx) {
+    const debugId = `REPLAY-${Date.now()}`;
+
+    // Guard: Only allow in testing mode
+    if (process.env.WEBHOOK_TESTING_ENABLED !== "true") {
+      strapi.log.warn(
+        `[${debugId}] Replay attempt blocked - WEBHOOK_TESTING_ENABLED is not true`
+      );
+      return ctx.forbidden("Webhook replay is disabled in this environment");
+    }
+
+    try {
+      const { eventId } = ctx.params;
+
+      if (!eventId) {
+        return ctx.badRequest("Event ID is required");
+      }
+
+      strapi.log.info(`[${debugId}] Replaying webhook event: ${eventId}`);
+
+      // Find the stored webhook event
+      const webhookEvent = await strapi
+        .documents("api::webhook-event.webhook-event")
+        .findFirst({
+          filters: { event_id: eventId },
+        });
+
+      if (!webhookEvent) {
+        return ctx.notFound(`Webhook event not found: ${eventId}`);
+      }
+
+      // Process the webhook using internal logic (simulate a replay)
+      const result = await this._processWebhookPayload(
+        webhookEvent.raw_payload,
+        webhookEvent.raw_headers,
+        debugId
+      );
+
+      // Update replay count
+      await strapi.documents("api::webhook-event.webhook-event").update({
+        documentId: webhookEvent.documentId,
+        data: {
+          replay_count: (webhookEvent.replay_count || 0) + 1,
+        },
+      });
+
+      return ctx.send({
+        success: true,
+        message: "Webhook replayed",
+        eventId,
+        result,
+      });
+    } catch (error) {
+      strapi.log.error(`[${debugId}] Replay error:`, error);
+      return ctx.internalServerError("Failed to replay webhook");
+    }
+  },
+
+  /**
+   * POST /api/payment/webhook/replay-storm
+   * Replay a webhook multiple times concurrently to test idempotency (TESTING ONLY)
+   * Body: { eventId: string, replayCount: number (default 5), concurrent: boolean (default true) }
+   */
+  async replayStorm(ctx) {
+    const debugId = `STORM-${Date.now()}`;
+
+    // Guard: Only allow in testing mode
+    if (process.env.WEBHOOK_TESTING_ENABLED !== "true") {
+      strapi.log.warn(
+        `[${debugId}] Replay storm attempt blocked - WEBHOOK_TESTING_ENABLED is not true`
+      );
+      return ctx.forbidden("Webhook replay is disabled in this environment");
+    }
+
+    try {
+      const {
+        eventId,
+        orderId,
+        replayCount = 5,
+        concurrent = true,
+      } = ctx.request.body;
+
+      // Can use either eventId or find by orderId
+      let webhookEvent = null;
+
+      if (eventId) {
+        webhookEvent = await strapi
+          .documents("api::webhook-event.webhook-event")
+          .findFirst({
+            filters: { event_id: eventId },
+          });
+      } else if (orderId) {
+        // Find the most recent success webhook for this order
+        webhookEvent = await strapi
+          .documents("api::webhook-event.webhook-event")
+          .findFirst({
+            filters: {
+              order_id: orderId,
+              event_type: "PAYMENT_SUCCESS_WEBHOOK",
+            },
+            sort: { createdAt: "desc" },
+          });
+      }
+
+      if (!webhookEvent) {
+        return ctx.notFound("Webhook event not found");
+      }
+
+      strapi.log.info(
+        `[${debugId}] Starting replay storm: ${replayCount}x for event ${webhookEvent.event_id}`
+      );
+
+      const results = [];
+      const startTime = Date.now();
+
+      // Create replays
+      const replayPromises = Array.from(
+        { length: replayCount },
+        async (_, index) => {
+          const replayId = `${debugId}-${index}`;
+          try {
+            const result = await this._processWebhookPayload(
+              webhookEvent.raw_payload,
+              webhookEvent.raw_headers,
+              replayId
+            );
+            return { index, success: true, result };
+          } catch (error) {
+            return { index, success: false, error: error.message };
+          }
+        }
+      );
+
+      if (concurrent) {
+        // Fire all at once
+        const promiseResults = await Promise.allSettled(replayPromises);
+        promiseResults.forEach((pr, idx) => {
+          results.push(
+            pr.status === "fulfilled"
+              ? pr.value
+              : { index: idx, success: false, error: pr.reason?.message }
+          );
+        });
+      } else {
+        // Sequential execution
+        for (const promise of replayPromises) {
+          results.push(await promise);
+        }
+      }
+
+      const elapsed = Date.now() - startTime;
+
+      // Update replay count
+      await strapi.documents("api::webhook-event.webhook-event").update({
+        documentId: webhookEvent.documentId,
+        data: {
+          replay_count: (webhookEvent.replay_count || 0) + replayCount,
+        },
+      });
+
+      // Check how many subscriptions exist for this order
+      const subscriptionCount = await strapi
+        .documents("api::usersubscription.usersubscription")
+        .findMany({
+          filters: {
+            cashfree_order_id: webhookEvent.raw_payload?.data?.order?.order_id,
+          },
+        });
+
+      const passed = subscriptionCount.length === 1;
+
+      strapi.log.info(
+        `[${debugId}] Storm complete: ${replayCount} replays in ${elapsed}ms. Subscriptions: ${subscriptionCount.length}. PASSED: ${passed}`
+      );
+
+      return ctx.send({
+        success: true,
+        message: `Replay storm complete`,
+        replayCount,
+        concurrent,
+        elapsedMs: elapsed,
+        results,
+        subscriptionCheck: {
+          orderId: webhookEvent.raw_payload?.data?.order?.order_id,
+          subscriptionCount: subscriptionCount.length,
+          passed,
+          message: passed
+            ? "✓ Idempotency check PASSED - exactly 1 subscription created"
+            : `✗ Idempotency check FAILED - ${subscriptionCount.length} subscriptions found`,
+        },
+      });
+    } catch (error) {
+      strapi.log.error(`[${debugId}] Replay storm error:`, error);
+      return ctx.internalServerError("Failed to execute replay storm");
+    }
+  },
+
+  /**
+   * Internal helper to process a webhook payload (used for replays)
+   */
+  async _processWebhookPayload(webhookData, headers, debugId) {
+    const invoiceService = strapi.service("api::payment.invoice-service");
+    const subscriptionService = strapi.service("api::payment.subscription");
+
+    const { type, data } = webhookData;
+    const orderId = data?.order?.order_id || data?.payment?.order_id;
+
+    if (!orderId) {
+      throw new Error("Missing order_id in payload");
+    }
+
+    // Find Payment Record
+    const paymentRecord = await strapi
+      .documents("api::invoice-payment.invoice-payment")
+      .findFirst({
+        filters: { payment_reference: orderId },
+        populate: ["invoice"],
+      });
+
+    if (!paymentRecord) {
+      throw new Error(`Payment record not found for reference: ${orderId}`);
+    }
+
+    if (type === "PAYMENT_SUCCESS_WEBHOOK") {
+      if (paymentRecord.invoice) {
+        strapi.log.info(
+          `[${debugId}] Processing PAYMENT_SUCCESS for ${orderId}`
+        );
+
+        const paymentMethodData = data.payment?.payment_method || {};
+        let paymentMethodEnum = "OTHER";
+        if (paymentMethodData.card) paymentMethodEnum = "CARD";
+        else if (paymentMethodData.upi) paymentMethodEnum = "UPI";
+        else if (paymentMethodData.netbanking) paymentMethodEnum = "NETBANKING";
+
+        // Mark invoice paid (idempotent - should be OK to call multiple times)
+        await invoiceService.markInvoicePaid(paymentRecord.invoice.documentId, {
+          referenceId: data.payment?.cf_payment_id,
+          transactionId: data.payment?.payment_group,
+          metadata: data,
+          paymentMethod: paymentMethodEnum,
+        });
+
+        const invoiceFull = await strapi
+          .documents("api::invoice.invoice")
+          .findOne({
+            documentId: paymentRecord.invoice.documentId,
+            populate: {
+              customer: { populate: ["org"] },
+              course: true,
+              org: true,
+              invoice_items: {
+                populate: ["subject", "course"],
+              },
+            },
+          });
+
+        const mainItem = invoiceFull.invoice_items?.[0];
+        const purchaseType = mainItem?.item_type || "COURSE";
+
+        let pricingInfo = null;
+        if (purchaseType === "COURSE") {
+          const courseId =
+            invoiceFull.course?.documentId || mainItem?.course?.documentId;
+          if (courseId) {
+            pricingInfo = await strapi
+              .documents("api::course-pricing.course-pricing")
+              .findFirst({
+                filters: { course: { documentId: courseId } },
+                populate: ["course"],
+              });
+          }
+        } else if (purchaseType === "SUBJECT") {
+          const subjectId = mainItem?.subject?.documentId;
+          if (subjectId) {
+            pricingInfo = await strapi
+              .documents("api::subject-pricing.subject-pricing")
+              .findFirst({
+                filters: { subject: { documentId: subjectId } },
+                populate: ["subject"],
+              });
+          }
+        }
+
+        const pricingData = {
+          documentId: pricingInfo?.documentId || null,
+          course: invoiceFull.course || mainItem?.course,
+          subject: mainItem?.subject,
+          amount: invoiceFull.total_amount,
+        };
+
+        // This is the critical idempotent call
+        const subscription = await subscriptionService.createSubscription({
+          user: invoiceFull.customer,
+          pricing: pricingData,
+          invoice: invoiceFull,
+          type: purchaseType,
+          cashfreeOrderId: data.order?.order_id,
+          transactionId: data.payment?.cf_payment_id,
+          paymentMethod: paymentMethodEnum,
+          org: invoiceFull.org || invoiceFull.customer?.org,
+        });
+
+        return {
+          processed: true,
+          subscriptionId: subscription.documentId,
+          isNew: !subscription.wasExisting, // The subscription service should ideally indicate this
+        };
+      }
+    } else if (type === "PAYMENT_FAILED_WEBHOOK") {
+      if (paymentRecord.invoice) {
+        await invoiceService.markInvoiceFailed(
+          paymentRecord.invoice.documentId,
+          data.payment?.payment_message || "Payment Failed"
+        );
+        return { processed: true, status: "failed" };
+      }
+    }
+
+    return { processed: false, reason: "Unknown webhook type or no invoice" };
   },
 };

@@ -91,6 +91,26 @@ module.exports = ({ strapi }) => ({
             );
             return existingSub;
           }
+
+          // Add a small random delay (0-100ms) to reduce race condition window
+          // This helps stagger duplicate webhook calls
+          const delay = Math.floor(Math.random() * 100);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+
+          // Check again after delay in case another webhook just created it
+          const recheckSub = await strapi
+            .documents("api::usersubscription.usersubscription")
+            .findFirst({
+              filters: filters,
+              populate: ["course", "subjects"],
+            });
+
+          if (recheckSub) {
+            strapi.log.info(
+              `[createSubscription] Idempotency hit (after delay): Subscription ${recheckSub.documentId} already exists for Order ${cashfreeOrderId}`
+            );
+            return recheckSub;
+          }
         }
       }
 

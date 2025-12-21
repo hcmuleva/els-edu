@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: "/els-kids", // <-- important for deployment under emeelan.com/els
   server: {
+    // allowedHosts: "all", // Allow ngrok and other tunneling services
     watch: {
       // Ignore heavy dirs to save watchers
       ignored: ["**/node_modules/**", "**/.git/**", "**/dist/**"],

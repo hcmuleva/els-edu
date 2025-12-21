@@ -63,6 +63,8 @@ module.exports = ({ strapi }) => {
           order_meta: {
             return_url: `${process.env.FRONTEND_URL || "http://localhost:5173"}/#/payment/status?order_id=${finalOrderId}`,
             notify_url: `${process.env.BACKEND_URL || "http://localhost:1337"}/api/payment/webhook`,
+            // Restrict payment methods to only: UPI, Card, Netbanking
+            payment_methods: "upi,cc,dc,nb",
             ...orderMeta,
           },
         };
