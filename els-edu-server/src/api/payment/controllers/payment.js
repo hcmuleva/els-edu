@@ -296,8 +296,22 @@ module.exports = {
       const subscriptionService = strapi.service("api::payment.subscription");
 
       if (type === "PAYMENT_SUCCESS_WEBHOOK") {
+        strapi.log.info(
+          `[DEBUG-WEBHOOK] ========== PAYMENT_SUCCESS_WEBHOOK Processing ==========`
+        );
+        strapi.log.info(`[DEBUG-WEBHOOK] Order ID: ${orderId}`);
+        strapi.log.info(
+          `[DEBUG-WEBHOOK] Payment ID: ${data.payment?.cf_payment_id}`
+        );
+        strapi.log.info(
+          `[DEBUG-WEBHOOK] Payment Method: ${JSON.stringify(data.payment?.payment_method)}`
+        );
+
         if (paymentRecord.invoice) {
-          strapi.log.info(`[${debugId}] Marking Invoice PAID...`);
+          strapi.log.info(
+            `[DEBUG-WEBHOOK] Invoice found: ${paymentRecord.invoice.documentId}`
+          );
+          strapi.log.info(`[DEBUG-WEBHOOK] Marking Invoice PAID...`);
 
           // Extract payment method from webhook
           const paymentMethodData = data.payment?.payment_method || {};
@@ -317,84 +331,23 @@ module.exports = {
             }
           );
 
-          strapi.log.info(`[${debugId}] Creating User Subscription...`);
-          const invoiceFull = await strapi
-            .documents("api::invoice.invoice")
-            .findOne({
-              documentId: paymentRecord.invoice.documentId,
-              populate: {
-                customer: { populate: ["org"] },
-                course: true,
-                org: true,
-                invoice_items: {
-                  populate: ["subject", "course"],
-                },
-              },
-            });
-
-          const mainItem = invoiceFull.invoice_items?.[0];
-          const purchaseType = mainItem?.item_type || "COURSE";
-
-          strapi.log.info(`[${debugId}] Purchase Type: ${purchaseType}`);
           strapi.log.info(
-            `[${debugId}] Main Item: ${JSON.stringify({
-              type: mainItem?.item_type,
-              subject: mainItem?.subject?.documentId,
-              course: mainItem?.course?.documentId,
-            })}`
+            `[DEBUG-WEBHOOK] Invoice marked as PAID successfully`
           );
 
-          // Fetch the actual pricing information
-          let pricingInfo = null;
-          if (purchaseType === "COURSE") {
-            const courseId =
-              invoiceFull.course?.documentId || mainItem?.course?.documentId;
-            if (courseId) {
-              pricingInfo = await strapi
-                .documents("api::course-pricing.course-pricing")
-                .findFirst({
-                  filters: { course: { documentId: courseId } },
-                  populate: ["course"],
-                });
-            }
-          } else if (purchaseType === "SUBJECT") {
-            const subjectId = mainItem?.subject?.documentId;
-            if (subjectId) {
-              pricingInfo = await strapi
-                .documents("api::subject-pricing.subject-pricing")
-                .findFirst({
-                  filters: { subject: { documentId: subjectId } },
-                  populate: ["subject"],
-                });
-            }
-          }
-
-          // Build pricing object for subscription
-          const pricingData = {
-            documentId: pricingInfo?.documentId || null,
-            course: invoiceFull.course || mainItem?.course,
-            subject: mainItem?.subject,
-            amount: invoiceFull.total_amount,
-          };
-
+          // ✅ CRITICAL: Subscription is NOT created here anymore
+          // Subscription creation is handled by /finalize-subscription endpoint (called by frontend)
+          // This prevents duplicates when webhooks fire multiple times
           strapi.log.info(
-            `[${debugId}] Pricing Info: ${JSON.stringify({
-              documentId: pricingData.documentId,
-              type: purchaseType,
-            })}`
+            `[DEBUG-WEBHOOK] ⚠️ Subscription NOT created in webhook (deferred to finalize-subscription endpoint)`
           );
-
-          await subscriptionService.createSubscription({
-            user: invoiceFull.customer,
-            pricing: pricingData,
-            invoice: invoiceFull,
-            type: purchaseType,
-            cashfreeOrderId: data.order?.order_id,
-            transactionId: data.payment?.cf_payment_id,
-            paymentMethod: paymentMethodEnum,
-            org: invoiceFull.org || invoiceFull.customer?.org,
-          });
-          strapi.log.info(`[${debugId}] Subscription Created.`);
+          strapi.log.info(
+            `[DEBUG-WEBHOOK] Frontend will call /finalize-subscription after confirming SUCCESS status`
+          );
+        } else {
+          strapi.log.warn(
+            `[DEBUG-WEBHOOK] No invoice linked to payment record`
+          );
         }
       } else if (type === "PAYMENT_FAILED_WEBHOOK") {
         if (paymentRecord.invoice) {
@@ -566,21 +519,36 @@ module.exports = {
   /**
    * POST /api/payment/finalize-subscription
    * Ensure subscription is created for a successful order (Client backup)
+   * ✅ This is the SINGLE source of subscription creation (deferred from webhook)
    */
   async finalizeSubscription(ctx) {
     const debugId = `FINALIZE-${Date.now()}`;
+    strapi.log.info(
+      `[DEBUG-FINALIZE] ========== FINALIZE SUBSCRIPTION START ==========`
+    );
+
     try {
       const { orderId } = ctx.request.body;
       const user = ctx.state.user;
 
-      if (!user) return ctx.unauthorized();
-      if (!orderId) return ctx.badRequest("Order ID required");
-
+      strapi.log.info(`[DEBUG-FINALIZE] Order ID: ${orderId}`);
       strapi.log.info(
-        `[${debugId}] Finalizing subscription for order: ${orderId}`
+        `[DEBUG-FINALIZE] User: ${user?.documentId} (${user?.email})`
       );
 
-      // IDEMPOTENCY CHECK: First check if subscription already exists for this order
+      if (!user) {
+        strapi.log.warn(`[DEBUG-FINALIZE] No user in request - unauthorized`);
+        return ctx.unauthorized();
+      }
+      if (!orderId) {
+        strapi.log.warn(`[DEBUG-FINALIZE] No orderId provided`);
+        return ctx.badRequest("Order ID required");
+      }
+
+      // IDEMPOTENCY CHECK #1: Check if subscription already exists for this order
+      strapi.log.info(
+        `[DEBUG-FINALIZE] Checking for existing subscription by cashfree_order_id...`
+      );
       const existingSub = await strapi
         .documents("api::usersubscription.usersubscription")
         .findFirst({
@@ -590,7 +558,13 @@ module.exports = {
 
       if (existingSub) {
         strapi.log.info(
-          `[${debugId}] Subscription already exists for order ${orderId}: ${existingSub.documentId}`
+          `[DEBUG-FINALIZE] ✅ IDEMPOTENCY HIT: Subscription already exists`
+        );
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Existing subscription ID: ${existingSub.documentId}`
+        );
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Returning existing subscription (no duplicate created)`
         );
         return ctx.send({
           success: true,
@@ -600,7 +574,14 @@ module.exports = {
         });
       }
 
+      strapi.log.info(
+        `[DEBUG-FINALIZE] No existing subscription found. Proceeding with creation...`
+      );
+
       // 1. Find the payment/invoice
+      strapi.log.info(
+        `[DEBUG-FINALIZE] Looking up payment by payment_reference: ${orderId}`
+      );
       const payment = await strapi
         .documents("api::invoice-payment.invoice-payment")
         .findFirst({
@@ -612,53 +593,86 @@ module.exports = {
           },
         });
 
-      if (!payment) return ctx.notFound("Payment not found");
+      if (!payment) {
+        strapi.log.error(
+          `[DEBUG-FINALIZE] Payment not found for orderId: ${orderId}`
+        );
+        return ctx.notFound("Payment not found");
+      }
+
       const invoice = payment.invoice;
+      strapi.log.info(`[DEBUG-FINALIZE] Payment found: ${payment.documentId}`);
+      strapi.log.info(
+        `[DEBUG-FINALIZE] Payment status: ${payment.payment_status}`
+      );
+      strapi.log.info(`[DEBUG-FINALIZE] Invoice ID: ${invoice?.documentId}`);
 
       // Verify ownership
       const invoiceCustomerId =
         invoice.customer?.documentId ||
         invoice.customer?.id ||
         invoice.customer;
+
+      strapi.log.info(
+        `[DEBUG-FINALIZE] Invoice customer: ${invoiceCustomerId}, Request user: ${user.documentId}`
+      );
+
       if (invoiceCustomerId !== user.documentId) {
+        strapi.log.warn(
+          `[DEBUG-FINALIZE] SECURITY: User ${user.documentId} tried to finalize order belonging to ${invoiceCustomerId}`
+        );
         return ctx.forbidden("Not authorized");
       }
 
       // 2. Check status (Remote or Local)
-      // If it's already marked SUCCESS locally, we are good.
-      // If not, maybe webhook failed? Re-verify with Cashfree.
       if (payment.payment_status !== "SUCCESS") {
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Local payment status is ${payment.payment_status}, checking Cashfree...`
+        );
         const cashfreeService = strapi.service("api::payment.cashfree");
         try {
           const status = await cashfreeService.getOrderStatus(orderId);
+          strapi.log.info(
+            `[DEBUG-FINALIZE] Cashfree status: ${status.order?.order_status}`
+          );
+
           if (status.order.order_status === "PAID") {
-            // Update local status if needed (reuse invoice service logic ideally,
-            // but here we just need to ensure subscription creation proceeds)
             strapi.log.info(
-              `[${debugId}] Cashfree says PAID, but local was ${payment.payment_status}. Proceeding...`
+              `[DEBUG-FINALIZE] Cashfree confirms PAID. Proceeding...`
             );
           } else {
+            strapi.log.warn(
+              `[DEBUG-FINALIZE] Cashfree status is ${status.order?.order_status}, not PAID`
+            );
             return ctx.badRequest("Payment is not PAID");
           }
         } catch (e) {
           strapi.log.error(
-            `[${debugId}] Failed to verify status: ${e.message}`
+            `[DEBUG-FINALIZE] Failed to verify with Cashfree: ${e.message}`
           );
           return ctx.badRequest("Could not verify payment status");
         }
+      } else {
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Payment already marked SUCCESS locally`
+        );
       }
 
-      // 3. Trigger Subscription Creation (Idempotent)
-      // We essentially reuse the logic from webhook.
-      // Extract needed data similarly.
-
-      // Find main item
+      // 3. Trigger Subscription Creation (Idempotent via subscription service)
       if (invoice.invoice_items?.length > 0) {
-        const mainItem = invoice.invoice_items[0]; // simplistic assumption
+        const mainItem = invoice.invoice_items[0];
         const purchaseType = mainItem.item_type || "COURSE";
 
+        strapi.log.info(`[DEBUG-FINALIZE] Purchase type: ${purchaseType}`);
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Main item: ${JSON.stringify({
+            type: mainItem.item_type,
+            course: mainItem.course?.documentId,
+            subject: mainItem.subject?.documentId,
+          })}`
+        );
+
         let pricingInfo = null;
-        // ... fetch pricing doc similar to webhook ...
         if (purchaseType === "COURSE") {
           const courseId =
             invoice.course?.documentId || mainItem.course?.documentId;
@@ -689,18 +703,44 @@ module.exports = {
           amount: invoice.total_amount,
         };
 
+        // Extract payment method type from stored payment_method_details field
+        // This field is set by markInvoicePaid in invoice-service.js
+        // payment.payment_gateway is "CASHFREE" (gateway name), not the method type
+        let paymentMethodEnum = "OTHER";
+        const methodData =
+          payment.payment_method_details ||
+          payment.gateway_response?.payment?.payment_method;
+        if (methodData) {
+          if (methodData.card) paymentMethodEnum = "CARD";
+          else if (methodData.upi) paymentMethodEnum = "UPI";
+          else if (methodData.netbanking) paymentMethodEnum = "NETBANKING";
+        }
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Payment method: ${paymentMethodEnum}`
+        );
+
+        strapi.log.info(
+          `[DEBUG-FINALIZE] Calling subscription service createSubscription...`
+        );
         const subscriptionService = strapi.service("api::payment.subscription");
 
         const sub = await subscriptionService.createSubscription({
-          user: user, // Use the requesting user, NOT invoice.customer
+          user: user,
           pricing: pricingData,
           invoice: invoice,
           type: purchaseType,
           cashfreeOrderId: orderId,
           transactionId: payment.gateway_transaction_id,
-          paymentMethod: payment.payment_gateway,
+          paymentMethod: paymentMethodEnum,
           org: invoice.org,
         });
+
+        strapi.log.info(
+          `[DEBUG-FINALIZE] ✅ Subscription created/returned: ${sub.documentId}`
+        );
+        strapi.log.info(
+          `[DEBUG-FINALIZE] ========== FINALIZE SUBSCRIPTION SUCCESS ==========`
+        );
 
         return ctx.send({
           success: true,

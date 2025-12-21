@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -29,9 +29,16 @@ const PaymentStatusPage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 10; // 10 retries = 50 seconds
 
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
+    console.log(`[DEBUG-PAYMENT] ========== CHECK STATUS START ==========`);
+    console.log(`[DEBUG-PAYMENT] Order ID: ${orderId}`);
+    console.log(
+      `[DEBUG-PAYMENT] finalizeCalled.current: ${finalizeCalled.current}`
+    );
+
     try {
       if (!orderId) {
+        console.warn(`[DEBUG-PAYMENT] No Order ID provided`);
         setStatus((prev) => ({
           ...prev,
           loading: false,
@@ -42,7 +49,14 @@ const PaymentStatusPage = () => {
       }
 
       const token = localStorage.getItem("token");
+      console.log(`[DEBUG-PAYMENT] Calling getOrderStatus API...`);
       const data = await subscriptionService.getOrderStatus(token, orderId);
+
+      console.log(`[DEBUG-PAYMENT] API Response:`, {
+        payment_status: data.payment_status,
+        amount: data.amount,
+        item_name: data.item_name,
+      });
 
       setStatus({
         loading: false,
@@ -53,32 +67,58 @@ const PaymentStatusPage = () => {
       });
 
       // If success, try to finalize subscription (ensure it's created)
-      // Only call once per orderId to avoid duplicate calls
-      if (data.payment_status === "SUCCESS" && !finalizeCalled.current) {
-        finalizeCalled.current = true; // Mark as called immediately
-        try {
-          console.log("Payment SUCCESS, finalizing subscription...");
-          await subscriptionService.finalizeSubscription(token, orderId);
-          console.log("Subscription finalization call complete.");
-        } catch (finalErr) {
-          console.error("Finalization warning:", finalErr);
-          // We don't block the UI here because usually the webhook handles it.
-          // This is just a backup.
+      // ✅ Only call ONCE per orderId to avoid duplicate API calls
+      if (data.payment_status === "SUCCESS") {
+        if (!finalizeCalled.current) {
+          finalizeCalled.current = true; // Mark as called immediately BEFORE the async call
+          console.log(
+            `[DEBUG-PAYMENT] Payment SUCCESS, calling finalizeSubscription...`
+          );
+          console.log(
+            `[DEBUG-PAYMENT] (finalizeCalled ref set to TRUE to prevent duplicates)`
+          );
+
+          try {
+            const result = await subscriptionService.finalizeSubscription(
+              token,
+              orderId
+            );
+            console.log(
+              `[DEBUG-PAYMENT] finalizeSubscription response:`,
+              result
+            );
+            console.log(
+              `[DEBUG-PAYMENT] ✅ Subscription finalization complete`
+            );
+          } catch (finalErr) {
+            console.error(`[DEBUG-PAYMENT] Finalization warning:`, finalErr);
+            // We don't block the UI here because webhook may have already created it
+            // This finalize call is idempotent - server will return existing subscription
+          }
+        } else {
+          console.log(
+            `[DEBUG-PAYMENT] ⚠️ finalizeCalled was already TRUE, skipping duplicate call`
+          );
+          console.log(
+            `[DEBUG-PAYMENT] (Subscription should already exist from previous call)`
+          );
         }
       }
+
+      console.log(`[DEBUG-PAYMENT] ========== CHECK STATUS END ==========`);
     } catch (err) {
-      console.error(err);
+      console.error(`[DEBUG-PAYMENT] Error checking status:`, err);
       setStatus((prev) => ({
         ...prev,
         loading: false,
-        // If network error, maybe keep pending? For now fail.
         payment_status: "FAILED",
         error: "Failed to fetch status. Please check Purchase History.",
       }));
     }
-  };
+  }, [orderId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: fetch data on mount
     checkStatus();
     // Poll every 5 seconds if pending
     const interval = setInterval(() => {
@@ -100,7 +140,7 @@ const PaymentStatusPage = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [orderId, status.payment_status, retryCount]); // Re-run if status changes (to stop if success/failed) or orderId changes
+  }, [checkStatus, status.payment_status, retryCount]);
 
   // Use replace to prevent back button from going to Cashfree page
   const handleGoHome = () => navigate("/browse-courses", { replace: true });

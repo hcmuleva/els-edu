@@ -52,6 +52,7 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Create a user subscription after successful payment
+   * ✅ Implements double-check idempotency to prevent duplicates
    */
   async createSubscription({
     user,
@@ -63,13 +64,28 @@ module.exports = ({ strapi }) => ({
     paymentMethod,
     org,
   }) {
+    const debugId = `SUB-${Date.now()}`;
+    strapi.log.info(
+      `[DEBUG-SUBSCRIPTION] ========== CREATE SUBSCRIPTION START ==========`
+    );
+
     try {
       const userDocId = user.documentId || user.id || user;
 
-      // IDEMPOTENCY CHECK:
-      // Check if a subscription already exists for this transaction or order
-      // likely to happen if webhook fires multiple times
+      strapi.log.info(`[DEBUG-SUBSCRIPTION] Creating subscription with:`);
+      strapi.log.info(`[DEBUG-SUBSCRIPTION]   User: ${userDocId}`);
+      strapi.log.info(`[DEBUG-SUBSCRIPTION]   Order ID: ${cashfreeOrderId}`);
+      strapi.log.info(
+        `[DEBUG-SUBSCRIPTION]   Transaction ID: ${transactionId}`
+      );
+      strapi.log.info(`[DEBUG-SUBSCRIPTION]   Type: ${type}`);
+
+      // ✅ IDEMPOTENCY CHECK #1: Check if subscription already exists for this transaction or order
       if (cashfreeOrderId || transactionId) {
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION] Idempotency check #1: Looking for existing subscription...`
+        );
+
         const filters = {
           $or: [],
         };
@@ -87,17 +103,22 @@ module.exports = ({ strapi }) => ({
 
           if (existingSub) {
             strapi.log.info(
-              `[createSubscription] Idempotency hit: Subscription ${existingSub.documentId} already exists for Order ${cashfreeOrderId}`
+              `[DEBUG-SUBSCRIPTION] ✅ IDEMPOTENCY HIT #1: Subscription ${existingSub.documentId} already exists`
+            );
+            strapi.log.info(
+              `[DEBUG-SUBSCRIPTION] Returning existing subscription (no duplicate created)`
             );
             return existingSub;
           }
 
-          // Add a small random delay (0-100ms) to reduce race condition window
-          // This helps stagger duplicate webhook calls
+          // ✅ IDEMPOTENCY CHECK #2: Add small random delay + re-check to handle race conditions
           const delay = Math.floor(Math.random() * 100);
+          strapi.log.info(
+            `[DEBUG-SUBSCRIPTION] No existing found. Adding ${delay}ms delay before recheck...`
+          );
           await new Promise((resolve) => setTimeout(resolve, delay));
 
-          // Check again after delay in case another webhook just created it
+          // Check again after delay in case another request just created it
           const recheckSub = await strapi
             .documents("api::usersubscription.usersubscription")
             .findFirst({
@@ -107,11 +128,22 @@ module.exports = ({ strapi }) => ({
 
           if (recheckSub) {
             strapi.log.info(
-              `[createSubscription] Idempotency hit (after delay): Subscription ${recheckSub.documentId} already exists for Order ${cashfreeOrderId}`
+              `[DEBUG-SUBSCRIPTION] ✅ IDEMPOTENCY HIT #2 (after delay): Subscription ${recheckSub.documentId} found`
+            );
+            strapi.log.info(
+              `[DEBUG-SUBSCRIPTION] Returning existing subscription (race condition prevented)`
             );
             return recheckSub;
           }
+
+          strapi.log.info(
+            `[DEBUG-SUBSCRIPTION] Recheck complete. No duplicate found. Proceeding to create...`
+          );
         }
+      } else {
+        strapi.log.warn(
+          `[DEBUG-SUBSCRIPTION] No cashfreeOrderId or transactionId provided - skipping idempotency check`
+        );
       }
 
       const courseId =
@@ -146,10 +178,21 @@ module.exports = ({ strapi }) => ({
         amount_paid: amount,
       };
 
+      strapi.log.info(
+        `[DEBUG-SUBSCRIPTION] Course ID: ${courseId}, Subject ID: ${subjectId}, Org ID: ${orgId}`
+      );
+      strapi.log.info(
+        `[DEBUG-SUBSCRIPTION] Subscription type: ${subscriptionType}, Amount: ${amount}`
+      );
+
       if (type === "COURSE") {
         // Course purchase
         subscriptionData.course = courseId;
         subscriptionData.course_pricing = pricing.documentId || null;
+
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION] Fetching course subjects for course: ${courseId}`
+        );
 
         // Get all subjects in the course
         const course = await strapi.documents("api::course.course").findOne({
@@ -161,7 +204,7 @@ module.exports = ({ strapi }) => ({
           course?.subjects?.map((s) => s.documentId || s.id || s) || [];
 
         strapi.log.info(
-          `[createSubscription] Creating COURSE subscription with ${subjectIds.length} subjects`
+          `[DEBUG-SUBSCRIPTION] Found ${subjectIds.length} subjects in course`
         );
 
         // Add subjects to subscription data for manyToMany connection
@@ -170,6 +213,7 @@ module.exports = ({ strapi }) => ({
         }
 
         // Create subscription for the course with subjects connected
+        strapi.log.info(`[DEBUG-SUBSCRIPTION] Creating COURSE subscription...`);
         const subscription = await strapi
           .documents("api::usersubscription.usersubscription")
           .create({
@@ -178,11 +222,20 @@ module.exports = ({ strapi }) => ({
           });
 
         strapi.log.info(
-          `[createSubscription] Created COURSE subscription: ${subscription.documentId} with ${subjectIds.length} subjects`
+          `[DEBUG-SUBSCRIPTION] ✅ COURSE subscription created: ${subscription.documentId}`
+        );
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION]   With ${subjectIds.length} subjects attached`
+        );
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION] ========== CREATE SUBSCRIPTION SUCCESS ==========`
         );
         return subscription;
       } else if (type === "SUBJECT") {
         // Subject purchase
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION] Processing SUBJECT purchase for subject: ${subjectId}`
+        );
         subscriptionData.subject_pricing = pricing.documentId || null;
 
         // Add the subject to subscription data for manyToMany connection
@@ -191,6 +244,9 @@ module.exports = ({ strapi }) => ({
         }
 
         // Create new subscription for this subject
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION] Creating SUBJECT subscription...`
+        );
         const subscription = await strapi
           .documents("api::usersubscription.usersubscription")
           .create({
@@ -199,14 +255,24 @@ module.exports = ({ strapi }) => ({
           });
 
         strapi.log.info(
-          `[createSubscription] Created SUBJECT subscription: ${subscription.documentId} with subject ${subjectId}`
+          `[DEBUG-SUBSCRIPTION] ✅ SUBJECT subscription created: ${subscription.documentId}`
+        );
+        strapi.log.info(`[DEBUG-SUBSCRIPTION]   With subject: ${subjectId}`);
+        strapi.log.info(
+          `[DEBUG-SUBSCRIPTION] ========== CREATE SUBSCRIPTION SUCCESS ==========`
         );
         return subscription;
       }
 
+      strapi.log.error(
+        `[DEBUG-SUBSCRIPTION] Unknown subscription type: ${type}`
+      );
       throw new Error(`Unknown subscription type: ${type}`);
     } catch (error) {
-      strapi.log.error("Error creating subscription:", error);
+      strapi.log.error(
+        `[DEBUG-SUBSCRIPTION] ========== CREATE SUBSCRIPTION ERROR ==========`
+      );
+      strapi.log.error(`[DEBUG-SUBSCRIPTION] Error:`, error);
       throw error;
     }
   },
