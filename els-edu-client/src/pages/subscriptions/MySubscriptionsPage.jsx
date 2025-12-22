@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Title, useDataProvider, useGetIdentity } from "react-admin";
-import { GraduationCap, Search, RotateCcw } from "lucide-react";
+import {
+  GraduationCap,
+  Search,
+  RotateCcw,
+  X,
+  Sparkles,
+  BookOpen,
+} from "lucide-react";
 import CourseCard from "../../components/subscriptions/CourseCard";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { subscriptionService } from "../../services/subscriptionService";
@@ -90,125 +97,140 @@ const MySubscriptionsPage = () => {
 
   if (identityLoading) {
     return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-64 bg-gray-200 rounded-3xl" />
+      <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-12 bg-gray-200 rounded-xl w-1/3" />
+            <div className="h-64 bg-gray-200 rounded-2xl" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
       <Title title="My Subscriptions" />
 
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black text-gray-800 font-heading">
-          My Subscriptions
-        </h1>
-        <p className="text-gray-500 font-medium">
-          Your enrolled courses and learning paths
-        </p>
-      </div>
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          {/* Title */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+              <GraduationCap className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                My Subscriptions
+              </h1>
+              <p className="text-sm text-gray-500">
+                Your enrolled courses and learning paths
+              </p>
+            </div>
+          </div>
 
-      {/* Main Content Card */}
-      <div className="bg-white rounded-3xl border border-border/50 shadow-sm">
-        {/* Filters Section */}
-        <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Search */}
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {/* Search and Filters Row */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Bar - Full Width */}
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search courses..."
+                placeholder="Search your courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                className="w-full pl-12 pr-12 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-gray-600" />
+                </button>
+              )}
             </div>
 
-            {/* Subscription Type Filter */}
-            <div className="w-[180px]">
-              <CustomSelect
-                value={selectedType}
-                onChange={setSelectedType}
-                options={SUBSCRIPTION_TYPE_OPTIONS}
-                placeholder="All Types"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="w-[180px]">
-              <CustomSelect
-                value={selectedStatus}
-                onChange={setSelectedStatus}
-                options={STATUS_OPTIONS}
-                placeholder="All Status"
-              />
-            </div>
-
-            {/* Reset Button */}
+            {/* Clear Button */}
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold transition-colors border border-gray-200"
               >
                 <RotateCcw className="w-4 h-4" />
-                Reset
+                Clear
               </button>
             )}
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Results Count */}
         {!loading && filteredSubscriptions.length > 0 && (
-          <div className="px-6 pt-6 pb-2">
-            <p className="text-sm font-semibold text-gray-500">
-              Showing {filteredSubscriptions.length} course
-              {filteredSubscriptions.length !== 1 ? "s" : ""}
+          <div className="flex items-center gap-2 mb-6">
+            <BookOpen className="w-4 h-4 text-gray-400" />
+            <p className="text-sm text-gray-500">
+              <span className="font-semibold text-gray-700">
+                {filteredSubscriptions.length}
+              </span>{" "}
+              course{filteredSubscriptions.length !== 1 ? "s" : ""} enrolled
             </p>
           </div>
         )}
 
         {/* Courses Grid */}
-        <div className="p-6 min-h-[400px]">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-gray-100 rounded-3xl h-80 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : filteredSubscriptions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSubscriptions.map((subscription) => (
-                <CourseCard
-                  key={subscription.documentId || subscription.id}
-                  subscription={subscription}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="bg-gray-50 p-6 rounded-full mb-4">
-                <GraduationCap className="w-12 h-12 text-gray-300" />
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+              >
+                <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-50 animate-pulse" />
+                <div className="p-4 space-y-3">
+                  <div className="h-5 bg-gray-100 rounded-lg w-3/4 animate-pulse" />
+                  <div className="h-4 bg-gray-100 rounded-lg w-full animate-pulse" />
+                  <div className="h-4 bg-gray-100 rounded-lg w-1/2 animate-pulse" />
+                  <div className="h-10 bg-gray-100 rounded-xl w-full animate-pulse mt-4" />
+                </div>
               </div>
-              <h3 className="text-xl font-black text-gray-800 mb-2">
-                No subscriptions found
-              </h3>
-              <p className="text-gray-500 font-medium">
-                {hasActiveFilters
-                  ? "Try adjusting your filters"
-                  : "You haven't enrolled in any courses yet"}
-              </p>
+            ))}
+          </div>
+        ) : filteredSubscriptions.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSubscriptions.map((subscription) => (
+              <CourseCard
+                key={subscription.documentId || subscription.id}
+                subscription={subscription}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-100 to-violet-100 flex items-center justify-center mb-6">
+              <Sparkles className="w-10 h-10 text-primary-400" />
             </div>
-          )}
-        </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              {hasActiveFilters ? "No courses found" : "No subscriptions yet"}
+            </h3>
+            <p className="text-gray-500 max-w-sm mb-6">
+              {hasActiveFilters
+                ? "Try adjusting your search or explore different filters"
+                : "Start your learning journey by browsing available courses"}
+            </p>
+            {hasActiveFilters && (
+              <button
+                onClick={handleResetFilters}
+                className="px-6 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-colors"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

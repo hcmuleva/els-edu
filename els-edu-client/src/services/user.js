@@ -8,7 +8,7 @@ import api from "./api";
 export const getUserStats = async () => {
   try {
     const response = await api.get("/user/stats");
-    // Axios wraps response in 'data' prop. 
+    // Axios wraps response in 'data' prop.
     // If backend sends { totalUsers: ... }, it will be in response.data
     return response.data;
   } catch (err) {
@@ -26,6 +26,24 @@ export const getUserStats = async () => {
 export const getAllUsers = async (params = {}) => {
   try {
     const response = await api.get("/users", { params });
+    return response.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+/**
+ * Upload a file (e.g., profile picture)
+ * @param {FormData} formData
+ * @returns {Promise<Array>} List of uploaded files
+ */
+export const uploadFile = async (formData) => {
+  try {
+    const response = await api.post("/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (err) {
     throw err;

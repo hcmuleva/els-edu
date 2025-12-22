@@ -17,6 +17,7 @@ import CourseSubjectsPage from "../pages/subscriptions/CourseSubjectsPage";
 import PaymentStatusPage from "../pages/payment/PaymentStatusPage";
 
 import PurchaseHistoryPage from "../pages/payment/PurchaseHistoryPage";
+import ProfilePage from "../pages/profile/ProfilePage";
 
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 
@@ -48,6 +49,7 @@ const AppRoutes = () => (
       <Route path="/browse-subjects/:id" element={<SubjectDetailPage />} />
       <Route path="/quiz/:id/play" element={<QuizPlayer />} />
       <Route path="/progress" element={<ProgressPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
       {/* Manage page - only SUPERADMIN */}
       <Route
         path="/manage"
