@@ -120,9 +120,14 @@ export const updateResource = async (httpClient, resource, params) => {
   // Recursively strip read-only fields
   const cleanData = sanitizePayload(params.data);
 
+  const isUsersResource = resource === "users";
+  const body = isUsersResource
+    ? JSON.stringify(cleanData)
+    : JSON.stringify({ data: cleanData });
+
   const { json } = await httpClient(`${apiUrl}/${resource}/${params.id}`, {
     method: "PUT",
-    body: JSON.stringify({ data: cleanData }),
+    body,
   });
   const data = json.data || json;
   return { data: { ...data, id: data.id } };

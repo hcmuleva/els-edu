@@ -1,166 +1,420 @@
-import { Title } from "react-admin";
-import { cn } from "../../lib/utils";
+import React, { useState, useEffect } from "react";
+import { Title, useGetIdentity, useDataProvider } from "react-admin";
+import { useNavigate } from "react-router-dom";
 import {
-  Users,
   BookOpen,
   Trophy,
+  Clock,
+  TrendingUp,
   Sparkles,
   ArrowRight,
-  Building2,
+  GraduationCap,
+  Target,
+  X,
+  CheckCircle2,
+  Zap,
+  User,
+  Edit3,
 } from "lucide-react";
 
-const Card = ({ className, children }) => (
-  <div
-    className={cn(
-      "bg-card rounded-2xl shadow-sm border border-border/50 p-6 hover:shadow-lg hover:border-primary/20 transition-all duration-300 group",
-      className
-    )}
-  >
-    {children}
-  </div>
-);
-
-const StatCard = ({ title, value, subtitle, icon: Icon, gradient }) => (
-  <Card className="relative overflow-hidden">
-    <div
-      className={cn(
-        "absolute top-0 right-0 w-24 h-24 bg-gradient-to-br opacity-10 rounded-bl-full transition-transform duration-500 group-hover:scale-150",
-        gradient
-      )}
-    />
-    <div className="relative z-10 flex flex-col h-full justify-between">
-      <div className="flex items-center justify-between mb-4">
-        <div
-          className={cn(
-            "p-3 rounded-xl bg-gradient-to-br text-white shadow-inner",
-            gradient
-          )}
-        >
-          {Icon && <Icon className="w-6 h-6" />}
-        </div>
-        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          Stats
-        </span>
-      </div>
-      <div>
-        <h3 className="text-3xl font-heading font-black text-foreground mb-1">
-          {value}
-        </h3>
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-      </div>
-    </div>
-  </Card>
-);
-
-// Get user data from localStorage
-const getUserData = () => {
-  try {
-    const userStr = localStorage.getItem("user");
-    return userStr ? JSON.parse(userStr) : null;
-  } catch {
-    return null;
-  }
-};
-
 const Dashboard = () => {
-  const user = getUserData();
-  const userName = user?.first_name || user?.username || "Explorer";
-  const orgName = user?.org?.org_name || user?.org?.name || null;
-  const userRole = user?.user_role || "STUDENT";
+  const { identity, isLoading: identityLoading } = useGetIdentity();
+  const dataProvider = useDataProvider();
+  const navigate = useNavigate();
+
+  const [showTour, setShowTour] = useState(false);
+  const [stats, setStats] = useState({
+    totalSubscriptions: 0,
+    totalQuizAttempts: 0,
+    averageScore: 0,
+    passedQuizzes: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Check if user has seen the tour
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("hasSeenDashboardTour");
+    if (!hasSeenTour && identity) {
+      setShowTour(true);
+    }
+  }, [identity]);
+
+  // Fetch stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!identity?.id) return;
+
+      try {
+        setLoading(true);
+
+        // Fetch subscriptions
+        const { data: subs } = await dataProvider.getList("usersubscriptions", {
+          filter: { user: identity.id },
+          pagination: { page: 1, perPage: 1000 },
+        });
+
+        // Fetch quiz results
+        const { data: results } = await dataProvider.getList("quiz-results", {
+          filter: { user: identity.id },
+          pagination: { page: 1, perPage: 1000 },
+        });
+
+        const averageScore =
+          results.length > 0
+            ? Math.round(
+                results.reduce((sum, r) => sum + r.percentage, 0) /
+                  results.length
+              )
+            : 0;
+
+        const passed = results.filter((r) => r.isPassed).length;
+
+        setStats({
+          totalSubscriptions: subs.length || 0,
+          totalQuizAttempts: results.length || 0,
+          averageScore,
+          passedQuizzes: passed,
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [identity, dataProvider]);
+
+  const handleDismissTour = () => {
+    localStorage.setItem("hasSeenDashboardTour", "true");
+    setShowTour(false);
+  };
+
+  if (identityLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-lg font-semibold text-gray-600">
+            Loading dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const isNewUser =
+    stats.totalSubscriptions === 0 && stats.totalQuizAttempts === 0;
+  const isProfileIncomplete =
+    !identity?.fullName || !identity?.email || !identity?.age;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Title title="Dashboard | ELS Kids" />
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+      <Title title="Dashboard" />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary-600 p-8 md:p-12 text-white shadow-2xl shadow-primary/20">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-secondary opacity-20 rounded-full blur-2xl" />
-
-        <div className="relative z-10 max-w-2xl">
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium text-white">
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-              <span>Welcome back, {userName}!</span>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg shadow-primary-200">
+              <Sparkles className="w-8 h-8 text-white" />
             </div>
-            {orgName && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium text-white">
-                <Building2 className="w-4 h-4 text-cyan-300" />
-                <span>{orgName}</span>
-              </div>
-            )}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-white uppercase">
-              {userRole}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Welcome back, {identity?.fullName || identity?.username}! 👋
+              </h1>
+              <p className="text-sm text-gray-500">
+                Here's your learning progress at a glance
+              </p>
             </div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-heading font-black mb-6 leading-tight">
-            Ready to start your <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-pink-200">
-              Learning Adventure?
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-primary-100 mb-8 max-w-lg leading-relaxed">
-            Discover new worlds of knowledge today. Your journey to becoming a
-            genius starts here.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <button className="bg-white text-primary-600 px-8 py-4 rounded-xl font-bold hover:bg-yellow-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 flex items-center gap-2 group">
-              Start Learning
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        {/* Tour Guide Modal */}
+        {showTour && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative animate-in fade-in zoom-in duration-300">
+              <button
+                onClick={handleDismissTour}
+                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200">
+                  <GraduationCap className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Welcome to Your Learning Journey! 🎉
+                </h2>
+                <p className="text-gray-600">
+                  Let's get you started in just 3 simple steps
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  {
+                    step: 1,
+                    icon: BookOpen,
+                    title: "Browse Courses",
+                    description:
+                      "Explore our wide range of courses tailored for you",
+                    action: "/browse-courses",
+                    color: "from-blue-500 to-cyan-500",
+                  },
+                  {
+                    step: 2,
+                    icon: CheckCircle2,
+                    title: "Enroll in Courses",
+                    description: "Subscribe to any course that interests you",
+                    action: "/my-subscriptions",
+                    color: "from-emerald-500 to-teal-500",
+                  },
+                  {
+                    step: 3,
+                    icon: Zap,
+                    title: "Start Learning",
+                    description:
+                      "Access subjects, topics, and quizzes to begin your journey",
+                    action: "/my-subscriptions",
+                    color: "from-violet-500 to-purple-500",
+                  },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.step}
+                      className="flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => {
+                        handleDismissTour();
+                        navigate(item.action);
+                      }}
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+                      >
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-gray-400">
+                            STEP {item.step}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleDismissTour}
+                className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all shadow-md"
+              >
+                Got it, Let's Start!
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Getting Started Card - Show only for new users */}
+        {isNewUser && !showTour && (
+          <div className="bg-gradient-to-br from-primary-500 to-violet-600 rounded-3xl p-8 text-white shadow-2xl shadow-primary-200">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-10 h-10 text-white" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold mb-2">
+                  Ready to Start Learning?
+                </h3>
+                <p className="text-white/90 mb-4 leading-relaxed">
+                  Discover amazing courses, enroll, and begin your educational
+                  journey today!
+                </p>
+                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                  <button
+                    onClick={() => navigate("/browse-courses")}
+                    className="px-5 py-2.5 bg-white text-primary-600 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-md flex items-center gap-2"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    Browse Courses
+                  </button>
+                  <button
+                    onClick={() => setShowTour(true)}
+                    className="px-5 py-2.5 bg-white/10 backdrop-blur text-white border-2 border-white/30 rounded-xl font-semibold hover:bg-white/20 transition-all flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Show Guide
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Setup Card - Show if profile is incomplete */}
+        {isProfileIncomplete && (
+          <div className="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-8 text-white shadow-2xl shadow-orange-200">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                <User className="w-10 h-10 text-white" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold mb-2">
+                  Complete Your Profile
+                </h3>
+                <p className="text-white/90 mb-4 leading-relaxed">
+                  Add your details to personalize your learning experience and
+                  unlock all features!
+                </p>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="px-5 py-2.5 bg-white text-orange-600 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-md flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Complete Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Cards - Simple & Small */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Subscriptions */}
+          <button
+            onClick={() => navigate("/my-subscriptions")}
+            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-blue-200 transition-all text-center group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <BookOpen className="w-6 h-6 text-blue-600" />
+            </div>
+            <p className="text-2xl font-black text-gray-900 mb-1">
+              {stats.totalSubscriptions}
+            </p>
+            <p className="text-xs text-gray-500 font-medium">Courses</p>
+          </button>
+
+          {/* Quiz Attempts */}
+          <button
+            onClick={() => navigate("/progress")}
+            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-violet-200 transition-all text-center group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <Trophy className="w-6 h-6 text-violet-600" />
+            </div>
+            <p className="text-2xl font-black text-gray-900 mb-1">
+              {stats.totalQuizAttempts}
+            </p>
+            <p className="text-xs text-gray-500 font-medium">Quizzes</p>
+          </button>
+
+          {/* Average Score */}
+          <button
+            onClick={() => navigate("/progress")}
+            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-emerald-200 transition-all text-center group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <Target className="w-6 h-6 text-emerald-600" />
+            </div>
+            <p className="text-2xl font-black text-emerald-600 mb-1">
+              {stats.averageScore}%
+            </p>
+            <p className="text-xs text-gray-500 font-medium">Avg Score</p>
+          </button>
+
+          {/* Passed */}
+          <button
+            onClick={() => navigate("/progress")}
+            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all text-center group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+              <CheckCircle2 className="w-6 h-6 text-orange-600" />
+            </div>
+            <p className="text-2xl font-black text-gray-900 mb-1">
+              {stats.passedQuizzes}
+            </p>
+            <p className="text-xs text-gray-500 font-medium">Passed</p>
+          </button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary-500" />
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => navigate("/browse-courses")}
+              className="p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md hover:shadow-primary-100/50 transition-all text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-3">
+                <BookOpen className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors">
+                Browse Courses
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Explore all available courses
+              </p>
             </button>
-            <button className="bg-primary-700/50 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl font-bold hover:bg-primary-700 transition-all">
-              View Progress
+
+            <button
+              onClick={() => navigate("/my-subscriptions")}
+              className="p-4 rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50 transition-all text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-3">
+                <GraduationCap className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-emerald-600 transition-colors">
+                My Subscriptions
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Access your enrolled courses
+              </p>
+            </button>
+
+            <button
+              onClick={() => navigate("/progress")}
+              className="p-4 rounded-xl border border-gray-200 hover:border-violet-300 hover:shadow-md hover:shadow-violet-100/50 transition-all text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center mb-3">
+                <Trophy className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-violet-600 transition-colors">
+                View Progress
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Track your quiz performance
+              </p>
             </button>
           </div>
         </div>
-      </section>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Active Learners"
-          value="1,234"
-          icon={Users}
-          gradient="from-blue-500 to-cyan-400"
-        />
-        <StatCard
-          title="Quizzes Mastered"
-          value="856"
-          icon={Trophy}
-          gradient="from-yellow-500 to-orange-400"
-        />
-        <StatCard
-          title="Lessons Completed"
-          value="12k"
-          icon={BookOpen}
-          gradient="from-pink-500 to-rose-400"
-        />
-      </div>
-
-      {/* Recent Activity / Content Area placeholder */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="min-h-[300px] flex flex-col justify-center items-center text-center p-12 border-dashed border-2 border-border bg-transparent hover:bg-card/50">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <BookOpen className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">
-            Continue Learning
-          </h3>
-          <p className="text-muted-foreground max-w-xs">
-            Your recent lessons will appear here properly formatted soon.
-          </p>
-        </Card>
-        <Card className="min-h-[300px] flex flex-col justify-center items-center text-center p-12 border-dashed border-2 border-border bg-transparent hover:bg-card/50">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Trophy className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">
-            Leaderboard
-          </h3>
-          <p className="text-muted-foreground max-w-xs">
-            Compete with friends and see who's leading the pack!
-          </p>
-        </Card>
+        {/* Show Tour Again Button */}
+        {!isNewUser && !showTour && (
+          <button
+            onClick={() => setShowTour(true)}
+            className="w-full md:w-auto px-5 py-2.5 bg-gray-50 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition-all border border-gray-200 flex items-center justify-center gap-2 mx-auto"
+          >
+            <Sparkles className="w-4 h-4" />
+            Show Getting Started Guide
+          </button>
+        )}
       </div>
     </div>
   );

@@ -18,9 +18,9 @@ const normalizePermissions = (user) => {
 };
 
 // Helper to fetch full user data with specific relations populated
-// Uses /users/me endpoint which returns the authenticated user's full data
-const fetchFullUserData = async (token) => {
-  if (!token) return null;
+// Uses /users/:id endpoint which returns the user's full data
+const fetchFullUserData = async (token, userId) => {
+  if (!token || !userId) return null;
 
   try {
     // Use /users/me endpoint with specific populate for org, role, and profile_picture
@@ -36,7 +36,7 @@ const fetchFullUserData = async (token) => {
     });
 
     const response = await fetch(
-      `${apiUrl}/users/me?${populateParams.toString()}`,
+      `${apiUrl}/users/${userId}?_t=${Date.now()}&${populateParams.toString()}`,
       {
         method: "GET",
         headers: {
@@ -51,7 +51,9 @@ const fetchFullUserData = async (token) => {
       return null;
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log("fetchFullUserData - raw response:", data);
+    return data;
   } catch (error) {
     console.error("Error fetching full user data:", error);
     return null;
@@ -65,7 +67,8 @@ export const refreshUser = async () => {
     throw new Error("Not authenticated");
   }
 
-  const user = await fetchFullUserData(token);
+  const userId = localStorage.getItem("userId");
+  const user = await fetchFullUserData(token, userId);
   if (!user) {
     throw new Error("Failed to fetch user data");
   }
@@ -107,7 +110,12 @@ export const authProvider = {
       const token = auth.jwt;
 
       // Fetch full user data for complete content population
-      const fullUser = await fetchFullUserData(token);
+      const fullUser = await fetchFullUserData(token, user.id);
+
+      if (!fullUser) {
+        throw new Error("Failed to load user profile. Please try again.");
+      }
+
       if (fullUser) {
         console.log("Full user data fetched:", fullUser);
         console.log("profile_picture:", fullUser.profile_picture);
@@ -155,8 +163,9 @@ export const authProvider = {
 
     // Refresh user data on every checkAuth (page refresh/navigation)
     try {
+      const userId = localStorage.getItem("userId");
       // Fetch fresh user data with full populate
-      const user = await fetchFullUserData(token);
+      const user = await fetchFullUserData(token, userId);
 
       if (!user) {
         // Token is invalid or user not found, clear storage and reject
@@ -278,6 +287,14 @@ export const authProvider = {
 
     return Promise.resolve({
       id: user.id,
+      username: user.username,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      mobile_number: user.mobile_number,
+      dob: user.dob,
+      gender: user.gender,
+      age: user.age,
       fullName:
         `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
         user.username,

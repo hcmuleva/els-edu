@@ -644,12 +644,7 @@ const AppMenu = (props) => {
                   <DropdownItem
                     icon={User}
                     label="Profile"
-                    onClick={() => notify("Profile clicked")}
-                  />
-                  <DropdownItem
-                    icon={Settings}
-                    label="Settings"
-                    onClick={() => notify("Settings clicked")}
+                    onClick={() => (window.location.href = "#/profile")}
                   />
                 </div>
 
