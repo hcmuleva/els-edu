@@ -391,8 +391,27 @@ export const ContentEdit = () => {
             )}
           </div>
 
-          {/* Topic & Subjects */}
+          {/* Subject & Topic */}
           <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-foreground">
+                Subject <span className="text-red-500">*</span>
+              </label>
+              <CustomAsyncSelect
+                resource="subjects"
+                optionText="name"
+                value={formData.subjects[0] || null}
+                onChange={(val) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    subjects: val ? [val] : [],
+                    topic: null, // Clear topic when subject changes
+                  }))
+                }
+                placeholder="Select subject first..."
+                initialData={initialSubject}
+              />
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-foreground">
                 Topic <span className="text-red-500">*</span>
@@ -404,27 +423,16 @@ export const ContentEdit = () => {
                 onChange={(val) =>
                   setFormData((prev) => ({ ...prev, topic: val }))
                 }
-                placeholder="Select topic..."
-                initialData={initialTopic}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground">
-                Subjects (Optional)
-              </label>
-              <CustomAsyncSelect
-                resource="subjects"
-                optionText="name"
-                value={formData.subjects[0] || null}
-                onChange={(val) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    subjects: val ? [val] : [],
-                  }))
+                placeholder={
+                  formData.subjects[0]
+                    ? "Select topic..."
+                    : "Select subject first"
                 }
-                placeholder="Select subject..."
-                allowEmpty
-                initialData={initialSubject}
+                disabled={!formData.subjects[0]}
+                filter={
+                  formData.subjects[0] ? { subject: formData.subjects[0] } : {}
+                }
+                initialData={initialTopic}
               />
             </div>
           </div>

@@ -421,7 +421,10 @@ export const QuestionsTab = () => {
             <CustomAsyncSelect
               label=""
               value={subjectFilter}
-              onChange={setSubjectFilter}
+              onChange={(value) => {
+                setSubjectFilter(value);
+                setTopicFilter(null);
+              }}
               resource="subjects"
               optionText="name"
               placeholder="Filter Subject"
@@ -436,9 +439,13 @@ export const QuestionsTab = () => {
               onChange={setTopicFilter}
               resource="topics"
               optionText="name"
-              placeholder="Filter Topic"
+              placeholder={
+                subjectFilter ? "Filter Topic" : "Select Subject first"
+              }
               allowEmpty
               searchable
+              disabled={!subjectFilter}
+              filter={subjectFilter ? { subject: subjectFilter } : {}}
             />
           </div>
           <div className="w-[180px]">

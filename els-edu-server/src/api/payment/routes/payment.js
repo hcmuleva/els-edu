@@ -64,5 +64,35 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: "POST",
+      path: "/payment/finalize-subscription",
+      handler: "payment.finalizeSubscription",
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    // ========== TESTING ONLY - Guarded by WEBHOOK_TESTING_ENABLED ==========
+    {
+      method: "POST",
+      path: "/payment/replay/:eventId",
+      handler: "payment.replayWebhook",
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: "POST",
+      path: "/payment/replay-storm",
+      handler: "payment.replayStorm",
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

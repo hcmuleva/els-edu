@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "webhook_events",
+  "info": {
+    "singularName": "webhook-event",
+    "pluralName": "webhook-events",
+    "displayName": "Webhook Event",
+    "description": "Stores raw webhook payloads for replay testing and audit"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "event_id": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "raw_payload": {
+      "type": "json"
+    },
+    "raw_headers": {
+      "type": "json"
+    },
+    "processing_status": {
+      "type": "enumeration",
+      "enum": ["STORED", "PROCESSED", "FAILED", "SKIPPED"],
+      "default": "STORED"
+    },
+    "processed_at": {
+      "type": "datetime"
+    },
+    "error_message": {
+      "type": "text"
+    },
+    "replay_count": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

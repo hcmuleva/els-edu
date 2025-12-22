@@ -119,9 +119,9 @@ package-lock.json
 # Old/Backup Directories
 ############################
 elsclient_copy/
+elsserver_copy/
 elsserver/
 elsclient/
-elsserver_copy/
 strapi-app/
 els-edu-server_backup/
 TBD/

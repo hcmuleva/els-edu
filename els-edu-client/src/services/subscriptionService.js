@@ -1,3 +1,5 @@
+import api from "./api";
+
 /**
  * Subscription Service - Reusable service for managing user subscriptions
  *
@@ -277,35 +279,27 @@ export const syncUserSubscriptions = async (
 /**
  * Initiate payment and handle Cashfree checkout
  *
- * @param {string} authToken - User auth token
+ * @param {string} _authToken - Deprecated, handled by api.js
  * @param {Object} paymentData - { coursePricingId, subjectPricingId, type }
  * @returns {Promise<void>}
  */
 export const initiatePayment = async (
-  authToken,
+  _authToken,
   { coursePricingId, subjectPricingId, type }
 ) => {
   try {
-    const baseUrl = (
-      import.meta.env.VITE_API_URL || "http://localhost:1337"
-    ).replace(/\/api$/, "");
-    const response = await fetch(`${baseUrl}/api/payment/create-order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        coursePricingId,
-        subjectPricingId,
-        type,
-      }),
+    const response = await api.post("/payment/create-order", {
+      coursePricingId,
+      subjectPricingId,
+      type,
     });
 
-    const data = await response.json();
+    const data = response.data;
 
-    if (!response.ok) {
-      throw new Error(data.error?.message || "Failed to create order");
+    // Axios throws on 4xx/5xx, so we don't need !response.ok check here usually,
+    // unless the server returns 200 with success: false
+    if (!data) {
+      throw new Error("Failed to create order");
     }
 
     if (data.success && data.paymentSessionId) {
@@ -324,11 +318,12 @@ export const initiatePayment = async (
         redirectTarget: "_self", // Use _self for full-page redirect to ensure returnUrl works
       });
     } else {
-      throw new Error("Invalid payment session recieved");
+      throw new Error("Invalid payment session received");
     }
   } catch (error) {
     console.error("Payment initiation failed:", error);
-    throw error;
+    // Extract error message from axios error object
+    throw error.response?.data?.message || error.message || error;
   }
 };
 
@@ -345,78 +340,34 @@ const loadCashfree = async () => {
 
 /**
  * Get payment order status
- * @param {string} authToken
+ * @param {string} _authToken - Deprecated
  * @param {string} orderId
  * @returns
  */
-export const getOrderStatus = async (authToken, orderId) => {
-  const baseUrl = (
-    import.meta.env.VITE_API_URL || "http://localhost:1337"
-  ).replace(/\/api$/, "");
-  const response = await fetch(`${baseUrl}/api/payment/order/${orderId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch order status");
-  }
-
-  return await response.json();
+export const getOrderStatus = async (_authToken, orderId) => {
+  const response = await api.get(`/payment/order/${orderId}`);
+  return response.data;
 };
 
 /**
  * Get purchase history
- * @param {string} authToken
+ * @param {string} _authToken - Deprecated
  * @returns
  */
-export const getPurchaseHistory = async (authToken) => {
-  const baseUrl = (
-    import.meta.env.VITE_API_URL || "http://localhost:1337"
-  ).replace(/\/api$/, "");
-  const response = await fetch(`${baseUrl}/api/payment/history`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch purchase history");
-  }
-
-  return await response.json();
+export const getPurchaseHistory = async (_authToken) => {
+  const response = await api.get("/payment/history");
+  return response.data;
 };
 
 /**
  * Cancel a pending payment
- * @param {string} authToken
+ * @param {string} _authToken - Deprecated
  * @param {string} orderId
  * @returns
  */
-export const cancelPayment = async (authToken, orderId) => {
-  const baseUrl = (
-    import.meta.env.VITE_API_URL || "http://localhost:1337"
-  ).replace(/\/api$/, "");
-  const response = await fetch(`${baseUrl}/api/payment/cancel`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({ orderId }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to cancel payment");
-  }
-
-  return await response.json();
+export const cancelPayment = async (_authToken, orderId) => {
+  const response = await api.post("/payment/cancel", { orderId });
+  return response.data;
 };
 
 /**
@@ -436,29 +387,13 @@ export const getPendingPayments = async (authToken) => {
 
 /**
  * Resume/Retry a payment
- * @param {string} authToken
+ * @param {string} _authToken - Deprecated
  * @param {string} orderId
  * @returns {Promise<Object>}
  */
-export const resumePayment = async (authToken, orderId) => {
-  const baseUrl = (
-    import.meta.env.VITE_API_URL || "http://localhost:1337"
-  ).replace(/\/api$/, "");
-  const response = await fetch(`${baseUrl}/api/payment/resume`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({ orderId }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to resume payment");
-  }
-
-  return await response.json();
+export const resumePayment = async (_authToken, orderId) => {
+  const response = await api.post("/payment/resume", { orderId });
+  return response.data;
 };
 
 /**
@@ -481,6 +416,19 @@ export const checkout = async (paymentSessionId, orderId) => {
   });
 };
 
+/**
+ * Finalize subscription after successful payment (Client backup)
+ * @param {string} _authToken - Deprecated
+ * @param {string} orderId
+ * @returns {Promise<Object>}
+ */
+export const finalizeSubscription = async (_authToken, orderId) => {
+  const response = await api.post("/payment/finalize-subscription", {
+    orderId,
+  });
+  return response.data;
+};
+
 // Export as service object for convenience
 export const subscriptionService = {
   createSubscription,
@@ -498,6 +446,7 @@ export const subscriptionService = {
   cancelPayment,
   getPendingPayments,
   resumePayment,
+  finalizeSubscription,
 };
 
 export default subscriptionService;

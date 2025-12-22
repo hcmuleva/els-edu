@@ -17,6 +17,7 @@ import { ChevronDown, Search, Check, X } from "lucide-react";
  * @param {string} helperText - Optional helper text
  * @param {boolean} searchable - Enable search filtering
  * @param {object} initialData - Initial data object for pre-selected value (used in edit forms)
+ * @param {object} filter - Filter object to pass to the API query (e.g., { "subject.id": 5 })
  */
 export const CustomAsyncSelect = ({
   label,
@@ -30,6 +31,7 @@ export const CustomAsyncSelect = ({
   helperText,
   searchable = true,
   initialData = null,
+  filter = {},
 }) => {
   const dataProvider = useDataProvider();
   const [options, setOptions] = useState([]);
@@ -40,13 +42,15 @@ export const CustomAsyncSelect = ({
   const searchInputRef = useRef(null);
 
   // Fetch Data and merge with initialData if provided
+  // Re-fetch when filter changes
   useEffect(() => {
     const fetchOptions = async () => {
+      setLoading(true);
       try {
         const { data } = await dataProvider.getList(resource, {
           pagination: { page: 1, perPage: 100 },
           sort: { field: optionText, order: "ASC" },
-          filter: {},
+          filter: filter || {},
         });
 
         // Merge initialData with fetched options if it exists and isn't already in the list
@@ -73,7 +77,7 @@ export const CustomAsyncSelect = ({
     };
 
     fetchOptions();
-  }, [dataProvider, resource, optionText]);
+  }, [dataProvider, resource, optionText, JSON.stringify(filter)]);
 
   // Handle initialData changes - merge with existing options when initialData arrives
   useEffect(() => {

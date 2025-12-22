@@ -42,38 +42,35 @@ const CourseViewModal = ({ course, onClose }) => {
   // Helper to process HTML and ensure links open in new tabs
   const processHTML = (html) => {
     if (!html || typeof html !== "string") return html;
-    
+
     // Add target="_blank" and rel="noopener noreferrer" to links that don't have them
-    return html.replace(
-      /<a\s+([^>]*?)>/gi,
-      (match, attributes) => {
-        // Check if target already exists
-        if (/target\s*=/i.test(attributes)) {
-          return match; // Already has target, return as is
-        }
-        // Add target and rel if href exists
-        if (/href\s*=/i.test(attributes)) {
-          return `<a ${attributes} target="_blank" rel="noopener noreferrer">`;
-        }
-        return match;
+    return html.replace(/<a\s+([^>]*?)>/gi, (match, attributes) => {
+      // Check if target already exists
+      if (/target\s*=/i.test(attributes)) {
+        return match; // Already has target, return as is
       }
-    );
+      // Add target and rel if href exists
+      if (/href\s*=/i.test(attributes)) {
+        return `<a ${attributes} target="_blank" rel="noopener noreferrer">`;
+      }
+      return match;
+    });
   };
 
   // Helper to get cover image URL
   const getCoverImageUrl = () => {
     if (!course.cover) return null;
-    
+
     // Handle different cover structures
-    if (typeof course.cover === 'string') {
+    if (typeof course.cover === "string") {
       return course.cover;
     }
-    
+
     // Strapi v5 structure: cover object with url property
     if (course.cover.url) {
       return course.cover.url;
     }
-    
+
     // Try nested formats
     if (course.cover.formats?.large?.url) {
       return course.cover.formats.large.url;
@@ -87,12 +84,12 @@ const CourseViewModal = ({ course, onClose }) => {
     if (course.cover.formats?.thumbnail?.url) {
       return course.cover.formats.thumbnail.url;
     }
-    
+
     // Try data.url structure
     if (course.cover.data?.url) {
       return course.cover.data.url;
     }
-    
+
     return null;
   };
 
@@ -101,14 +98,16 @@ const CourseViewModal = ({ course, onClose }) => {
   // Helper to get description content
   const descriptionContent = useMemo(() => {
     if (!course.description) return { content: "", isHTML: false };
-    
+
     // If it's already a string
     if (typeof course.description === "string") {
       const isHTML = containsHTML(course.description);
-      const content = isHTML ? processHTML(course.description) : course.description;
+      const content = isHTML
+        ? processHTML(course.description)
+        : course.description;
       return { content, isHTML };
     }
-    
+
     // If it's an array (blocks format), convert to markdown
     if (Array.isArray(course.description)) {
       try {
@@ -120,13 +119,20 @@ const CourseViewModal = ({ course, onClose }) => {
             if (block.type === "heading" && block.children) {
               const level = block.level || 1;
               const prefix = "#".repeat(level) + " ";
-              return prefix + block.children.map((child) => child.text || "").join("");
+              return (
+                prefix +
+                block.children.map((child) => child.text || "").join("")
+              );
             }
             if (block.type === "list" && block.children) {
               return block.children
                 .map((item, index) => {
-                  const prefix = block.format === "ordered" ? `${index + 1}. ` : "- ";
-                  return prefix + (item.children?.map((c) => c.text || "").join("") || "");
+                  const prefix =
+                    block.format === "ordered" ? `${index + 1}. ` : "- ";
+                  return (
+                    prefix +
+                    (item.children?.map((c) => c.text || "").join("") || "")
+                  );
                 })
                 .join("\n");
             }
@@ -140,7 +146,7 @@ const CourseViewModal = ({ course, onClose }) => {
         return { content: "", isHTML: false };
       }
     }
-    
+
     return { content: "", isHTML: false };
   }, [course.description]);
 
@@ -214,23 +220,37 @@ const CourseViewModal = ({ course, onClose }) => {
                   {descriptionContent.isHTML ? (
                     <div
                       className="prose prose-sm max-w-none text-gray-600 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2 [&_p]:leading-relaxed [&_p]:text-gray-600 [&_a]:text-blue-600 [&_a]:hover:text-blue-800 [&_a]:hover:underline [&_a]:font-medium [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ul]:space-y-1 [&_ul]:text-gray-600 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_ol]:space-y-1 [&_ol]:text-gray-600 [&_li]:text-gray-600 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_blockquote]:my-2 [&_strong]:font-bold [&_strong]:text-gray-900 [&_em]:italic"
-                      dangerouslySetInnerHTML={{ __html: descriptionContent.content }}
+                      dangerouslySetInnerHTML={{
+                        __html: descriptionContent.content,
+                      }}
                     />
                   ) : (
                     <div className="prose prose-sm max-w-none text-gray-600">
                       <ReactMarkdown
                         components={{
                           h1: ({ node, ...props }) => (
-                            <h1 className="text-xl font-bold text-gray-900 mt-4 mb-2" {...props} />
+                            <h1
+                              className="text-xl font-bold text-gray-900 mt-4 mb-2"
+                              {...props}
+                            />
                           ),
                           h2: ({ node, ...props }) => (
-                            <h2 className="text-lg font-bold text-gray-900 mt-3 mb-2" {...props} />
+                            <h2
+                              className="text-lg font-bold text-gray-900 mt-3 mb-2"
+                              {...props}
+                            />
                           ),
                           h3: ({ node, ...props }) => (
-                            <h3 className="text-base font-bold text-gray-900 mt-3 mb-1" {...props} />
+                            <h3
+                              className="text-base font-bold text-gray-900 mt-3 mb-1"
+                              {...props}
+                            />
                           ),
                           p: ({ node, ...props }) => (
-                            <p className="mb-2 leading-relaxed text-gray-600" {...props} />
+                            <p
+                              className="mb-2 leading-relaxed text-gray-600"
+                              {...props}
+                            />
                           ),
                           a: ({ node, ...props }) => (
                             <a
@@ -241,10 +261,16 @@ const CourseViewModal = ({ course, onClose }) => {
                             />
                           ),
                           ul: ({ node, ...props }) => (
-                            <ul className="list-disc pl-5 mb-2 space-y-1 text-gray-600" {...props} />
+                            <ul
+                              className="list-disc pl-5 mb-2 space-y-1 text-gray-600"
+                              {...props}
+                            />
                           ),
                           ol: ({ node, ...props }) => (
-                            <ol className="list-decimal pl-5 mb-2 space-y-1 text-gray-600" {...props} />
+                            <ol
+                              className="list-decimal pl-5 mb-2 space-y-1 text-gray-600"
+                              {...props}
+                            />
                           ),
                           li: ({ node, ...props }) => (
                             <li className="text-gray-600" {...props} />
@@ -268,7 +294,10 @@ const CourseViewModal = ({ course, onClose }) => {
                             />
                           ),
                           strong: ({ node, ...props }) => (
-                            <strong className="font-bold text-gray-900" {...props} />
+                            <strong
+                              className="font-bold text-gray-900"
+                              {...props}
+                            />
                           ),
                           em: ({ node, ...props }) => (
                             <em className="italic" {...props} />
@@ -414,6 +443,7 @@ export const CoursesTab = () => {
   } = useGetList("courses", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
+    filter: userId ? { creator: userId } : {},
     meta: {
       populate: "*", // Populate all relations including cover
     },
@@ -734,10 +764,10 @@ export const CoursesTab = () => {
                         <ImagePreview
                           src={
                             // Handle Strapi v5 cover object structure
-                            typeof item.cover === 'string' 
-                              ? item.cover 
-                              : item.cover?.url || 
-                                item.cover?.formats?.thumbnail?.url || 
+                            typeof item.cover === "string"
+                              ? item.cover
+                              : item.cover?.url ||
+                                item.cover?.formats?.thumbnail?.url ||
                                 item.cover?.formats?.small?.url ||
                                 item.cover?.data?.url ||
                                 null

@@ -115,3 +115,31 @@ export const getHighestRole = (roles) => {
   }
   return highest;
 };
+
+// Navigation items visible to each role
+// These keys correspond to navigation identifiers used in Menu.jsx
+export const NAVIGATION_BY_ROLE = {
+  SUPERADMIN: [
+    "dashboard",
+    "all-orgs",
+    "users",
+    "invoices",
+    "my-subscriptions",
+    "browse-courses",
+    "progress",
+    "my-studio",
+  ],
+  ADMIN: ["dashboard", "manage", "my-studio"],
+  TEACHER: ["my-studio"],
+  STUDENT: ["dashboard", "my-subscriptions", "browse-courses", "progress"],
+  PARENT: ["dashboard", "progress"],
+  MARKETING: ["dashboard"],
+  USER: ["dashboard"],
+};
+
+// Check if a role can access a specific navigation item
+export const canAccessNavItem = (role, navItem) => {
+  if (!role || !navItem) return false;
+  const allowedNav = NAVIGATION_BY_ROLE[role] || NAVIGATION_BY_ROLE["STUDENT"];
+  return allowedNav.includes(navItem);
+};

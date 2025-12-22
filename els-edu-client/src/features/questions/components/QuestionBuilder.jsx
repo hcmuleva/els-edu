@@ -289,8 +289,26 @@ export const QuestionBuilder = ({
         />
       </div>
 
-      {/* Topic and Subject Reference - Body Grid */}
+      {/* Subject and Topic Reference - Body Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <CustomAsyncSelect
+          label="Subject Reference"
+          value={question.subject}
+          onChange={(subjectId) => {
+            if (readOnly) return;
+            onChange(index, {
+              ...question,
+              subject: subjectId,
+              topic: null, // Clear topic when subject changes
+            });
+          }}
+          resource="subjects"
+          optionText="name"
+          placeholder="Select subject first..."
+          allowEmpty
+          helperText="Optional categorization"
+          disabled={readOnly}
+        />
         <CustomAsyncSelect
           label="Topic Reference"
           value={question.topic}
@@ -299,23 +317,13 @@ export const QuestionBuilder = ({
           }
           resource="topics"
           optionText="name"
-          placeholder="Select topic..."
-          allowEmpty
-          helperText="Optional categorization"
-          disabled={readOnly}
-        />
-        <CustomAsyncSelect
-          label="Subject Reference"
-          value={question.subject}
-          onChange={(subjectId) =>
-            !readOnly && onChange(index, { ...question, subject: subjectId })
+          placeholder={
+            question.subject ? "Select topic..." : "Select subject first"
           }
-          resource="subjects"
-          optionText="name"
-          placeholder="Select subject..."
           allowEmpty
           helperText="Optional categorization"
-          disabled={readOnly}
+          disabled={readOnly || !question.subject}
+          filter={question.subject ? { subject: question.subject } : {}}
         />
       </div>
 

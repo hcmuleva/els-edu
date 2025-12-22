@@ -159,6 +159,7 @@ export const TopicsTab = () => {
 
   // Local Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [courseFilter, setCourseFilter] = useState(null);
   const [subjectFilter, setSubjectFilter] = useState(null);
 
   // Sorting
@@ -227,6 +228,7 @@ export const TopicsTab = () => {
 
   const resetFilters = () => {
     setSearchQuery("");
+    setCourseFilter(null);
     setSubjectFilter(null);
   };
 
@@ -291,13 +293,32 @@ export const TopicsTab = () => {
           <div className="w-[200px]">
             <CustomAsyncSelect
               label=""
+              value={courseFilter}
+              onChange={(value) => {
+                setCourseFilter(value);
+                setSubjectFilter(null);
+              }}
+              resource="courses"
+              optionText="name"
+              placeholder="Filter Course"
+              allowEmpty
+              searchable
+            />
+          </div>
+          <div className="w-[200px]">
+            <CustomAsyncSelect
+              label=""
               value={subjectFilter}
               onChange={setSubjectFilter}
               resource="subjects"
               optionText="name"
-              placeholder="Filter Subject"
+              placeholder={
+                courseFilter ? "Filter Subject" : "Select Course first"
+              }
               allowEmpty
               searchable
+              disabled={!courseFilter}
+              filter={courseFilter ? { courses: courseFilter } : {}}
             />
           </div>
 

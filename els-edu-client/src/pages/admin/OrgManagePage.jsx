@@ -493,9 +493,34 @@ const OrgManagePage = () => {
 
   // Fetch org details and stats
   useEffect(() => {
-    if (currentUserRole !== "SUPERADMIN") {
+    // Allow both ADMIN and SUPERADMIN to access
+    const allowedRoles = ["ADMIN", "SUPERADMIN"];
+    if (!allowedRoles.includes(currentUserRole)) {
       navigate("/");
       return;
+    }
+
+    // For ADMIN users, verify they can only access their own org
+    if (currentUserRole === "ADMIN") {
+      const userOrgDocumentId = storedUser?.org?.documentId || storedUser?.org;
+      console.log(
+        "ADMIN org check - userOrgDocumentId:",
+        userOrgDocumentId,
+        "URL documentId:",
+        documentId
+      );
+
+      // Only redirect if user has an org AND it doesn't match the URL
+      // If user doesn't have an org, let them proceed (will show error if org not found)
+      if (userOrgDocumentId && userOrgDocumentId !== documentId) {
+        // ADMIN trying to access a different org - redirect to their own
+        console.log(
+          "ADMIN accessing different org, redirecting to:",
+          userOrgDocumentId
+        );
+        navigate(`/admin/org/${userOrgDocumentId}`);
+        return;
+      }
     }
 
     const fetchOrgAndStats = async () => {
@@ -980,7 +1005,10 @@ const OrgManagePage = () => {
     );
   };
 
-  if (currentUserRole !== "SUPERADMIN") return null;
+  // Allow both ADMIN and SUPERADMIN to view this page
+  // Access control is already handled in the useEffect above
+  const allowedRoles = ["ADMIN", "SUPERADMIN"];
+  if (!allowedRoles.includes(currentUserRole)) return null;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">

@@ -61,6 +61,18 @@ const ContentPage = () => {
     () => localStorage.getItem("contentPage.activeTab") || "questions"
   ); // Default to questions
 
+  // Get current user role for content creation restrictions
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const userRole = storedUser?.user_role || "STUDENT";
+
+  // Role-based content creation permissions
+  // TEACHER: Can only create Questions and Quizzes
+  // ADMIN/SUPERADMIN: Can create all content types
+  const canCreateQuestionQuiz = ["TEACHER", "ADMIN", "SUPERADMIN"].includes(
+    userRole
+  );
+  const canCreateFullContent = ["ADMIN", "SUPERADMIN"].includes(userRole);
+
   useEffect(() => {
     localStorage.setItem("contentPage.mode", studioMode);
   }, [studioMode]);
@@ -85,7 +97,7 @@ const ContentPage = () => {
           </p>
         </div>
 
-        {/* Main Mode Tabs */}
+        {/* Main Mode Tabs - Only show Assign tab for Admin/SuperAdmin */}
         <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
           <button
             onClick={() => setStudioMode("create")}
@@ -98,17 +110,19 @@ const ContentPage = () => {
             <PlusCircle className="w-4 h-4" />
             Create
           </button>
-          <button
-            onClick={() => setStudioMode("assign")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
-              studioMode === "assign"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Link2 className="w-4 h-4" />
-            Assign
-          </button>
+          {canCreateFullContent && (
+            <button
+              onClick={() => setStudioMode("assign")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                studioMode === "assign"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Link2 className="w-4 h-4" />
+              Assign
+            </button>
+          )}
         </div>
       </div>
 
@@ -116,54 +130,72 @@ const ContentPage = () => {
       {studioMode === "create" && (
         <>
           <div className="flex flex-wrap gap-4">
-            <ActionButton
-              icon={FileQuestion}
-              title="New Question"
-              description="Create a single question for quizzes or practice."
-              onClick={() => redirect("/questions/create")}
-              bgClass="bg-blue-50"
-              colorClass="text-blue-600"
-            />
-            <ActionButton
-              icon={BookOpen}
-              title="New Quiz"
-              description="Assemble questions into a graded assessment."
-              onClick={() => redirect("/quizzes/create")}
-              bgClass="bg-violet-50"
-              colorClass="text-violet-600"
-            />
-            <ActionButton
-              icon={GraduationCap}
-              title="New Course"
-              description="Build a comprehensive learning path."
-              onClick={() => redirect("/courses/create")}
-              bgClass="bg-emerald-50"
-              colorClass="text-emerald-600"
-            />
-            <ActionButton
-              icon={Layers}
-              title="New Subject"
-              description="Create a subject to organize topics and content."
-              onClick={() => redirect("/subjects/create")}
-              bgClass="bg-amber-50"
-              colorClass="text-amber-600"
-            />
-            <ActionButton
-              icon={FolderTree}
-              title="New Topic"
-              description="Add a topic under a subject for better organization."
-              onClick={() => redirect("/topics/create")}
-              bgClass="bg-indigo-50"
-              colorClass="text-indigo-600"
-            />
-            <ActionButton
-              icon={FileText}
-              title="New Content"
-              description="Add educational content like videos, images, or documents."
-              onClick={() => redirect("/contents/create")}
-              bgClass="bg-teal-50"
-              colorClass="text-teal-600"
-            />
+            {/* Questions - Available to: TEACHER, ADMIN, SUPERADMIN */}
+            {canCreateQuestionQuiz && (
+              <ActionButton
+                icon={FileQuestion}
+                title="New Question"
+                description="Create a single question for quizzes or practice."
+                onClick={() => redirect("/questions/create")}
+                bgClass="bg-blue-50"
+                colorClass="text-blue-600"
+              />
+            )}
+            {/* Quizzes - Available to: TEACHER, ADMIN, SUPERADMIN */}
+            {canCreateQuestionQuiz && (
+              <ActionButton
+                icon={BookOpen}
+                title="New Quiz"
+                description="Assemble questions into a graded assessment."
+                onClick={() => redirect("/quizzes/create")}
+                bgClass="bg-violet-50"
+                colorClass="text-violet-600"
+              />
+            )}
+            {/* Courses - Available to: ADMIN, SUPERADMIN only */}
+            {canCreateFullContent && (
+              <ActionButton
+                icon={GraduationCap}
+                title="New Course"
+                description="Build a comprehensive learning path."
+                onClick={() => redirect("/courses/create")}
+                bgClass="bg-emerald-50"
+                colorClass="text-emerald-600"
+              />
+            )}
+            {/* Subjects - Available to: ADMIN, SUPERADMIN only */}
+            {canCreateFullContent && (
+              <ActionButton
+                icon={Layers}
+                title="New Subject"
+                description="Create a subject to organize topics and content."
+                onClick={() => redirect("/subjects/create")}
+                bgClass="bg-amber-50"
+                colorClass="text-amber-600"
+              />
+            )}
+            {/* Topics - Available to: ADMIN, SUPERADMIN only */}
+            {canCreateFullContent && (
+              <ActionButton
+                icon={FolderTree}
+                title="New Topic"
+                description="Add a topic under a subject for better organization."
+                onClick={() => redirect("/topics/create")}
+                bgClass="bg-indigo-50"
+                colorClass="text-indigo-600"
+              />
+            )}
+            {/* Contents - Available to: ADMIN, SUPERADMIN only */}
+            {canCreateFullContent && (
+              <ActionButton
+                icon={FileText}
+                title="New Content"
+                description="Add educational content like videos, images, or documents."
+                onClick={() => redirect("/contents/create")}
+                bgClass="bg-teal-50"
+                colorClass="text-teal-600"
+              />
+            )}
           </div>
           <div className="bg-white rounded-3xl border border-border/50 shadow-sm">
             <div className="flex items-center justify-between p-6 pb-4 border-b border-border/50">

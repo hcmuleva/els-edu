@@ -1,26 +1,31 @@
 module.exports = [
-  'strapi::logger',
-  'strapi::errors',
+  "strapi::logger",
+  "strapi::errors",
   {
-    name: 'strapi::security',
+    name: "strapi::security",
     config: {
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
-          'connect-src': ["'self'", "https:", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
-          'img-src': [
+          "connect-src": [
             "'self'",
-            'data:',
-            'blob:',
-            'market-assets.strapi.io',
-            'emeelanels.s3.us-east-1.amazonaws.com',
+            "https:",
+            "https://sandbox.cashfree.com",
+            "https://api.cashfree.com",
           ],
-          'media-src': [
+          "img-src": [
             "'self'",
-            'data:',
-            'blob:',
-            'market-assets.strapi.io',
-            'emeelanels.s3.us-east-1.amazonaws.com',
+            "data:",
+            "blob:",
+            "market-assets.strapi.io",
+            "emeelanels.s3.us-east-1.amazonaws.com",
+          ],
+          "media-src": [
+            "'self'",
+            "data:",
+            "blob:",
+            "market-assets.strapi.io",
+            "emeelanels.s3.us-east-1.amazonaws.com",
           ],
           upgradeInsecureRequests: null,
         },
@@ -28,28 +33,28 @@ module.exports = [
     },
   },
   {
-    name: 'strapi::cors',
+    name: "strapi::cors",
     config: {
       enabled: true,
-      origin: '*', // Allow all origins
-      headers: ['*'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+      origin: "*", // Allow all origins
+      headers: ["*"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     },
   },
-  'strapi::poweredBy',
-  'strapi::query',
+  "strapi::poweredBy",
+  "strapi::query",
   {
-    name: 'strapi::body',
+    name: "strapi::body",
     config: {
-      includeUnparsed: true,  // KEY: Preserves raw body for webhooks
-      jsonLimit: '10mb',      // JSON size limit
-      formLimit: '56kb',      // Form limit
-      textLimit: '56kb',      // Text limit
-      multipart: true,        // For file uploads (if needed)
-      encoding: 'utf-8',
+      includeUnparsed: true, // KEY: Preserves raw body for webhooks
+      jsonLimit: "10mb", // JSON size limit
+      formLimit: "56kb", // Form limit
+      textLimit: "56kb", // Text limit
+      multipart: true, // For file uploads (if needed)
+      encoding: "utf-8",
     },
   },
-  'strapi::session',
-  'strapi::favicon',
-  'strapi::public',
+  "strapi::session",
+  "strapi::favicon",
+  "strapi::public",
 ];

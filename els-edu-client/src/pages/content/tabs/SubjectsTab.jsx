@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { CustomSelect } from "../../../components/common/CustomSelect";
+import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
 import ImagePreview from "../../../components/studio/ImagePreview";
 import CountListModal from "../../../components/studio/CountListModal";
 
@@ -193,6 +194,7 @@ export const SubjectsTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState(null);
 
   // Sorting
   const [sortField, setSortField] = useState("createdAt");
@@ -265,6 +267,7 @@ export const SubjectsTab = () => {
     setSearchQuery("");
     setGradeFilter("");
     setLevelFilter("");
+    setCourseFilter(null);
   };
 
   const getFilteredContent = () => {
@@ -282,6 +285,19 @@ export const SubjectsTab = () => {
 
     if (levelFilter) {
       content = content.filter((item) => item.level === parseInt(levelFilter));
+    }
+
+    if (courseFilter) {
+      content = content.filter((item) => {
+        const courses = item.courses || [];
+        return courses.some((c) => {
+          const cId = c?.id || c;
+          return (
+            cId === courseFilter ||
+            (typeof cId === "object" && cId?.id === courseFilter)
+          );
+        });
+      });
     }
 
     return content;
@@ -351,6 +367,18 @@ export const SubjectsTab = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+            />
+          </div>
+          <div className="w-[180px]">
+            <CustomAsyncSelect
+              label=""
+              value={courseFilter}
+              onChange={setCourseFilter}
+              resource="courses"
+              optionText="name"
+              placeholder="Filter Course"
+              allowEmpty
+              searchable
             />
           </div>
           <div className="w-[180px]">

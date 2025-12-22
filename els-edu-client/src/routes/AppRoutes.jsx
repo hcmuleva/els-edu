@@ -18,6 +18,8 @@ import PaymentStatusPage from "../pages/payment/PaymentStatusPage";
 
 import PurchaseHistoryPage from "../pages/payment/PurchaseHistoryPage";
 
+import { ProtectedRoute } from "../components/common/ProtectedRoute";
+
 const AppRoutes = () => (
   <>
     <CustomRoutes noLayout>
@@ -25,7 +27,15 @@ const AppRoutes = () => (
       <Route path="/payment/status" element={<PaymentStatusPage />} />
     </CustomRoutes>
     <CustomRoutes>
-      <Route path="/my-contents" element={<ContentPage />} />
+      {/* My Studio - protected for TEACHER, ADMIN, SUPERADMIN */}
+      <Route
+        path="/my-contents"
+        element={
+          <ProtectedRoute allowedRoles={["TEACHER", "ADMIN", "SUPERADMIN"]}>
+            <ContentPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/purchase-history" element={<PurchaseHistoryPage />} />
       <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
       <Route
@@ -38,9 +48,33 @@ const AppRoutes = () => (
       <Route path="/browse-subjects/:id" element={<SubjectDetailPage />} />
       <Route path="/quiz/:id/play" element={<QuizPlayer />} />
       <Route path="/progress" element={<ProgressPage />} />
-      <Route path="/manage" element={<ManagePage />} />
-      <Route path="/admin/orgs" element={<SuperAdminOrgsPage />} />
-      <Route path="/admin/org/:documentId" element={<OrgManagePage />} />
+      {/* Manage page - only SUPERADMIN */}
+      <Route
+        path="/manage"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+            <ManagePage />
+          </ProtectedRoute>
+        }
+      />
+      {/* All Orgs - only SUPERADMIN */}
+      <Route
+        path="/admin/orgs"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERADMIN"]}>
+            <SuperAdminOrgsPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Org Management - ADMIN and SUPERADMIN (ADMIN restricted to their org in component) */}
+      <Route
+        path="/admin/org/:documentId"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
+            <OrgManagePage />
+          </ProtectedRoute>
+        }
+      />
     </CustomRoutes>
   </>
 );
