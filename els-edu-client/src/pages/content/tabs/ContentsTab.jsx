@@ -187,6 +187,7 @@ export const ContentsTab = () => {
   // Local Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState(null);
   const [topicFilter, setTopicFilter] = useState(null);
   const [subjectFilter, setSubjectFilter] = useState(null);
 
@@ -258,6 +259,7 @@ export const ContentsTab = () => {
   const resetFilters = () => {
     setSearchQuery("");
     setTypeFilter("");
+    setCourseFilter(null);
     setTopicFilter(null);
     setSubjectFilter(null);
   };
@@ -370,13 +372,38 @@ export const ContentsTab = () => {
           <div className="w-[180px]">
             <CustomAsyncSelect
               label=""
-              value={subjectFilter}
-              onChange={setSubjectFilter}
-              resource="subjects"
+              value={courseFilter}
+              onChange={(value) => {
+                setCourseFilter(value);
+                // Clear subject and topic when course changes
+                setSubjectFilter(null);
+                setTopicFilter(null);
+              }}
+              resource="courses"
               optionText="name"
-              placeholder="Filter Subject"
+              placeholder="Filter Course"
               allowEmpty
               searchable
+            />
+          </div>
+          <div className="w-[180px]">
+            <CustomAsyncSelect
+              label=""
+              value={subjectFilter}
+              onChange={(value) => {
+                setSubjectFilter(value);
+                // Clear topic filter when subject changes
+                setTopicFilter(null);
+              }}
+              resource="subjects"
+              optionText="name"
+              placeholder={
+                courseFilter ? "Filter Subject" : "Select Course first"
+              }
+              allowEmpty
+              searchable
+              disabled={!courseFilter}
+              filter={courseFilter ? { courses: courseFilter } : {}}
             />
           </div>
           <div className="w-[180px]">
@@ -386,9 +413,13 @@ export const ContentsTab = () => {
               onChange={setTopicFilter}
               resource="topics"
               optionText="name"
-              placeholder="Filter Topic"
+              placeholder={
+                subjectFilter ? "Filter Topic" : "Select Subject first"
+              }
               allowEmpty
               searchable
+              disabled={!subjectFilter}
+              filter={subjectFilter ? { subject: subjectFilter } : {}}
             />
           </div>
 

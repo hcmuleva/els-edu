@@ -400,6 +400,21 @@ export const QuizCreate = () => {
                   <div className="grid grid-cols-2 gap-8 pt-2">
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-foreground">
+                        Subject <span className="text-red-500">*</span>
+                      </label>
+                      <CustomAsyncSelect
+                        resource="subjects"
+                        optionText="name"
+                        value={formData.subject}
+                        onChange={(val) => {
+                          updateFormData("subject", val);
+                          updateFormData("topic", null); // Clear topic when subject changes
+                        }}
+                        placeholder="Select subject first..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-foreground">
                         Topic <span className="text-red-500">*</span>
                       </label>
                       <CustomAsyncSelect
@@ -407,19 +422,15 @@ export const QuizCreate = () => {
                         optionText="name"
                         value={formData.topic}
                         onChange={(val) => updateFormData("topic", val)}
-                        placeholder="Select topic..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-foreground">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <CustomAsyncSelect
-                        resource="subjects"
-                        optionText="name"
-                        value={formData.subject}
-                        onChange={(val) => updateFormData("subject", val)}
-                        placeholder="Select subject..."
+                        placeholder={
+                          formData.subject
+                            ? "Select topic..."
+                            : "Select subject first"
+                        }
+                        disabled={!formData.subject}
+                        filter={
+                          formData.subject ? { subject: formData.subject } : {}
+                        }
                       />
                     </div>
                   </div>

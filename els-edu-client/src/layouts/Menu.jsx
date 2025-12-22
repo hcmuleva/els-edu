@@ -26,6 +26,7 @@ import { cn } from "../lib/utils";
 import { useLocation } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useRoleNavigation } from "../hooks/useRoleNavigation";
 
 // Portal Dropdown Component to avoid clipping
 const PortalDropdown = ({
@@ -297,6 +298,9 @@ const AppMenu = (props) => {
   const authProvider = useAuthProvider();
   const [open, setOpen] = useSidebarState();
 
+  // Use role-based navigation hook
+  const { canAccess, getManageRoute, userRole } = useRoleNavigation();
+
   const isTeacherOrAdmin = ["TEACHER", "ADMIN", "SUPERADMIN"].includes(
     permissions
   );
@@ -432,20 +436,31 @@ const AppMenu = (props) => {
             },
           }}
         >
+          {/* Main Section - Role-based visibility */}
           <SectionHeader title="Main" isOpen={open} />
-          <CustomMenuItem
-            to="/"
-            primaryText="Dashboard"
-            leftIcon={<LayoutDashboard size={20} />}
-            isOpen={open}
-          />
-          <CustomMenuItem
-            to="/manage"
-            primaryText="Manage"
-            leftIcon={<Settings size={20} />}
-            isOpen={open}
-          />
-          {permissions === "SUPERADMIN" && (
+
+          {/* Dashboard - visible to: STUDENT, ADMIN, SUPERADMIN */}
+          {canAccess("dashboard") && (
+            <CustomMenuItem
+              to="/"
+              primaryText="Dashboard"
+              leftIcon={<LayoutDashboard size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* Manage - visible to: ADMIN (their org), SUPERADMIN (full manage page) */}
+          {canAccess("manage") && (
+            <CustomMenuItem
+              to={getManageRoute()}
+              primaryText="Manage"
+              leftIcon={<Settings size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* All Orgs - visible to: SUPERADMIN only */}
+          {canAccess("all-orgs") && (
             <CustomMenuItem
               to="/admin/orgs"
               primaryText="All Orgs"
@@ -453,40 +468,66 @@ const AppMenu = (props) => {
               isOpen={open}
             />
           )}
-          <CustomMenuItem
-            to="/users"
-            primaryText="Users"
-            leftIcon={<Users size={20} />}
-            isOpen={open}
-          />
-          <CustomMenuItem
-            to="/invoices"
-            primaryText="Invoices"
-            leftIcon={<FileText size={20} />}
-            isOpen={open}
-          />
 
-          <SectionHeader title="Learning" isOpen={open} />
-          <CustomMenuItem
-            to="/my-subscriptions"
-            primaryText="My Subscriptions"
-            leftIcon={<GraduationCap size={20} />}
-            isOpen={open}
-          />
-          <CustomMenuItem
-            to="/browse-courses"
-            primaryText="Browse Courses"
-            leftIcon={<BookOpen size={20} />}
-            isOpen={open}
-          />
-          <CustomMenuItem
-            to="/progress"
-            primaryText="My Progress"
-            leftIcon={<GraduationCap size={20} />}
-            isOpen={open}
-          />
+          {/* Users - visible to: SUPERADMIN only */}
+          {canAccess("users") && (
+            <CustomMenuItem
+              to="/users"
+              primaryText="Users"
+              leftIcon={<Users size={20} />}
+              isOpen={open}
+            />
+          )}
 
-          {isTeacherOrAdmin && (
+          {/* Invoices - visible to: SUPERADMIN only */}
+          {canAccess("invoices") && (
+            <CustomMenuItem
+              to="/invoices"
+              primaryText="Invoices"
+              leftIcon={<FileText size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* Learning Section - Role-based visibility */}
+          {(canAccess("my-subscriptions") ||
+            canAccess("browse-courses") ||
+            canAccess("progress")) && (
+            <SectionHeader title="Learning" isOpen={open} />
+          )}
+
+          {/* My Subscriptions - visible to: STUDENT, SUPERADMIN */}
+          {canAccess("my-subscriptions") && (
+            <CustomMenuItem
+              to="/my-subscriptions"
+              primaryText="My Subscriptions"
+              leftIcon={<GraduationCap size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* Browse Courses - visible to: STUDENT, SUPERADMIN */}
+          {canAccess("browse-courses") && (
+            <CustomMenuItem
+              to="/browse-courses"
+              primaryText="Browse Courses"
+              leftIcon={<BookOpen size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* My Progress - visible to: STUDENT, PARENT, SUPERADMIN */}
+          {canAccess("progress") && (
+            <CustomMenuItem
+              to="/progress"
+              primaryText="My Progress"
+              leftIcon={<GraduationCap size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* My Studio - visible to: TEACHER, ADMIN, SUPERADMIN */}
+          {canAccess("my-studio") && (
             <CustomMenuItem
               to="/my-contents"
               primaryText="My Studio"
