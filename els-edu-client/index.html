@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,8 +16,9 @@
     <title>els-kids-client</title>
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script>
-      // Automatic redirect to hash routing if visiting base path without hash
-      if (!window.location.hash) {
+      // Automatic redirect to hash routing if visiting base path without hash (web deployment only)
+      // On Capacitor (mobile), location is localhost and no redirect is needed
+      if (!window.location.hash && window.location.hostname !== "localhost") {
         const path = window.location.pathname;
         if (path === "/els-kids" || path === "/els-kids/") {
           window.location.replace("/els-kids/#/");

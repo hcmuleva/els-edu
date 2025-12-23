@@ -173,3 +173,27 @@
     }
   }
 }
+
+/* Mobile Safe Area Support for Capacitor Apps */
+@layer utilities {
+  /* Safe area padding for iOS notch and Android status bar */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Mobile header height with safe area - smaller padding */
+  .mobile-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+    padding-bottom: 0.5rem;
+  }
+
+  /* Mobile bottom nav with safe area */
+  .mobile-bottom-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+    min-height: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}

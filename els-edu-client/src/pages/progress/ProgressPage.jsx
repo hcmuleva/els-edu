@@ -614,7 +614,7 @@ const ProgressPage = () => {
               </p>
               {timeFilteredResults.length === 0 ? (
                 <button
-                  onClick={() => navigate("/browse-subjects")}
+                  onClick={() => navigate("/browse-courses")}
                   className="px-6 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all shadow-md"
                 >
                   Browse Quizzes
@@ -714,19 +714,25 @@ const ProgressPage = () => {
                             <div className="text-sm font-black text-rose-700">
                               {record.incorrectAnswers}
                             </div>
-                            <div className="text-[10px] text-rose-600">Wrong</div>
+                            <div className="text-[10px] text-rose-600">
+                              Wrong
+                            </div>
                           </div>
                           <div className="bg-gray-50 rounded-md p-1.5 text-center">
                             <div className="text-sm font-black text-gray-700">
                               {record.unansweredQuestions}
                             </div>
-                            <div className="text-[10px] text-gray-600">Skip</div>
+                            <div className="text-[10px] text-gray-600">
+                              Skip
+                            </div>
                           </div>
                           <div className="bg-blue-50 rounded-md p-1.5 text-center">
                             <div className="text-sm font-black text-blue-700">
                               {record.totalQuestions}
                             </div>
-                            <div className="text-[10px] text-blue-600">Total</div>
+                            <div className="text-[10px] text-blue-600">
+                              Total
+                            </div>
                           </div>
                         </div>
 
