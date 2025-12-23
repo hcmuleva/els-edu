@@ -62,7 +62,7 @@ const BrowseCourseCard = ({
   enrolledSubjectCount = 0,
   totalSubjectCount = 0,
   pendingPayment = null,
-  onEnroll,
+
   onResumePayment,
   onCancelPayment,
   onClick,
@@ -112,10 +112,10 @@ const BrowseCourseCard = ({
   return (
     <div
       onClick={() => onClick && onClick(course)}
-      className="group relative bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-100/50 transition-all duration-300 overflow-hidden cursor-pointer"
+      className="group relative transition-all duration-300 cursor-pointer"
     >
       {/* Cover Image */}
-      <div className="relative h-36 bg-gradient-to-br from-primary-50 via-violet-50 to-pink-50 overflow-hidden">
+      <div className="relative h-40 md:h-48 rounded-2xl md:rounded-3xl bg-gradient-to-br from-primary-50 via-violet-50 to-pink-50 overflow-hidden shadow-sm">
         {course?.cover?.url ? (
           <img
             src={course.cover.url}
@@ -169,7 +169,7 @@ const BrowseCourseCard = ({
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="pt-4 px-1">
         {/* Title */}
         <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors leading-snug">
           {course.name}

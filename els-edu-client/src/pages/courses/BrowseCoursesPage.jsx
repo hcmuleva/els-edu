@@ -519,7 +519,7 @@ const BrowseCoursesPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 pb-20">
         {/* Results Count */}
         {!loading && filteredCourses.length > 0 && (
           <div className="flex items-center gap-2 mb-6">
@@ -535,7 +535,7 @@ const BrowseCoursesPage = () => {
 
         {/* Courses Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -555,7 +555,7 @@ const BrowseCoursesPage = () => {
             ))}
           </div>
         ) : filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
             {filteredCourses.map((course) => {
               const courseSubjectIds = (course.subjects || []).map(
                 (s) => s.documentId

@@ -305,17 +305,19 @@ const ProgressPage = () => {
       <Title title="My Progress" />
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 py-4">
           {/* Title */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-200">
-              <TrendingUp className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-md shadow-violet-200">
+              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Progress</h1>
-              <p className="text-sm text-gray-500">
-                Track your quiz performance and improvement
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900">
+                My Progress
+              </h1>
+              <p className="text-xs md:text-sm text-gray-500">
+                Track your quiz performance
               </p>
             </div>
           </div>
@@ -349,55 +351,61 @@ const ProgressPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-4 pb-20 space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-primary-100/50 transition-all">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Award className="w-5 h-5 text-blue-600" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <Award className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
               </div>
-              <p className="text-sm text-gray-500 font-medium">
-                Total Attempts
+              <p className="text-xs md:text-sm text-gray-500 font-medium">
+                Total
               </p>
             </div>
-            <p className="text-3xl font-black text-gray-900">
+            <p className="text-2xl md:text-3xl font-black text-gray-900">
               {stats.totalAttempts}
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-orange-100/50 transition-all">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                <Target className="w-5 h-5 text-orange-600" />
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                <Target className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
               </div>
-              <p className="text-sm text-gray-500 font-medium">Average Score</p>
+              <p className="text-xs md:text-sm text-gray-500 font-medium">
+                Avg
+              </p>
             </div>
-            <p className="text-3xl font-black text-orange-600">
+            <p className="text-2xl md:text-3xl font-black text-orange-600">
               {stats.averageScore}%
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-emerald-100/50 transition-all">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
               </div>
-              <p className="text-sm text-gray-500 font-medium">Passed</p>
+              <p className="text-xs md:text-sm text-gray-500 font-medium">
+                Passed
+              </p>
             </div>
-            <p className="text-3xl font-black text-emerald-600">
+            <p className="text-2xl md:text-3xl font-black text-emerald-600">
               {stats.passed}
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-violet-100/50 transition-all">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-violet-600" />
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+                <Clock className="w-4 h-4 md:w-5 md:h-5 text-violet-600" />
               </div>
-              <p className="text-sm text-gray-500 font-medium">Time Spent</p>
+              <p className="text-xs md:text-sm text-gray-500 font-medium">
+                Time
+              </p>
             </div>
-            <p className="text-3xl font-black text-violet-600">
+            <p className="text-2xl md:text-3xl font-black text-violet-600">
               {Math.round(stats.totalTimeSpent / 60)}m
             </p>
           </div>
@@ -537,59 +545,55 @@ const ProgressPage = () => {
         )}
 
         {/* Result Filter Pills */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <h3 className="text-sm font-bold text-gray-900">Filter Results</h3>
-            {activeResultFilter !== "all" && (
-              <button
-                onClick={() => setActiveResultFilter("all")}
-                className="ml-auto text-xs text-primary-600 hover:text-primary-700 font-semibold"
-              >
-                Clear Filter
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {resultFilters.map((filter) => {
-              const Icon = filter.icon;
-              const isActive = activeResultFilter === filter.id;
+        <div className="flex flex-wrap gap-2 items-center mb-4">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-sm font-bold text-gray-900">Filter:</span>
+          {resultFilters.map((filter) => {
+            const Icon = filter.icon;
+            const isActive = activeResultFilter === filter.id;
 
-              return (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveResultFilter(filter.id)}
-                  disabled={filter.count === 0}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
-                    isActive
-                      ? filter.color === "primary"
-                        ? "bg-primary-500 text-white shadow-md shadow-primary-200"
-                        : filter.color === "emerald"
-                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-200"
-                        : filter.color === "rose"
-                        ? "bg-rose-500 text-white shadow-md shadow-rose-200"
-                        : filter.color === "orange"
-                        ? "bg-orange-500 text-white shadow-md shadow-orange-200"
-                        : filter.color === "amber"
-                        ? "bg-amber-500 text-white shadow-md shadow-amber-200"
-                        : "bg-violet-500 text-white shadow-md shadow-violet-200"
-                      : filter.count === 0
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
-                  }`}
-                >
-                  {Icon && <Icon className="w-4 h-4" />}
-                  {filter.label} ({filter.count})
-                </button>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={filter.id}
+                onClick={() => setActiveResultFilter(filter.id)}
+                disabled={filter.count === 0}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? filter.color === "primary"
+                      ? "bg-primary-500 text-white"
+                      : filter.color === "emerald"
+                      ? "bg-emerald-500 text-white"
+                      : filter.color === "rose"
+                      ? "bg-rose-500 text-white"
+                      : filter.color === "orange"
+                      ? "bg-orange-500 text-white"
+                      : filter.color === "amber"
+                      ? "bg-amber-500 text-white"
+                      : "bg-violet-500 text-white"
+                    : filter.count === 0
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {Icon && <Icon className="w-3.5 h-3.5" />}
+                {filter.label} ({filter.count})
+              </button>
+            );
+          })}
+          {activeResultFilter !== "all" && (
+            <button
+              onClick={() => setActiveResultFilter("all")}
+              className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Quiz Results List */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Award className="w-5 h-5 text-primary-500" />
+        <div className="space-y-3">
+          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <Award className="w-4 h-4 text-primary-500" />
             Quiz Attempts ({filteredResults.length})
           </h2>
 
@@ -631,31 +635,31 @@ const ProgressPage = () => {
               return (
                 <div
                   key={record.id}
-                  className="bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-all overflow-hidden"
+                  className="bg-white rounded-xl border border-gray-100 hover:shadow-md transition-all overflow-hidden"
                 >
                   <div
-                    className="p-5 cursor-pointer"
+                    className="p-3 md:p-4 cursor-pointer"
                     onClick={() => {
                       setExpandedRow(isExpanded ? null : record.id);
                     }}
                   >
                     {/* Header */}
-                    <div className="flex items-start gap-4 mb-4">
+                    <div className="flex items-start gap-3 mb-3">
                       {/* Index Badge */}
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-violet-500 text-white font-black text-sm flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-violet-500 text-white font-bold text-xs flex items-center justify-center flex-shrink-0">
                         #{index + 1}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4 mb-2">
-                          <div className="flex-1">
-                            <h3 className="text-base font-bold text-gray-900 mb-1 leading-snug">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-bold text-gray-900 mb-0.5 leading-snug truncate">
                               {record.quiz?.title ||
                                 record.subject?.name ||
                                 "Quiz Attempt"}
                             </h3>
                             {record.subject && record.quiz?.title && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-xs text-gray-500 truncate">
                                 {record.subject.name}
                               </p>
                             )}
@@ -664,7 +668,7 @@ const ProgressPage = () => {
                           {/* Score Badge */}
                           <div className="flex-shrink-0">
                             <div
-                              className={`px-4 py-2 rounded-xl font-black text-xl ${
+                              className={`px-3 py-1.5 rounded-lg font-black text-base ${
                                 record.isPassed
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-rose-100 text-rose-700"
@@ -697,32 +701,32 @@ const ProgressPage = () => {
                         </div>
 
                         {/* Stats Row */}
-                        <div className="grid grid-cols-4 gap-2 mb-4">
-                          <div className="bg-emerald-50 rounded-lg p-2 text-center">
-                            <div className="text-base font-black text-emerald-700">
+                        <div className="grid grid-cols-4 gap-1.5 mb-3">
+                          <div className="bg-emerald-50 rounded-md p-1.5 text-center">
+                            <div className="text-sm font-black text-emerald-700">
                               {record.correctAnswers}
                             </div>
-                            <div className="text-xs text-emerald-600">
+                            <div className="text-[10px] text-emerald-600">
                               Correct
                             </div>
                           </div>
-                          <div className="bg-rose-50 rounded-lg p-2 text-center">
-                            <div className="text-base font-black text-rose-700">
+                          <div className="bg-rose-50 rounded-md p-1.5 text-center">
+                            <div className="text-sm font-black text-rose-700">
                               {record.incorrectAnswers}
                             </div>
-                            <div className="text-xs text-rose-600">Wrong</div>
+                            <div className="text-[10px] text-rose-600">Wrong</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-2 text-center">
-                            <div className="text-base font-black text-gray-700">
+                          <div className="bg-gray-50 rounded-md p-1.5 text-center">
+                            <div className="text-sm font-black text-gray-700">
                               {record.unansweredQuestions}
                             </div>
-                            <div className="text-xs text-gray-600">Skipped</div>
+                            <div className="text-[10px] text-gray-600">Skip</div>
                           </div>
-                          <div className="bg-blue-50 rounded-lg p-2 text-center">
-                            <div className="text-base font-black text-blue-700">
+                          <div className="bg-blue-50 rounded-md p-1.5 text-center">
+                            <div className="text-sm font-black text-blue-700">
                               {record.totalQuestions}
                             </div>
-                            <div className="text-xs text-blue-600">Total</div>
+                            <div className="text-[10px] text-blue-600">Total</div>
                           </div>
                         </div>
 
