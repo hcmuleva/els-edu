@@ -486,149 +486,159 @@ const CourseDetailPage = () => {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 max-w-6xl mx-auto pb-safe">
       <Title title={course.name} />
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleBack}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-black text-gray-800">{course.name}</h1>
-            {course.category && (
-              <span
-                className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-bold ${categoryColor}`}
-              >
-                {course.category}
-              </span>
-            )}
-          </div>
+      {/* Header Title Section */}
+      <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+        <button
+          onClick={handleBack}
+          className="p-3 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-xl transition-all shadow-sm shrink-0 group"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
+            {course.name}
+          </h1>
+          {course.category && (
+            <span
+              className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide ${categoryColor}`}
+            >
+              {course.category}
+            </span>
+          )}
         </div>
+      </div>
 
-        {/* Pending Payment Controls */}
-        {pendingPayment && !hasFullCourse && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleCancelPaymentAction}
-              className="px-6 py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
-            >
-              Cancel Payment
-            </button>
-            <button
-              onClick={handleResumePayment}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 transition-colors animate-pulse"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              Continue Payment
-            </button>
+      {/* Main Action Section - Moved Below Header */}
+      <div className="mb-10">
+        {!hasFullCourse && (
+          <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-xl shadow-primary-500/5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 mb-1">
+                  Total Course Bundle
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-gray-900">
+                    {isBundleFree ? "FREE" : `₹${bundlePrice.toLocaleString()}`}
+                  </span>
+                  {individualTotal > bundlePrice && (
+                    <span className="text-sm text-gray-400 line-through decoration-gray-300">
+                      ₹{individualTotal.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                {savings > 0 && !isBundleFree && (
+                  <span className="inline-block mt-2 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">
+                    Save {savings}% on bundle
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto min-w-[200px]">
+                {/* Pending Payment Controls */}
+                {pendingPayment ? (
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <button
+                      onClick={handleCancelPaymentAction}
+                      className="flex-1 px-6 py-4 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleResumePayment}
+                      className="flex-[2] flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200 transition-all animate-pulse text-sm"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      Continue Payment
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleBuyBundle}
+                    className={`w-full md:w-auto flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl active:scale-95 ${
+                      isBundleFree
+                        ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-green-200"
+                        : "bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-primary-200"
+                    }`}
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    {isBundleFree ? "Enroll Now - Free" : "Buy Full Course"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Buy Course Button */}
-        {!pendingPayment && !hasFullCourse && (
-          <button
-            onClick={handleBuyBundle}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-colors ${
-              isBundleFree
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-primary hover:bg-primary/90 text-white"
-            }`}
-          >
-            <ShoppingCart className="w-5 h-5" />
-            {isBundleFree
-              ? "Enroll Full Course"
-              : `Buy Course ₹${bundlePrice.toLocaleString()}`}
-          </button>
-        )}
         {hasFullCourse && (
-          <span className="flex items-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-xl font-bold">
-            <CheckCircle className="w-5 h-5" />
-            Full Course Enrolled
-          </span>
+          <div className="bg-green-50 rounded-2xl p-6 border border-green-100 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-green-900">
+                You are enrolled!
+              </h3>
+              <p className="text-green-700">
+                You have full access to all subjects in this course.
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Course Info Card */}
-      <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden mb-8">
-        <div className="p-6">
+      <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden mb-12 shadow-sm">
+        <div className="p-6 md:p-8">
           {/* Info Row: Image thumbnail + Description + Stats */}
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col md:flex-row items-start gap-8">
             {/* Expandable Image Thumbnail */}
             {course.cover?.url && (
               <button
                 onClick={() => setImageModalOpen(true)}
-                className="group relative w-16 h-16 rounded-xl overflow-hidden border-2 border-gray-200 hover:border-primary transition-colors flex-shrink-0"
+                className="group relative w-full md:w-64 aspect-video rounded-2xl overflow-hidden border border-gray-100 hover:border-primary-200 transition-all shadow-sm flex-shrink-0"
               >
                 <img
                   src={course.cover.url}
                   alt={course.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                  <ZoomIn className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
                 </div>
               </button>
             )}
 
             {/* Info content */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-6">
               {course.description && (
-                <div className="mb-3">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                    Description
-                  </p>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary-500" />
+                    About this course
+                  </h3>
                   <div
-                    className="prose prose-sm max-w-none text-gray-600 line-clamp-2"
+                    className="prose prose-sm prose-gray max-w-none text-gray-600 leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: course.description }}
                   />
                 </div>
               )}
 
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <BookOpen className="w-4 h-4" />
-                  <span className="font-semibold">{subjectCount} Subjects</span>
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 font-medium">
+                  <BookOpen className="w-4 h-4 text-primary-500" />
+                  <span>{subjectCount} Subjects</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Layers className="w-4 h-4" />
-                  <span className="font-semibold">{topicCount} Topics</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 font-medium">
+                  <Layers className="w-4 h-4 text-primary-500" />
+                  <span>{topicCount} Topics</span>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Bundle Pricing Info */}
-          {!hasFullCourse && coursePricing && (
-            <div className="mt-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl p-4 border border-primary/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">
-                    Full Course Bundle Price
-                  </p>
-                  <p className="text-2xl font-black text-gray-800">
-                    {isBundleFree ? "FREE" : `₹${bundlePrice.toLocaleString()}`}
-                  </p>
-                </div>
-                {savings > 0 && (
-                  <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-sm font-bold">Save {savings}%</span>
-                  </div>
-                )}
-              </div>
-              {individualTotal > bundlePrice && (
-                <p className="text-xs text-gray-400 mt-2">
-                  vs ₹{individualTotal.toLocaleString()} if purchased
-                  individually
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -642,7 +652,7 @@ const CourseDetailPage = () => {
           value
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {subjects.map((subject) => {
             const pricing = subjectPricings[subject.documentId];
             const isEnrolled = enrolledSubjectIds.has(subject.documentId);
@@ -724,35 +734,6 @@ const CourseDetailPage = () => {
                     )}
                   </div>
                 )}
-
-                {/* Price and Action */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <p className="text-lg font-black text-gray-800">
-                    {isFree ? "FREE" : `₹${price.toLocaleString()}`}
-                  </p>
-
-                  {isEnrolled ? (
-                    <span className="flex items-center gap-1 text-green-600 text-sm font-bold">
-                      <CheckCircle className="w-4 h-4" />
-                      Enrolled
-                    </span>
-                  ) : pendingPayment ? (
-                    <span className="text-sm font-bold text-orange-500 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
-                      Payment Pending
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleBuySubject(subject)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-                        isFree
-                          ? "bg-green-500 hover:bg-green-600 text-white"
-                          : "bg-primary hover:bg-primary/90 text-white"
-                      }`}
-                    >
-                      {isFree ? "Enroll" : "Buy"}
-                    </button>
-                  )}
-                </div>
               </div>
             );
           })}

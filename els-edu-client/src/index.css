@@ -60,11 +60,23 @@
   }
 }
 
+/* Utilities */
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
 /* Book Style Content */
 @layer components {
   .book-style-content {
     @apply text-gray-800 leading-relaxed;
-    font-family: 'Georgia', 'Times New Roman', serif;
+    font-family: "Georgia", "Times New Roman", serif;
     line-height: 1.8;
     letter-spacing: 0.02em;
   }
@@ -100,7 +112,7 @@
   }
 
   /* Enhanced spacing for readability */
-  .book-style-content>*+* {
+  .book-style-content > * + * {
     @apply mt-6;
   }
 
@@ -118,8 +130,8 @@
   }
 
   /* Spacing between rules */
-  .book-style-content br+strong,
-  .book-style-content br+b {
+  .book-style-content br + strong,
+  .book-style-content br + b {
     margin-top: 1rem;
     display: inline-block;
   }

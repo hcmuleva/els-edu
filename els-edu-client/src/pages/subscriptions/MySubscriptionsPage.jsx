@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Title, useDataProvider, useGetIdentity } from "react-admin";
+import { useNavigate } from "react-router-dom";
 import {
   GraduationCap,
   Search,
@@ -7,6 +8,7 @@ import {
   X,
   Sparkles,
   BookOpen,
+  TrendingUp,
 } from "lucide-react";
 import CourseCard from "../../components/subscriptions/CourseCard";
 import { CustomSelect } from "../../components/common/CustomSelect";
@@ -31,6 +33,7 @@ const STATUS_OPTIONS = [
 const MySubscriptionsPage = () => {
   const dataProvider = useDataProvider();
   const { data: identity, isLoading: identityLoading } = useGetIdentity();
+  const navigate = useNavigate();
 
   const [subscriptions, setSubscriptions] = useState([]);
   const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
@@ -113,52 +116,48 @@ const MySubscriptionsPage = () => {
       <Title title="My Subscriptions" />
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          {/* Title */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
-              <GraduationCap className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                My Subscriptions
-              </h1>
-              <p className="text-sm text-gray-500">
-                Your enrolled courses and learning paths
-              </p>
-            </div>
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          {/* Title Row */}
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">
+              My Subscriptions
+            </h1>
+            <button
+              onClick={() => navigate("/progress")}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-lg text-xs font-semibold hover:from-primary-600 hover:to-violet-600 transition-all shadow-sm"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Progress
+            </button>
           </div>
 
-          {/* Search and Filters Row */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search Bar - Full Width */}
+          {/* Search Row */}
+          <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search your courses..."
+                placeholder="Search courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-12 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400"
+                className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                 >
-                  <X className="w-3.5 h-3.5 text-gray-600" />
+                  <X className="w-3 h-3 text-gray-600" />
                 </button>
               )}
             </div>
 
-            {/* Clear Button */}
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold transition-colors border border-gray-200"
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-semibold transition-colors"
               >
-                <RotateCcw className="w-4 h-4" />
                 Clear
               </button>
             )}
@@ -167,40 +166,29 @@ const MySubscriptionsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Results Count */}
-        {!loading && filteredSubscriptions.length > 0 && (
-          <div className="flex items-center gap-2 mb-6">
-            <BookOpen className="w-4 h-4 text-gray-400" />
-            <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">
-                {filteredSubscriptions.length}
-              </span>{" "}
-              course{filteredSubscriptions.length !== 1 ? "s" : ""} enrolled
-            </p>
-          </div>
-        )}
-
+      <div className="max-w-6xl mx-auto px-4 py-4 pb-20">
         {/* Courses Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+                className="bg-white rounded-xl border border-gray-100 overflow-hidden"
               >
                 <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-50 animate-pulse" />
                 <div className="p-4 space-y-3">
-                  <div className="h-5 bg-gray-100 rounded-lg w-3/4 animate-pulse" />
-                  <div className="h-4 bg-gray-100 rounded-lg w-full animate-pulse" />
-                  <div className="h-4 bg-gray-100 rounded-lg w-1/2 animate-pulse" />
-                  <div className="h-10 bg-gray-100 rounded-xl w-full animate-pulse mt-4" />
+                  <div className="h-5 bg-gray-100 rounded w-3/4 animate-pulse" />
+                  <div className="h-4 bg-gray-100 rounded w-full animate-pulse" />
+                  <div className="flex gap-3 mt-3">
+                    <div className="h-10 bg-gray-100 rounded-lg flex-1 animate-pulse" />
+                    <div className="h-10 bg-gray-100 rounded-lg flex-1 animate-pulse" />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : filteredSubscriptions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredSubscriptions.map((subscription) => (
               <CourseCard
                 key={subscription.documentId || subscription.id}

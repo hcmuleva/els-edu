@@ -13,6 +13,7 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  SkipForward,
 } from "lucide-react";
 
 const TopicContentPlayer = ({ topic, onQuizStart }) => {
@@ -129,6 +130,22 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Play Next Logic
+  const currentIndex = selectedContent
+    ? filteredContent.findIndex((c) => c.id === selectedContent.id)
+    : -1;
+  const nextContent =
+    currentIndex >= 0 && currentIndex < filteredContent.length - 1
+      ? filteredContent[currentIndex + 1]
+      : null;
+
+  const handlePlayNext = () => {
+    if (nextContent) {
+      setSelectedContent(nextContent);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
@@ -272,6 +289,19 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
                     </div>
                   )}
                 </div>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-3">
+                  {nextContent && (
+                    <button
+                      onClick={handlePlayNext}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                    >
+                      <span>Next</span>
+                      <SkipForward className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Related Quizzes - Below Title */}
@@ -392,7 +422,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
           </div>
 
           {/* Scrollable List */}
-          <div className="flex-1 overflow-y-auto max-h-[600px] space-y-3 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="flex-1 overflow-y-auto max-h-[calc(100vh-300px)] min-h-[400px] space-y-3 pr-2 custom-scrollbar">
             {visibleContent.map((content) => {
               const isSelected = selectedContent?.id === content.id;
               const thumbId = getYoutubeId(content.youtubeurl);

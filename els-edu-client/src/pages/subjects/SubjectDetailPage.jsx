@@ -285,94 +285,42 @@ const SubjectDetailPage = () => {
       <Title title={subject.name} />
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          {/* Back Button */}
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-primary-600 font-semibold transition-colors mb-6"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back
-          </button>
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          {/* Compact Header Row */}
+          <div className="flex items-center gap-3">
+            {/* Back Button */}
+            <button
+              onClick={handleBack}
+              className="p-1.5 -ml-1.5 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
 
-          {/* Subject Info */}
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* Cover Image */}
-            <div className="w-24 h-24 bg-gradient-to-br from-primary-50 to-violet-50 rounded-2xl overflow-hidden flex-shrink-0">
-              {subject.coverpage?.url ? (
-                <img
-                  src={subject.coverpage.url}
-                  alt={subject.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <BookOpen className="w-10 h-10 text-primary-300" />
-                </div>
-              )}
-            </div>
+            {/* Title */}
+            <h1 className="text-base md:text-lg font-bold text-gray-900 truncate flex-1">
+              {subject.name}
+            </h1>
 
-            {/* Subject Details */}
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {subject.name}
-                </h1>
-                {subject.grade && (
-                  <span className="px-3 py-1 bg-primary-50 text-primary-600 border border-primary-200 rounded-lg text-xs font-semibold">
-                    {subject.grade.replace("_", " ")}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-gray-400 mb-3">
-                <span className="flex items-center gap-1">
-                  <Layers className="w-4 h-4" />
-                  <span className="font-medium">{topicCount} Topics</span>
-                </span>
-                <div className="w-1 h-1 rounded-full bg-gray-200 self-center" />
-                <span className="flex items-center gap-1">
-                  <FileText className="w-4 h-4" />
-                  <span className="font-medium">{contentCount} Content</span>
-                </span>
-                <div className="w-1 h-1 rounded-full bg-gray-200 self-center" />
-                <span className="flex items-center gap-1">
-                  <BookOpen className="w-4 h-4" />
-                  <span className="font-medium">{quizCount} Quizzes</span>
-                </span>
-              </div>
-
-              {/* Level Indicator */}
-              {subject.level && (
-                <div className="flex items-center justify-center md:justify-start gap-2">
-                  <span className="text-xs font-semibold text-gray-400">
-                    LEVEL
-                  </span>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-8 h-1.5 rounded-full ${
-                          i < subject.level
-                            ? "bg-gradient-to-r from-primary-500 to-violet-500"
-                            : "bg-gray-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Counts - Inline */}
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span className="font-semibold">{topicCount} Topics</span>
+              <span className="text-gray-300">•</span>
+              <span className="font-semibold">{contentCount} Content</span>
+              <span className="text-gray-300 hidden sm:inline">•</span>
+              <span className="font-semibold hidden sm:inline">
+                {quizCount} Quizzes
+              </span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div>
           {/* Tab Headers */}
-          <div className="flex items-center gap-2 p-6 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2 pb-4 border-b border-gray-200">
             {[
               { id: "topics", label: "Topic & Contents", icon: Layers },
               { id: "quizzes", label: "Quizzes", icon: BookOpen },
@@ -396,7 +344,7 @@ const SubjectDetailPage = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="p-6 min-h-[400px]">
+          <div className="pt-4 min-h-[400px]">
             {activeTab === "topics" && (
               <div className="space-y-6">
                 {topicCount > 0 ? (
@@ -427,20 +375,15 @@ const SubjectDetailPage = () => {
                         Select Topic ({filteredTopics.length})
                       </h3>
                       <div className="relative">
-                        {/* Left Arrow */}
+                        {/* Left Fade Overlay */}
                         {showLeftArrow && (
-                          <button
-                            onClick={() => scrollTopics("left")}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-all"
-                          >
-                            <ChevronLeft className="w-5 h-5 text-gray-600" />
-                          </button>
+                          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none z-10" />
                         )}
 
                         {/* Topics List */}
                         <div
                           ref={topicScrollRef}
-                          className="flex gap-3 overflow-x-auto pb-4 px-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                          className="flex gap-3 overflow-x-auto pb-4 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                         >
                           {filteredTopics.map((topic) => (
                             <button
@@ -448,8 +391,8 @@ const SubjectDetailPage = () => {
                               onClick={() => setSelectedTopic(topic)}
                               className={`flex-none px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
                                 selectedTopic?.id === topic.id
-                                  ? "bg-gradient-to-r from-primary-500 to-violet-500 text-white shadow-md shadow-primary-200"
-                                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                                  ? "bg-gradient-to-r from-primary-500 to-violet-500 text-white shadow-md shadow-primary-200 scale-105"
+                                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200 hover:scale-105"
                               }`}
                             >
                               {topic.name}
@@ -457,15 +400,96 @@ const SubjectDetailPage = () => {
                           ))}
                         </div>
 
-                        {/* Right Arrow */}
+                        {/* Right Fade Overlay */}
                         {showRightArrow && (
-                          <button
-                            onClick={() => scrollTopics("right")}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-all"
-                          >
-                            <ChevronRight className="w-5 h-5 text-gray-600" />
-                          </button>
+                          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
                         )}
+                      </div>
+
+                      {/* Previous/Next Topic Navigation */}
+                      <div className="flex items-center justify-between gap-3 mt-3">
+                        <button
+                          onClick={() => {
+                            const currentIndex = filteredTopics.findIndex(
+                              (t) => t.id === selectedTopic?.id
+                            );
+                            if (currentIndex > 0) {
+                              setSelectedTopic(
+                                filteredTopics[currentIndex - 1]
+                              );
+                              // Scroll the topic into view
+                              setTimeout(() => {
+                                const topicButtons =
+                                  topicScrollRef.current?.querySelectorAll(
+                                    "button"
+                                  );
+                                if (
+                                  topicButtons &&
+                                  topicButtons[currentIndex - 1]
+                                ) {
+                                  topicButtons[currentIndex - 1].scrollIntoView(
+                                    {
+                                      behavior: "smooth",
+                                      block: "nearest",
+                                      inline: "center",
+                                    }
+                                  );
+                                }
+                              }, 50);
+                            }
+                          }}
+                          disabled={
+                            filteredTopics.findIndex(
+                              (t) => t.id === selectedTopic?.id
+                            ) === 0
+                          }
+                          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-primary-300 transition-all disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed shadow-sm"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Previous Topic</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const currentIndex = filteredTopics.findIndex(
+                              (t) => t.id === selectedTopic?.id
+                            );
+                            if (currentIndex < filteredTopics.length - 1) {
+                              setSelectedTopic(
+                                filteredTopics[currentIndex + 1]
+                              );
+                              // Scroll the topic into view
+                              setTimeout(() => {
+                                const topicButtons =
+                                  topicScrollRef.current?.querySelectorAll(
+                                    "button"
+                                  );
+                                if (
+                                  topicButtons &&
+                                  topicButtons[currentIndex + 1]
+                                ) {
+                                  topicButtons[currentIndex + 1].scrollIntoView(
+                                    {
+                                      behavior: "smooth",
+                                      block: "nearest",
+                                      inline: "center",
+                                    }
+                                  );
+                                }
+                              }, 50);
+                            }
+                          }}
+                          disabled={
+                            filteredTopics.findIndex(
+                              (t) => t.id === selectedTopic?.id
+                            ) ===
+                            filteredTopics.length - 1
+                          }
+                          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-primary-300 transition-all disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed shadow-sm"
+                        >
+                          <span>Next Topic</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
 

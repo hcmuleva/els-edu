@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Trophy,
-  Clock,
-  TrendingUp,
   Sparkles,
   ArrowRight,
   GraduationCap,
@@ -109,21 +107,21 @@ const Dashboard = () => {
     !identity?.fullName || !identity?.email || !identity?.age;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-20 md:pb-0">
       <Title title="Dashboard" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 pt-safe">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-8">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg shadow-primary-200">
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg shadow-primary-200 shrink-0">
+              <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900 leading-tight">
                 Welcome back, {identity?.fullName || identity?.username}! 👋
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs md:text-sm text-gray-500 mt-1">
                 Here's your learning progress at a glance
               </p>
             </div>
@@ -132,31 +130,32 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-8 space-y-6">
         {/* Tour Guide Modal */}
         {showTour && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative animate-in fade-in zoom-in duration-300">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto">
+              {/* ... (Modal content remains mostly same, just ensuring responsiveness) ... */}
               <button
                 onClick={handleDismissTour}
-                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors shrink-0"
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
 
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200">
-                  <GraduationCap className="w-10 h-10 text-white" />
+              <div className="text-center mb-6 mt-2">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200">
+                  <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Welcome to Your Learning Journey! 🎉
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                  Welcome, Learner! 🎉
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm md:text-base text-gray-600">
                   Let's get you started in just 3 simple steps
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {[
                   {
                     step: 1,
@@ -189,31 +188,31 @@ const Dashboard = () => {
                   return (
                     <div
                       key={item.step}
-                      className="flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all cursor-pointer"
+                      className="flex items-start gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all cursor-pointer bg-gray-50/50"
                       onClick={() => {
                         handleDismissTour();
                         navigate(item.action);
                       }}
                     >
                       <div
-                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-md`}
+                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-md`}
                       >
-                        <Icon className="w-6 h-6 text-white" />
+                        <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-gray-400">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
                             STEP {item.step}
                           </span>
                         </div>
-                        <h3 className="text-base font-bold text-gray-900 mb-1">
+                        <h3 className="text-sm md:text-base font-bold text-gray-900 mb-0.5 truncate">
                           {item.title}
                         </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">
+                        <p className="text-xs md:text-sm text-gray-600 leading-relaxed line-clamp-2">
                           {item.description}
                         </p>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0 self-center" />
                     </div>
                   );
                 })}
@@ -221,7 +220,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleDismissTour}
-                className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all shadow-md"
+                className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all shadow-md active:scale-95"
               >
                 Got it, Let's Start!
               </button>
@@ -229,32 +228,32 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Getting Started Card - Show only for new users */}
+        {/* Getting Started Card - Mobile Optimized */}
         {isNewUser && !showTour && (
-          <div className="bg-gradient-to-br from-primary-500 to-violet-600 rounded-3xl p-8 text-white shadow-2xl shadow-primary-200">
+          <div className="bg-gradient-to-br from-primary-500 to-violet-600 rounded-3xl p-6 md:p-8 text-white shadow-xl md:shadow-2xl shadow-primary-200/50">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-                <GraduationCap className="w-10 h-10 text-white" />
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-white" />
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl font-bold mb-2">
+                <h3 className="text-xl md:text-2xl font-bold mb-2">
                   Ready to Start Learning?
                 </h3>
-                <p className="text-white/90 mb-4 leading-relaxed">
+                <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
                   Discover amazing courses, enroll, and begin your educational
                   journey today!
                 </p>
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={() => navigate("/browse-courses")}
-                    className="px-5 py-2.5 bg-white text-primary-600 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-md flex items-center gap-2"
+                    className="w-full sm:w-auto px-5 py-3 bg-white text-primary-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
                   >
                     <BookOpen className="w-4 h-4" />
                     Browse Courses
                   </button>
                   <button
                     onClick={() => setShowTour(true)}
-                    className="px-5 py-2.5 bg-white/10 backdrop-blur text-white border-2 border-white/30 rounded-xl font-semibold hover:bg-white/20 transition-all flex items-center gap-2"
+                    className="w-full sm:w-auto px-5 py-3 bg-white/10 backdrop-blur text-white border border-white/30 rounded-xl font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95"
                   >
                     <Sparkles className="w-4 h-4" />
                     Show Guide
@@ -265,24 +264,24 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Profile Setup Card - Show if profile is incomplete */}
+        {/* Profile Setup Card */}
         {isProfileIncomplete && (
-          <div className="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-8 text-white shadow-2xl shadow-orange-200">
+          <div className="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-orange-200/50">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-                <User className="w-10 h-10 text-white" />
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                <User className="w-8 h-8 md:w-10 md:h-10 text-white" />
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl font-bold mb-2">
+                <h3 className="text-xl md:text-2xl font-bold mb-2">
                   Complete Your Profile
                 </h3>
-                <p className="text-white/90 mb-4 leading-relaxed">
+                <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
                   Add your details to personalize your learning experience and
                   unlock all features!
                 </p>
                 <button
                   onClick={() => navigate("/profile")}
-                  className="px-5 py-2.5 bg-white text-orange-600 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-md flex items-center gap-2"
+                  className="w-full md:w-auto px-6 py-3 bg-white text-orange-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
                 >
                   <Edit3 className="w-4 h-4" />
                   Complete Profile
@@ -292,115 +291,143 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Stats Cards - Simple & Small */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Subscriptions */}
-          <button
-            onClick={() => navigate("/my-subscriptions")}
-            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-blue-200 transition-all text-center group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-6 h-6 text-blue-600" />
-            </div>
-            <p className="text-2xl font-black text-gray-900 mb-1">
-              {stats.totalSubscriptions}
-            </p>
-            <p className="text-xs text-gray-500 font-medium">Courses</p>
-          </button>
+        {/* Stats Grid - 2x2 on mobile with cleaner styling */}
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 mb-3 md:hidden">
+            Overview
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {/* Subscriptions */}
+            <button
+              onClick={() => navigate("/my-subscriptions")}
+              className="bg-white rounded-2xl md:rounded-xl p-4 md:p-5 border border-gray-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95"
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+              </div>
+              <p className="text-xl md:text-2xl font-black text-gray-900 mb-0.5 md:mb-1">
+                {stats.totalSubscriptions}
+              </p>
+              <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wide">
+                Courses
+              </p>
+            </button>
 
-          {/* Quiz Attempts */}
-          <button
-            onClick={() => navigate("/progress")}
-            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-violet-200 transition-all text-center group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-              <Trophy className="w-6 h-6 text-violet-600" />
-            </div>
-            <p className="text-2xl font-black text-gray-900 mb-1">
-              {stats.totalQuizAttempts}
-            </p>
-            <p className="text-xs text-gray-500 font-medium">Quizzes</p>
-          </button>
+            {/* Quiz Attempts */}
+            <button
+              onClick={() => navigate("/progress")}
+              className="bg-white rounded-2xl md:rounded-xl p-4 md:p-5 border border-gray-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95"
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-violet-50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
+                <Trophy className="w-5 h-5 md:w-6 md:h-6 text-violet-600" />
+              </div>
+              <p className="text-xl md:text-2xl font-black text-gray-900 mb-0.5 md:mb-1">
+                {stats.totalQuizAttempts}
+              </p>
+              <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wide">
+                Quizzes
+              </p>
+            </button>
 
-          {/* Average Score */}
-          <button
-            onClick={() => navigate("/progress")}
-            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-emerald-200 transition-all text-center group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-              <Target className="w-6 h-6 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-black text-emerald-600 mb-1">
-              {stats.averageScore}%
-            </p>
-            <p className="text-xs text-gray-500 font-medium">Avg Score</p>
-          </button>
+            {/* Average Score */}
+            <button
+              onClick={() => navigate("/progress")}
+              className="bg-white rounded-2xl md:rounded-xl p-4 md:p-5 border border-gray-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95"
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
+                <Target className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+              </div>
+              <p className="text-xl md:text-2xl font-black text-emerald-600 mb-0.5 md:mb-1">
+                {stats.averageScore}%
+              </p>
+              <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wide">
+                Avg Score
+              </p>
+            </button>
 
-          {/* Passed */}
-          <button
-            onClick={() => navigate("/progress")}
-            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all text-center group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-              <CheckCircle2 className="w-6 h-6 text-orange-600" />
-            </div>
-            <p className="text-2xl font-black text-gray-900 mb-1">
-              {stats.passedQuizzes}
-            </p>
-            <p className="text-xs text-gray-500 font-medium">Passed</p>
-          </button>
+            {/* Passed */}
+            <button
+              onClick={() => navigate("/progress")}
+              className="bg-white rounded-2xl md:rounded-xl p-4 md:p-5 border border-gray-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95"
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-orange-50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-orange-600" />
+              </div>
+              <p className="text-xl md:text-2xl font-black text-gray-900 mb-0.5 md:mb-1">
+                {stats.passedQuizzes}
+              </p>
+              <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wide">
+                Passed
+              </p>
+            </button>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary-500" />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Quick Actions - Horizontal Scroll on Mobile */}
+        <div>
+          <div className="flex items-center justify-between mb-3 px-1 md:px-0">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary-500" />
+              Quick Actions
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             <button
               onClick={() => navigate("/browse-courses")}
-              className="p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-md hover:shadow-primary-100/50 transition-all text-left group"
+              className="w-full p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-primary-300 hover:shadow-md transition-all text-left group active:scale-95"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-3">
-                <BookOpen className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
+                    Browse Courses
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Explore available courses
+                  </p>
+                </div>
               </div>
-              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors">
-                Browse Courses
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Explore all available courses
-              </p>
             </button>
 
             <button
               onClick={() => navigate("/my-subscriptions")}
-              className="p-4 rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50 transition-all text-left group"
+              className="w-full p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all text-left group active:scale-95"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-3">
-                <GraduationCap className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-sm">
+                  <GraduationCap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                    My Subscriptions
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Access enrolled courses
+                  </p>
+                </div>
               </div>
-              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-emerald-600 transition-colors">
-                My Subscriptions
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Access your enrolled courses
-              </p>
             </button>
 
             <button
               onClick={() => navigate("/progress")}
-              className="p-4 rounded-xl border border-gray-200 hover:border-violet-300 hover:shadow-md hover:shadow-violet-100/50 transition-all text-left group"
+              className="w-full p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-violet-300 hover:shadow-md transition-all text-left group active:scale-95"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center mb-3">
-                <Trophy className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-sm">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-violet-600 transition-colors">
+                    View Progress
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Track your performance
+                  </p>
+                </div>
               </div>
-              <h3 className="font-bold text-gray-900 mb-1 group-hover:text-violet-600 transition-colors">
-                View Progress
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Track your quiz performance
-              </p>
             </button>
           </div>
         </div>
@@ -409,10 +436,10 @@ const Dashboard = () => {
         {!isNewUser && !showTour && (
           <button
             onClick={() => setShowTour(true)}
-            className="w-full md:w-auto px-5 py-2.5 bg-gray-50 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition-all border border-gray-200 flex items-center justify-center gap-2 mx-auto"
+            className="w-full md:w-auto px-5 py-3 md:py-2.5 bg-gray-50 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition-all border border-gray-200 flex items-center justify-center gap-2 mx-auto"
           >
             <Sparkles className="w-4 h-4" />
-            Show Getting Started Guide
+            Show Guide
           </button>
         )}
       </div>

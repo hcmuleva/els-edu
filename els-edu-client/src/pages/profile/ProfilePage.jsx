@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Title, useGetIdentity, useDataProvider, useNotify } from "react-admin";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
@@ -22,6 +23,7 @@ const ProfilePage = () => {
   const { identity, refetch } = useGetIdentity();
   const dataProvider = useDataProvider();
   const notify = useNotify();
+  const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -263,22 +265,16 @@ const ProfilePage = () => {
       <Title title="My Profile" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="px-6 py-4">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="px-4 py-4 max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-md">
-                <User className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
-                <p className="text-xs text-gray-500">Manage your information</p>
-              </div>
-            </div>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">
+              My Profile
+            </h1>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-all text-sm flex items-center gap-2"
+                className="px-3 py-1.5 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-all text-sm flex items-center gap-2"
               >
                 <Edit3 className="w-4 h-4" />
                 Edit
@@ -289,13 +285,12 @@ const ProfilePage = () => {
       </div>
 
       {/* Content */}
-      <div className="px-6 py-4 space-y-4">
-        {/* Profile Info Card */}
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <div className="px-4 py-4 pb-20 space-y-4 max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
           {/* Avatar & Basic Info */}
-          <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-100">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4 pb-4 border-b border-gray-100">
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg overflow-hidden">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -322,9 +317,12 @@ const ProfilePage = () => {
                 </label>
               )}
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">{displayName}</h2>
-              <p className="text-xs text-gray-500">@{identity.username}</p>
+            <div className="text-center sm:text-left">
+              <h2 className="text-xl font-bold text-gray-900">{displayName}</h2>
+              <p className="text-sm text-gray-500">@{identity.username}</p>
+              {identity.email && (
+                <p className="text-xs text-gray-400 mt-1">{identity.email}</p>
+              )}
             </div>
           </div>
 
@@ -476,11 +474,11 @@ const ProfilePage = () => {
 
           {/* Action Buttons */}
           {isEditing && (
-            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-gray-100">
               <button
                 onClick={handleSave}
                 disabled={loading || uploading}
-                className="px-4 py-2 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-lg font-semibold hover:from-primary-600 hover:to-violet-600 transition-all text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:flex-1 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 {loading || uploading ? (
                   <>
@@ -497,61 +495,76 @@ const ProfilePage = () => {
               <button
                 onClick={handleCancel}
                 disabled={loading || uploading}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-4 h-4" />
                 Cancel
               </button>
             </div>
           )}
-        </div>
 
-        {/* Stats Cards */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">
-            Learning Stats
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="text-center p-3 rounded-lg bg-blue-50">
-              <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center mx-auto mb-2">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-xl font-black text-blue-600">
-                {stats.totalSubscriptions}
-              </p>
-              <p className="text-xs text-blue-700 font-medium">Courses</p>
-            </div>
+          {/* Stats - Integrated */}
+          {!isEditing && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                Learning Stats
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center p-3 rounded-xl bg-blue-50">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-2">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="text-2xl font-black text-blue-600">
+                    {stats.totalSubscriptions}
+                  </p>
+                  <p className="text-xs text-blue-700 font-medium">Courses</p>
+                </div>
 
-            <div className="text-center p-3 rounded-lg bg-violet-50">
-              <div className="w-10 h-10 rounded-lg bg-violet-500 flex items-center justify-center mx-auto mb-2">
-                <Trophy className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-xl font-black text-violet-600">
-                {stats.totalQuizAttempts}
-              </p>
-              <p className="text-xs text-violet-700 font-medium">Quizzes</p>
-            </div>
+                <div className="text-center p-3 rounded-xl bg-violet-50">
+                  <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center mx-auto mb-2">
+                    <Trophy className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="text-2xl font-black text-violet-600">
+                    {stats.totalQuizAttempts}
+                  </p>
+                  <p className="text-xs text-violet-700 font-medium">Quizzes</p>
+                </div>
 
-            <div className="text-center p-3 rounded-lg bg-emerald-50">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center mx-auto mb-2">
-                <Award className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-xl font-black text-emerald-600">
-                {stats.averageScore}%
-              </p>
-              <p className="text-xs text-emerald-700 font-medium">Avg Score</p>
-            </div>
+                <div className="text-center p-3 rounded-xl bg-emerald-50">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center mx-auto mb-2">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="text-2xl font-black text-emerald-600">
+                    {stats.averageScore}%
+                  </p>
+                  <p className="text-xs text-emerald-700 font-medium">
+                    Avg Score
+                  </p>
+                </div>
 
-            <div className="text-center p-3 rounded-lg bg-orange-50">
-              <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center mx-auto mb-2">
-                <Clock className="w-5 h-5 text-white" />
+                <div className="text-center p-3 rounded-xl bg-orange-50">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center mx-auto mb-2">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="text-2xl font-black text-orange-600">
+                    {stats.totalTimeSpent}m
+                  </p>
+                  <p className="text-xs text-orange-700 font-medium">
+                    Time Spent
+                  </p>
+                </div>
               </div>
-              <p className="text-xl font-black text-orange-600">
-                {stats.totalTimeSpent}m
-              </p>
-              <p className="text-xs text-orange-700 font-medium">Time Spent</p>
+
+              {/* View Progress Button */}
+              <button
+                onClick={() => navigate("/progress")}
+                className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all text-sm flex items-center justify-center gap-2 shadow-md"
+              >
+                <Trophy className="w-4 h-4" />
+                View My Progress
+              </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
