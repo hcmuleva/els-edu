@@ -163,8 +163,8 @@ export const TopicsTab = () => {
   const [subjectFilter, setSubjectFilter] = useState(null);
 
   // Sorting
-  const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("ASC");
+  const [sortField, setSortField] = useState("updatedAt");
+  const [sortOrder, setSortOrder] = useState("DESC");
 
   // View State
   const [viewingTopic, setViewingTopic] = useState(null);

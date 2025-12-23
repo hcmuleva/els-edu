@@ -250,8 +250,8 @@ export const QuestionsTab = () => {
   const [subjectFilter, setSubjectFilter] = useState(null);
 
   // Sorting
-  const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("ASC");
+  const [sortField, setSortField] = useState("updatedAt");
+  const [sortOrder, setSortOrder] = useState("DESC");
   const [page, setPage] = useState(1);
   const perPage = 10;
 

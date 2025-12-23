@@ -42,6 +42,8 @@ const getLevelLabel = (level) => {
 };
 
 const SubjectViewModal = ({ subject, onClose }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
   if (!subject) return null;
 
   const getGradeLabel = (grade) => {
@@ -88,9 +90,38 @@ const SubjectViewModal = ({ subject, onClose }) => {
               <h2 className="text-2xl font-black text-gray-900">
                 Subject Details
               </h2>
-              <p className="text-sm text-gray-500 font-medium">
-                Reviewing subject information
-              </p>
+              {subject.description ? (
+                <div 
+                  className="relative"
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                >
+                  <p 
+                    className="text-sm text-gray-500 font-medium max-w-md cursor-default"
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {subject.description}
+                  </p>
+                  {/* Tooltip */}
+                  {showTooltip && (
+                    <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none animate-in fade-in duration-200">
+                      <div className="whitespace-normal break-words">
+                        {subject.description}
+                      </div>
+                      {/* Arrow */}
+                      <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 font-medium">
+                  Reviewing subject information
+                </p>
+              )}
             </div>
           </div>
           <button
@@ -197,8 +228,8 @@ export const SubjectsTab = () => {
   const [courseFilter, setCourseFilter] = useState(null);
 
   // Sorting
-  const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("ASC");
+  const [sortField, setSortField] = useState("updatedAt");
+  const [sortOrder, setSortOrder] = useState("DESC");
 
   // View State
   const [viewingSubject, setViewingSubject] = useState(null);
