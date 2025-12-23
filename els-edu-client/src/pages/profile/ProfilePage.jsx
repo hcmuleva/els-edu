@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Title, useGetIdentity, useDataProvider, useNotify } from "react-admin";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Title,
+  useGetIdentity,
+  useDataProvider,
+  useNotify,
+  useAuthProvider,
+  usePermissions,
+} from "react-admin";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -14,6 +21,9 @@ import {
   Clock,
   Camera,
   Phone,
+  LogOut,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { refreshUser } from "../../api/authProvider";
@@ -24,12 +34,84 @@ const ProfilePage = () => {
   const dataProvider = useDataProvider();
   const notify = useNotify();
   const navigate = useNavigate();
+  const authProvider = useAuthProvider();
+  const { permissions } = usePermissions();
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [dropdownDirection, setDropdownDirection] = useState("down"); // 'up' or 'down'
+  const roleButtonRef = useRef(null);
+
+  // Parse assigned_roles from JSON field
+  const parseAssignedRoles = (assignedRoles) => {
+    if (!assignedRoles) return [];
+
+    try {
+      let parsed =
+        typeof assignedRoles === "string"
+          ? JSON.parse(assignedRoles)
+          : assignedRoles;
+
+      if (Array.isArray(parsed)) {
+        if (
+          parsed.length > 0 &&
+          typeof parsed[0] === "object" &&
+          parsed[0].role
+        ) {
+          return parsed.map((r) => r.role);
+        }
+        if (parsed.length > 0 && typeof parsed[0] === "string") {
+          return parsed;
+        }
+      }
+
+      return [];
+    } catch (e) {
+      console.error("Error parsing assigned_roles:", e);
+      return [];
+    }
+  };
+
+  // Get available roles for switching
+  const assignedRolesArray = parseAssignedRoles(identity?.assigned_roles);
+  const availableRoles = [...assignedRolesArray];
+  if (permissions && !availableRoles.includes(permissions)) {
+    availableRoles.push(permissions);
+  }
+  if (identity?.user_role && !availableRoles.includes(identity.user_role)) {
+    availableRoles.push(identity.user_role);
+  }
+  const uniqueRoles = [...new Set(availableRoles)];
+
+  // Handle role switch
+  const handleRoleSwitch = async (newRole) => {
+    if (newRole === permissions) {
+      setRoleDropdownOpen(false);
+      return;
+    }
+    try {
+      await authProvider.switchRole(newRole);
+      notify("Role switched successfully. Reloading...", { type: "success" });
+      setRoleDropdownOpen(false);
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.error(error);
+      notify(error.message || "Error switching role", { type: "error" });
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await authProvider.logout();
+    } catch (error) {
+      notify("Error logging out", { type: "error" });
+    }
+  };
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -422,14 +504,16 @@ const ProfilePage = () => {
                 Date of Birth
               </label>
               {isEditing ? (
-                <input
-                  type="date"
-                  value={formData.dob}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dob: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.dob}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dob: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all"
+                  />
+                </div>
               ) : (
                 <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">
                   {identity.dob
@@ -563,6 +647,99 @@ const ProfilePage = () => {
                 <Trophy className="w-4 h-4" />
                 View My Progress
               </button>
+
+              {/* Mobile Account Actions - Only visible on mobile */}
+              <div className="mt-4 pt-4 border-t border-gray-100 md:hidden">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  Account
+                </h3>
+
+                {/* Current Role Display */}
+                <div className="mb-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-700">
+                      Current Role:{" "}
+                      <span className="font-semibold text-primary-600">
+                        {permissions || identity?.user_role || "Guest"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Role Switcher - Only show if user has 2+ roles */}
+                {uniqueRoles.length > 1 && (
+                  <div className="relative mb-3">
+                    <button
+                      ref={roleButtonRef}
+                      onClick={() => {
+                        // Calculate dropdown direction before opening
+                        if (!roleDropdownOpen && roleButtonRef.current) {
+                          const rect =
+                            roleButtonRef.current.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          const estimatedDropdownHeight =
+                            uniqueRoles.length * 50 + 60; // Approx height
+                          setDropdownDirection(
+                            spaceBelow < estimatedDropdownHeight ? "up" : "down"
+                          );
+                        }
+                        setRoleDropdownOpen(!roleDropdownOpen);
+                      }}
+                      className="w-full px-4 py-3 bg-violet-50 border border-violet-200 text-violet-700 rounded-xl font-semibold hover:bg-violet-100 transition-all text-sm flex items-center justify-between gap-2"
+                    >
+                      <span>Switch Role</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-violet-500 transition-transform ${
+                          roleDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Role Dropdown - opens up or down based on available space */}
+                    {roleDropdownOpen && (
+                      <div
+                        className={`absolute left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden ${
+                          dropdownDirection === "up"
+                            ? "bottom-full mb-2"
+                            : "top-full mt-2"
+                        }`}
+                      >
+                        <div className="p-2">
+                          <p className="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Available Roles
+                          </p>
+                          {uniqueRoles.map((role) => (
+                            <button
+                              key={role}
+                              onClick={() => handleRoleSwitch(role)}
+                              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 transition-colors ${
+                                role === permissions
+                                  ? "bg-primary-50 text-primary-600"
+                                  : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              <span>{role}</span>
+                              {role === permissions && (
+                                <Check className="w-4 h-4" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 bg-red-50 border border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
             </div>
           )}
         </div>
