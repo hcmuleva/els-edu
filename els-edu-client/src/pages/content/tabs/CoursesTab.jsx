@@ -425,8 +425,8 @@ export const CoursesTab = () => {
   const [visibilityFilter, setVisibilityFilter] = useState("");
 
   // Sorting
-  const [sortField, setSortField] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("ASC");
+  const [sortField, setSortField] = useState("updatedAt");
+  const [sortOrder, setSortOrder] = useState("DESC");
 
   // View State
   const [viewingCourse, setViewingCourse] = useState(null);

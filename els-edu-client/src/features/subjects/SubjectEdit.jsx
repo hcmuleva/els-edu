@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { uploadFile } from "../../services/user";
 
 // Level options for dropdown
 const levelOptions = [
@@ -69,6 +70,8 @@ export const SubjectEdit = () => {
   });
 
   const [coverPreview, setCoverPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   // Store full course object for initialData
   const [initialCourse, setInitialCourse] = useState(null);
 
@@ -99,9 +102,23 @@ export const SubjectEdit = () => {
   }, [subject]);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, coverpage: file }));
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        notify("Please select an image file", { type: "error" });
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        notify("Image size should be less than 10MB", { type: "error" });
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverPreview(reader.result);
@@ -111,11 +128,33 @@ export const SubjectEdit = () => {
   };
 
   const removeImage = () => {
-    setFormData((prev) => ({ ...prev, coverpage: null }));
+    setSelectedFile(null);
     if (subject?.coverpage?.url) {
       setCoverPreview(subject.coverpage.url);
     } else {
       setCoverPreview(null);
+    }
+  };
+
+  const uploadCoverImage = async () => {
+    if (!selectedFile) return null;
+
+    try {
+      setUploading(true);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append("files", selectedFile);
+
+      // Upload using service
+      const uploadedFiles = await uploadFile(formData);
+      return uploadedFiles[0]?.id;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      notify("Failed to upload image", { type: "error" });
+      return null;
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -131,6 +170,15 @@ export const SubjectEdit = () => {
         return;
       }
 
+      // Upload cover image if selected
+      let coverpageId = null;
+      if (selectedFile) {
+        coverpageId = await uploadCoverImage();
+        if (!coverpageId) {
+          return; // Error already notified in uploadCoverImage
+        }
+      }
+
       const subjectData = {
         name: formData.name,
         grade: formData.grade,
@@ -141,23 +189,12 @@ export const SubjectEdit = () => {
         subjectData.courses = [formData.courses];
       }
 
-      if (formData.coverpage) {
-        const submitData = new FormData();
-        submitData.append("data", JSON.stringify(subjectData));
-        submitData.append("files.coverpage", formData.coverpage);
-
-        await update(
-          "subjects",
-          { id, data: submitData },
-          {
-            meta: {
-              isFormData: true,
-            },
-          }
-        );
-      } else {
-        await update("subjects", { id, data: subjectData });
+      // Add coverpage if uploaded
+      if (coverpageId) {
+        subjectData.coverpage = coverpageId;
       }
+
+      await update("subjects", { id, data: subjectData });
 
       notify("Subject updated successfully!", { type: "success" });
 
@@ -217,10 +254,10 @@ export const SubjectEdit = () => {
             <button
               type="button"
               onClick={handleSave}
-              disabled={isLoading}
+              disabled={isLoading || uploading}
               className="px-5 py-2 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Saving..." : "Save Changes"}
+              {uploading ? "Uploading..." : isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>

@@ -11,6 +11,7 @@ import { ArrowLeft, Upload, X } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { ImageUpload } from "../../components/common/ImageUpload";
 import { useParams } from "react-router-dom";
+import { uploadFile } from "../../services/user";
 
 export const CourseEdit = () => {
   const { id } = useParams();
@@ -32,6 +33,8 @@ export const CourseEdit = () => {
   });
 
   const [coverPreview, setCoverPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (course) {
@@ -52,9 +55,23 @@ export const CourseEdit = () => {
   }, [course]);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        notify("Please select an image file", { type: "error" });
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        notify("Image size should be less than 10MB", { type: "error" });
+        return;
+      }
+
+      setSelectedFile(file);
       setFormData((prev) => ({ ...prev, cover: file }));
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverPreview(reader.result);
@@ -64,8 +81,31 @@ export const CourseEdit = () => {
   };
 
   const removeCover = () => {
+    setSelectedFile(null);
     setFormData((prev) => ({ ...prev, cover: null }));
     setCoverPreview(course?.cover?.url || null);
+  };
+
+  const uploadCoverImage = async () => {
+    if (!selectedFile) return null;
+
+    try {
+      setUploading(true);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append("files", selectedFile);
+
+      // Upload using service
+      const uploadedFiles = await uploadFile(formData);
+      return uploadedFiles[0]?.id;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      notify("Failed to upload image", { type: "error" });
+      return null;
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -75,7 +115,14 @@ export const CourseEdit = () => {
         return;
       }
 
-      const hasNewFile = formData.cover instanceof File;
+      // Upload cover image if selected
+      let coverId = null;
+      if (selectedFile) {
+        coverId = await uploadCoverImage();
+        if (!coverId) {
+          return; // Error already notified in uploadCoverImage
+        }
+      }
 
       const baseData = {
         name: formData.name,
@@ -87,20 +134,12 @@ export const CourseEdit = () => {
         visibility: formData.visibility,
       };
 
-      if (hasNewFile) {
-        const submitData = new FormData();
-        submitData.append("data", JSON.stringify(baseData));
-        submitData.append("files.cover", formData.cover);
-
-        await update("courses", {
-          id,
-          data: submitData,
-          previousData: course,
-          meta: { isFormData: true },
-        });
-      } else {
-        await update("courses", { id, data: baseData, previousData: course });
+      // Add cover if uploaded
+      if (coverId) {
+        baseData.cover = coverId;
       }
+
+      await update("courses", { id, data: baseData, previousData: course });
 
       notify("Course updated successfully!", { type: "success" });
 
@@ -207,10 +246,10 @@ export const CourseEdit = () => {
             <button
               type="button"
               onClick={handleSave}
-              disabled={isUpdating}
+              disabled={isUpdating || uploading}
               className="px-5 py-2 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUpdating ? "Saving..." : "Save Changes"}
+              {uploading ? "Uploading..." : isUpdating ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>
@@ -259,6 +298,19 @@ export const CourseEdit = () => {
           <ImageUpload
             value={formData.cover}
             onChange={(file) => {
+              // Validate file type
+              if (!file.type.startsWith("image/")) {
+                notify("Please select an image file", { type: "error" });
+                return;
+              }
+
+              // Validate file size (10MB max)
+              if (file.size > 10 * 1024 * 1024) {
+                notify("Image size should be less than 10MB", { type: "error" });
+                return;
+              }
+
+              setSelectedFile(file);
               setFormData((prev) => ({ ...prev, cover: file }));
               const reader = new FileReader();
               reader.onloadend = () => setCoverPreview(reader.result);

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { RichTextEditor } from "../../components/common/RichTextEditor";
 
 // Step indicator component
 const StepIndicator = ({ currentStep, steps }) => (
@@ -93,6 +94,7 @@ export const SubjectCreate = () => {
 
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
     grade: "",
     level: 3,
     coverpage: null,
@@ -185,6 +187,7 @@ export const SubjectCreate = () => {
 
       const subjectData = {
         name: formData.name,
+        description: formData.description || null,
         grade: formData.grade,
         level: formData.level,
         creator: identity?.id,
@@ -319,6 +322,23 @@ export const SubjectCreate = () => {
                 />
               </div>
 
+              {/* Description - Rich Text Editor */}
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-foreground">
+                  Description
+                </label>
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, description: value }))
+                  }
+                  placeholder="Add a detailed description for this subject..."
+                />
+                <p className="text-xs text-gray-400">
+                  Use the toolbar to format your text (bold, italic, lists, links, etc.)
+                </p>
+              </div>
+
               {/* Grade, Level, Course */}
               <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
@@ -442,6 +462,17 @@ export const SubjectCreate = () => {
                           {formData.name || "Not specified"}
                         </p>
                       </div>
+                      {formData.description && (
+                        <div>
+                          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            Description
+                          </span>
+                          <div 
+                            className="text-sm text-foreground mt-1 prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: formData.description }}
+                          />
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
