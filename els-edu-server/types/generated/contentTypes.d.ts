@@ -1622,6 +1622,7 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
       'manyToMany',
       'api::pricing-offer.pricing-offer'
     >;
+    thumbnail: Schema.Attribute.String;
     topics: Schema.Attribute.Relation<'oneToMany', 'api::topic.topic'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

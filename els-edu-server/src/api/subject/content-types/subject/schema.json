@@ -17,7 +17,12 @@
     "coverpage": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
     "grade": {
       "type": "enumeration",
@@ -127,6 +132,9 @@
       "relation": "oneToMany",
       "target": "api::invoice-item.invoice-item",
       "mappedBy": "subject"
+    },
+    "thumbnail": {
+      "type": "string"
     }
   }
 }
