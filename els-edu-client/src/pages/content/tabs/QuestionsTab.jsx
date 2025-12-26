@@ -8,6 +8,7 @@ import {
   ReferenceField,
   TextField,
   useRedirect,
+  usePermissions,
 } from "react-admin";
 import {
   FileQuestion,
@@ -242,6 +243,10 @@ export const QuestionsTab = () => {
   const userId = identity?.id;
   const [deleteOne] = useDelete();
 
+  const { permissions } = usePermissions();
+  const isSuperAdmin = permissions === "SUPERADMIN";
+  const [viewMode, setViewMode] = useState("mine"); // "mine" or "all"
+
   // Local Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
@@ -266,7 +271,10 @@ export const QuestionsTab = () => {
   } = useGetList("questions", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter: userId ? { creator: userId } : {},
+    filter:
+      userId && (!isSuperAdmin || viewMode === "mine")
+        ? { creator: userId }
+        : {},
     meta: {
       populate: {
         subject: { fields: ["name"] },
@@ -277,7 +285,7 @@ export const QuestionsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page]);
+  }, [sortField, sortOrder, userId, page, viewMode]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -406,85 +414,113 @@ export const QuestionsTab = () => {
 
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search questions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomAsyncSelect
-              label=""
-              value={subjectFilter}
-              onChange={(value) => {
-                setSubjectFilter(value);
-                setTopicFilter(null);
-              }}
-              resource="subjects"
-              optionText="name"
-              placeholder="Filter Subject"
-              allowEmpty
-              searchable
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomAsyncSelect
-              label=""
-              value={topicFilter}
-              onChange={setTopicFilter}
-              resource="topics"
-              optionText="name"
-              placeholder={
-                subjectFilter ? "Filter Topic" : "Select Subject first"
-              }
-              allowEmpty
-              searchable
-              disabled={!subjectFilter}
-              filter={subjectFilter ? { subject: subjectFilter } : {}}
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomSelect
-              value={typeFilter}
-              onChange={setTypeFilter}
-              options={[
-                { id: "", name: "All Types" },
-                { id: "SC", name: "Single Choice" },
-                { id: "MCQ", name: "Multiple Choice" },
-                { id: "TF", name: "True/False" },
-                { id: "FillInBlank", name: "Fill in Blank" },
-                { id: "Match", name: "Matching" },
-                { id: "DragDrop", name: "Drag & Drop" },
-              ]}
-              placeholder="All Types"
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomSelect
-              value={difficultyFilter}
-              onChange={setDifficultyFilter}
-              options={[
-                { id: "", name: "All Difficulties" },
-                { id: "easy", name: "Easy" },
-                { id: "medium", name: "Medium" },
-                { id: "hard", name: "Hard" },
-              ]}
-              placeholder="All Difficulties"
-            />
-          </div>
+        <div className="flex flex-col gap-4">
+          {/* View Mode Toggle for SuperAdmin */}
+          {isSuperAdmin && (
+            <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
+              <button
+                onClick={() => setViewMode("mine")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "mine"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                My Creations
+              </button>
+              <button
+                onClick={() => setViewMode("all")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "all"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                All Creations
+              </button>
+            </div>
+          )}
 
-          <button
-            onClick={resetFilters}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search questions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomAsyncSelect
+                label=""
+                value={subjectFilter}
+                onChange={(value) => {
+                  setSubjectFilter(value);
+                  setTopicFilter(null);
+                }}
+                resource="subjects"
+                optionText="name"
+                placeholder="Filter Subject"
+                allowEmpty
+                searchable
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomAsyncSelect
+                label=""
+                value={topicFilter}
+                onChange={setTopicFilter}
+                resource="topics"
+                optionText="name"
+                placeholder={
+                  subjectFilter ? "Filter Topic" : "Select Subject first"
+                }
+                allowEmpty
+                searchable
+                disabled={!subjectFilter}
+                filter={subjectFilter ? { subject: subjectFilter } : {}}
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={[
+                  { id: "", name: "All Types" },
+                  { id: "SC", name: "Single Choice" },
+                  { id: "MCQ", name: "Multiple Choice" },
+                  { id: "TF", name: "True/False" },
+                  { id: "FillInBlank", name: "Fill in Blank" },
+                  { id: "Match", name: "Matching" },
+                  { id: "DragDrop", name: "Drag & Drop" },
+                ]}
+                placeholder="All Types"
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={difficultyFilter}
+                onChange={setDifficultyFilter}
+                options={[
+                  { id: "", name: "All Difficulties" },
+                  { id: "easy", name: "Easy" },
+                  { id: "medium", name: "Medium" },
+                  { id: "hard", name: "Hard" },
+                ]}
+                placeholder="All Difficulties"
+              />
+            </div>
+
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
         </div>
       </div>
 

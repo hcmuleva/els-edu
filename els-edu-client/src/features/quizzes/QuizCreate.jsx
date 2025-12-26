@@ -272,11 +272,14 @@ export const QuizCreate = () => {
       // 4. Create the Quiz
       const quizData = {
         ...formData,
-        creator: identity?.id,
         questions: allQuestionIds,
         topic: formData.topic, // Assuming ID from CustomAsyncSelect
         subject: formData.subject, // Assuming ID from CustomAsyncSelect
       };
+
+      if (!isEdit) {
+        quizData.creator = identity?.id;
+      }
 
       console.log("quizData", quizData);
 

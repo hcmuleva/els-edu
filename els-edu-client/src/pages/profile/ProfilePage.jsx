@@ -231,7 +231,7 @@ const ProfilePage = () => {
 
       // Upload using service
       const uploadedFiles = await uploadFile(formData);
-      return uploadedFiles[0]?.id;
+      return uploadedFiles[0];
     } catch (error) {
       console.error("Error uploading image:", error);
       notify("Failed to upload image", { type: "error" });
@@ -248,10 +248,10 @@ const ProfilePage = () => {
       setLoading(true);
 
       // Upload profile picture if selected
-      let profilePictureId = null;
+      let uploadedImage = null;
       if (selectedFile) {
-        profilePictureId = await uploadProfilePicture();
-        if (!profilePictureId) {
+        uploadedImage = await uploadProfilePicture();
+        if (!uploadedImage) {
           setLoading(false);
           return;
         }
@@ -286,8 +286,16 @@ const ProfilePage = () => {
       };
 
       // Add profile picture if uploaded
-      if (profilePictureId) {
-        updateData.profile_picture = profilePictureId;
+      if (uploadedImage) {
+        updateData.profile_picture = uploadedImage.id;
+
+        // Update preview immediately with the new URL to reflect change
+        const serverUrl = uploadedImage.url.startsWith("http")
+          ? uploadedImage.url
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              uploadedImage.url
+            }`;
+        setImagePreview(serverUrl);
       }
 
       // Send flat payload, not wrapped in data

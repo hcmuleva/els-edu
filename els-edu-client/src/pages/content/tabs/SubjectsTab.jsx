@@ -6,6 +6,7 @@ import {
   useDelete,
   useNotify,
   useRedirect,
+  usePermissions,
 } from "react-admin";
 import {
   Layers,
@@ -43,7 +44,7 @@ const getLevelLabel = (level) => {
 
 const SubjectViewModal = ({ subject, onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false);
-  
+
   if (!subject) return null;
 
   const getGradeLabel = (grade) => {
@@ -91,17 +92,17 @@ const SubjectViewModal = ({ subject, onClose }) => {
                 Subject Details
               </h2>
               {subject.description ? (
-                <div 
+                <div
                   className="relative"
                   onMouseEnter={() => setShowTooltip(true)}
                   onMouseLeave={() => setShowTooltip(false)}
                 >
-                  <p 
+                  <p
                     className="text-sm text-gray-500 font-medium max-w-md cursor-default"
                     style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {subject.description}
@@ -221,6 +222,10 @@ export const SubjectsTab = () => {
   const userId = identity?.id;
   const [deleteOne] = useDelete();
 
+  const { permissions } = usePermissions();
+  const isSuperAdmin = permissions === "SUPERADMIN";
+  const [viewMode, setViewMode] = useState("mine"); // "mine" or "all"
+
   // Local Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
@@ -246,7 +251,10 @@ export const SubjectsTab = () => {
   } = useGetList("subjects", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter: userId ? { creator: userId } : {},
+    filter:
+      userId && (!isSuperAdmin || viewMode === "mine")
+        ? { creator: userId }
+        : {},
     meta: {
       populate: {
         coverpage: { fields: ["url"] },
@@ -261,7 +269,7 @@ export const SubjectsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page]);
+  }, [sortField, sortOrder, userId, page, viewMode]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -389,53 +397,81 @@ export const SubjectsTab = () => {
 
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search subjects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomAsyncSelect
-              label=""
-              value={courseFilter}
-              onChange={setCourseFilter}
-              resource="courses"
-              optionText="name"
-              placeholder="Filter Course"
-              allowEmpty
-              searchable
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomSelect
-              value={gradeFilter}
-              onChange={setGradeFilter}
-              options={gradeOptions}
-              placeholder="All Grades"
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomSelect
-              value={levelFilter}
-              onChange={setLevelFilter}
-              options={levelOptions}
-              placeholder="All Levels"
-            />
-          </div>
+        <div className="flex flex-col gap-4">
+          {/* View Mode Toggle for SuperAdmin */}
+          {isSuperAdmin && (
+            <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
+              <button
+                onClick={() => setViewMode("mine")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "mine"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                My Creations
+              </button>
+              <button
+                onClick={() => setViewMode("all")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "all"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                All Creations
+              </button>
+            </div>
+          )}
 
-          <button
-            onClick={resetFilters}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search subjects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomAsyncSelect
+                label=""
+                value={courseFilter}
+                onChange={setCourseFilter}
+                resource="courses"
+                optionText="name"
+                placeholder="Filter Course"
+                allowEmpty
+                searchable
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={gradeFilter}
+                onChange={setGradeFilter}
+                options={gradeOptions}
+                placeholder="All Grades"
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={levelFilter}
+                onChange={setLevelFilter}
+                options={levelOptions}
+                placeholder="All Levels"
+              />
+            </div>
+
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
         </div>
       </div>
 
