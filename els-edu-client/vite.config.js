@@ -4,7 +4,8 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/els-kids", // <-- important for deployment under emeelan.com/els
+  // Use "./" for Capacitor/mobile builds, "/els-kids" for web deployment
+  base: process.env.VITE_BASE_PATH || "./",
   server: {
     // allowedHosts: "all", // Allow ngrok and other tunneling services
     watch: {

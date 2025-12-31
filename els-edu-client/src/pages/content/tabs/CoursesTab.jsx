@@ -6,6 +6,7 @@ import {
   useDelete,
   useNotify,
   useRedirect,
+  usePermissions,
 } from "react-admin";
 import {
   GraduationCap,
@@ -416,6 +417,10 @@ export const CoursesTab = () => {
   const userId = identity?.id;
   const [deleteOne] = useDelete();
 
+  const { permissions } = usePermissions();
+  const isSuperAdmin = permissions === "SUPERADMIN";
+  const [viewMode, setViewMode] = useState("mine"); // "mine" or "all"
+
   // Local Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -443,7 +448,10 @@ export const CoursesTab = () => {
   } = useGetList("courses", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter: userId ? { creator: userId } : {},
+    filter:
+      userId && (!isSuperAdmin || viewMode === "mine")
+        ? { creator: userId }
+        : {},
     meta: {
       populate: "*", // Populate all relations including cover
     },
@@ -451,7 +459,7 @@ export const CoursesTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page]);
+  }, [sortField, sortOrder, userId, page, viewMode]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -602,70 +610,98 @@ export const CoursesTab = () => {
 
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search courses..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-            />
-          </div>
+        <div className="flex flex-col gap-4">
+          {/* View Mode Toggle for SuperAdmin */}
+          {isSuperAdmin && (
+            <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
+              <button
+                onClick={() => setViewMode("mine")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "mine"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                My Creations
+              </button>
+              <button
+                onClick={() => setViewMode("all")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "all"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                All Creations
+              </button>
+            </div>
+          )}
 
-          <div className="w-[180px]">
-            <CustomSelect
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              options={categoryOptions}
-              placeholder="All Categories"
-            />
-          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
 
-          <div className="w-[180px]">
-            <CustomSelect
-              value={subcategoryFilter}
-              onChange={setSubcategoryFilter}
-              options={subcategoryOptions}
-              placeholder="All Subcategories"
-            />
-          </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                options={categoryOptions}
+                placeholder="All Categories"
+              />
+            </div>
 
-          <div className="w-[180px]">
-            <CustomSelect
-              value={conditionFilter}
-              onChange={setConditionFilter}
-              options={conditionOptions}
-              placeholder="All Statuses"
-            />
-          </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={subcategoryFilter}
+                onChange={setSubcategoryFilter}
+                options={subcategoryOptions}
+                placeholder="All Subcategories"
+              />
+            </div>
 
-          <div className="w-[180px]">
-            <CustomSelect
-              value={privacyFilter}
-              onChange={setPrivacyFilter}
-              options={privacyOptions}
-              placeholder="All Privacy"
-            />
-          </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={conditionFilter}
+                onChange={setConditionFilter}
+                options={conditionOptions}
+                placeholder="All Statuses"
+              />
+            </div>
 
-          <div className="w-[180px]">
-            <CustomSelect
-              value={visibilityFilter}
-              onChange={setVisibilityFilter}
-              options={visibilityOptions}
-              placeholder="All Visibility"
-            />
-          </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={privacyFilter}
+                onChange={setPrivacyFilter}
+                options={privacyOptions}
+                placeholder="All Privacy"
+              />
+            </div>
 
-          <button
-            onClick={resetFilters}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={visibilityFilter}
+                onChange={setVisibilityFilter}
+                options={visibilityOptions}
+                placeholder="All Visibility"
+              />
+            </div>
+
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
         </div>
       </div>
 

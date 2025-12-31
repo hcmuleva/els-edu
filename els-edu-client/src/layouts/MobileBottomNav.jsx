@@ -95,7 +95,7 @@ const MobileBottomNav = () => {
   const navItems = allNavItems.filter((item) => item.show);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t border-border shadow-lg lg:hidden h-20 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border shadow-lg lg:hidden h-24 pb-safe">
       <div className="flex justify-around items-center h-full px-2">
         {navItems.map((item) => {
           const isActive =
@@ -112,7 +112,7 @@ const MobileBottomNav = () => {
                 className={cn(
                   "absolute transition-all duration-300 ease-spring",
                   isActive
-                    ? "-translate-y-4 bg-primary text-primary-foreground shadow-lg shadow-primary/30 rounded-full p-3"
+                    ? "-translate-y-5 bg-primary text-primary-foreground shadow-lg shadow-primary/30 rounded-full p-3"
                     : "translate-y-0 text-muted-foreground p-2"
                 )}
               >
