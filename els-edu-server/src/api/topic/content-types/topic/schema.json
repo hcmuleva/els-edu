@@ -28,15 +28,15 @@
     },
     "contents": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::content.content",
-      "mappedBy": "topic"
+      "mappedBy": "topics"
     },
     "quizzes": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::quiz.quiz",
-      "mappedBy": "topic"
+      "mappedBy": "topics"
     },
     "quizResults": {
       "type": "relation",
@@ -46,9 +46,9 @@
     },
     "questions": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::question.question",
-      "mappedBy": "topic"
+      "mappedBy": "topics"
     },
     "creator": {
       "type": "relation",

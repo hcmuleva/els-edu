@@ -43,7 +43,7 @@ const getLevelLabel = (level) => {
 
 const SubjectViewModal = ({ subject, onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false);
-  
+
   if (!subject) return null;
 
   const getGradeLabel = (grade) => {
@@ -91,12 +91,12 @@ const SubjectViewModal = ({ subject, onClose }) => {
                 Subject Details
               </h2>
               {subject.description ? (
-                <div 
+                <div
                   className="relative"
                   onMouseEnter={() => setShowTooltip(true)}
                   onMouseLeave={() => setShowTooltip(false)}
                 >
-                  <p 
+                  <p
                     className="text-sm text-gray-500 font-medium max-w-md cursor-default"
                     style={{
                       overflow: 'hidden',
@@ -238,6 +238,15 @@ export const SubjectsTab = () => {
   const [activeCountTitle, setActiveCountTitle] = useState("");
   const [activeCountItems, setActiveCountItems] = useState([]);
 
+  // Filters
+  const filters = {
+    ...(userId && { creator: userId }),
+    ...(searchQuery && { q: searchQuery }), // Data provider maps 'q' to 'filters[name][$containsi]'
+    ...(gradeFilter && { grade: gradeFilter }),
+    ...(levelFilter && { level: parseInt(levelFilter) }),
+    ...(courseFilter && { "filters[courses][id][$eq]": courseFilter }), // Direct filter injection
+  };
+
   const {
     data: subjects,
     total,
@@ -246,7 +255,7 @@ export const SubjectsTab = () => {
   } = useGetList("subjects", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter: userId ? { creator: userId } : {},
+    filter: filters,
     meta: {
       populate: {
         coverpage: { fields: ["url"] },
@@ -261,7 +270,9 @@ export const SubjectsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page]);
+    // Reset page to 1 when filters change
+    setPage(1);
+  }, [sortField, sortOrder, userId, searchQuery, gradeFilter, levelFilter, courseFilter]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -301,40 +312,7 @@ export const SubjectsTab = () => {
     setCourseFilter(null);
   };
 
-  const getFilteredContent = () => {
-    let content = subjects || [];
 
-    if (searchQuery) {
-      content = content.filter((item) =>
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (gradeFilter) {
-      content = content.filter((item) => item.grade === gradeFilter);
-    }
-
-    if (levelFilter) {
-      content = content.filter((item) => item.level === parseInt(levelFilter));
-    }
-
-    if (courseFilter) {
-      content = content.filter((item) => {
-        const courses = item.courses || [];
-        return courses.some((c) => {
-          const cId = c?.id || c;
-          return (
-            cId === courseFilter ||
-            (typeof cId === "object" && cId?.id === courseFilter)
-          );
-        });
-      });
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
 
   const gradeOptions = [
     { id: "", name: "All Grades" },
@@ -444,7 +422,7 @@ export const SubjectsTab = () => {
         <div className="flex-1 flex items-center justify-center bg-white rounded-b-3xl min-h-[400px]">
           <Loading />
         </div>
-      ) : filteredContent.length === 0 ? (
+      ) : !subjects || subjects.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-6 bg-white rounded-b-3xl min-h-[400px]">
           <div className="bg-gray-50 p-6 rounded-full mb-4">
             <Layers className="w-12 h-12 text-gray-300" />
@@ -500,6 +478,9 @@ export const SubjectsTab = () => {
                     Approver
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    DocumentID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Authored By
                   </th>
                   <th
@@ -517,7 +498,7 @@ export const SubjectsTab = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30 bg-white">
-                {filteredContent.map((item, index) => {
+                {(subjects || []).map((item, index) => {
                   const itemId = item.documentId || item.id;
                   const displayId =
                     sortOrder === "ASC"
@@ -607,6 +588,11 @@ export const SubjectsTab = () => {
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="text-sm font-bold text-gray-700">
+                          {item.documentId}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-middle">
+                        <div className="text-sm font-bold text-gray-700">
                           {item.authoredBy?.username || "-"}
                         </div>
                       </td>
@@ -683,11 +669,10 @@ export const SubjectsTab = () => {
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
-                            page === p
-                              ? "bg-primary text-white border-primary shadow-sm"
-                              : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
-                          }`}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${page === p
+                            ? "bg-primary text-white border-primary shadow-sm"
+                            : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
+                            }`}
                         >
                           {p}
                         </button>

@@ -561,7 +561,7 @@ export interface ApiContentContent extends Struct.CollectionTypeSchema {
     resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
     subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     title: Schema.Attribute.String;
-    topic: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
+    topics: Schema.Attribute.Relation<'manyToMany', 'api::topic.topic'>;
     type: Schema.Attribute.Enumeration<
       ['YOUTUBE', 'VIDEO', 'IMAGE', 'MD', 'TEXT', 'DOCUMENT', 'DOWNLOAD']
     >;
@@ -1241,7 +1241,7 @@ export interface ApiQuestionQuestion extends Struct.CollectionTypeSchema {
         },
         number
       >;
-    topic: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
+    topics: Schema.Attribute.Relation<'manyToMany', 'api::topic.topic'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1412,7 +1412,7 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
-    topic: Schema.Attribute.Relation<'manyToOne', 'api::topic.topic'>;
+    topics: Schema.Attribute.Relation<'manyToMany', 'api::topic.topic'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1741,7 +1741,7 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    contents: Schema.Attribute.Relation<'oneToMany', 'api::content.content'>;
+    contents: Schema.Attribute.Relation<'manyToMany', 'api::content.content'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1756,12 +1756,15 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
-    questions: Schema.Attribute.Relation<'oneToMany', 'api::question.question'>;
+    questions: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::question.question'
+    >;
     quizResults: Schema.Attribute.Relation<
       'oneToMany',
       'api::quiz-result.quiz-result'
     >;
-    quizzes: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
+    quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
