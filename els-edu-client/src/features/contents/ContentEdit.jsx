@@ -23,7 +23,7 @@ export const ContentEdit = () => {
 
   const { data: content, isLoading } = useGetOne("contents", {
     id,
-    meta: { populate: ["topic", "subjects", "multimedia"] },
+    meta: { populate: ["topics", "subjects", "multimedia"] },
   });
 
   const [formData, setFormData] = useState({

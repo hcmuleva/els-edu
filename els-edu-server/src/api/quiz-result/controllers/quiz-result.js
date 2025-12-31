@@ -31,7 +31,6 @@ module.exports = createCoreController(
               populate: ["correctAnswer", "options"],
             },
             subject: true,
-            topic: true,
           },
         });
 
@@ -144,10 +143,9 @@ module.exports = createCoreController(
             filters,
             populate: {
               quiz: {
-                populate: ["subject", "topic"],
+                populate: ["subject", "topics"],
               },
               subject: true,
-              topic: true,
             },
             sort: { createdAt: "desc" },
           });
@@ -187,7 +185,7 @@ module.exports = createCoreController(
             filters,
             populate: {
               quiz: {
-                populate: ["questions", "subject", "topic"],
+                populate: ["questions", "subject", "topics"],
               },
             },
             sort: { createdAt: "asc" },

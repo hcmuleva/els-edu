@@ -125,3 +125,5 @@ elsclient/
 strapi-app/
 els-edu-server_backup/
 TBD/
+android/
+migration_scripts/
