@@ -116,12 +116,10 @@
       }
     },
     "hints": {
-      "type": "json",
-      "description": "Array of hint strings for the question"
+      "type": "json"
     },
     "options": {
-      "type": "json",
-      "description": "Array of options: [{ option: 'text', isCorrect: boolean, multimediaId: number }]. Works for SC, MCQ, TF (Yes/No) questions."
+      "type": "json"
     },
     "partialCredit": {
       "type": "boolean",
@@ -164,9 +162,9 @@
       "target": "api::tag-year.tag-year",
       "inversedBy": "questions"
     },
-    "topic": {
+    "topics": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::topic.topic",
       "inversedBy": "questions"
     },

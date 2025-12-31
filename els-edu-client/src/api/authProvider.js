@@ -150,7 +150,9 @@ export const authProvider = {
     localStorage.removeItem("activeRoleId");
     localStorage.removeItem("activeRole");
     // Force redirect to login page with base path (hash routing for React Admin)
-    window.location.href = "/els-kids/#/login";
+    // Use import.meta.env.BASE_URL for mobile/web compatibility
+    const basePath = import.meta.env.BASE_URL || "./";
+    window.location.href = `${basePath}#/login`;
     return Promise.resolve();
   },
   checkAuth: async () => {

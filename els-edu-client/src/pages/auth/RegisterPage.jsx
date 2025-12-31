@@ -93,7 +93,8 @@ const RegisterPage = () => {
 
       notify("Registration successful! Welcome.", { type: "success" });
       // Redirect to dashboard with base path (hash routing for React Admin)
-      window.location.href = "/els-kids/#/";
+      const basePath = import.meta.env.BASE_URL || "./";
+      window.location.href = `${basePath}#/`;
     } catch (error) {
       notify(error.message, { type: "error" });
     } finally {

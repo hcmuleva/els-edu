@@ -134,7 +134,7 @@ const Dashboard = () => {
         {/* Tour Guide Modal */}
         {showTour && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto hide-scrollbar">
               {/* ... (Modal content remains mostly same, just ensuring responsiveness) ... */}
               <button
                 onClick={handleDismissTour}

@@ -8,6 +8,7 @@ import {
   ReferenceField,
   TextField,
   useRedirect,
+  usePermissions,
 } from "react-admin";
 import {
   FileText,
@@ -184,6 +185,10 @@ export const ContentsTab = () => {
   const userId = identity?.id;
   const [deleteOne] = useDelete();
 
+  const { permissions } = usePermissions();
+  const isSuperAdmin = permissions === "SUPERADMIN";
+  const [viewMode, setViewMode] = useState("mine"); // "mine" or "all"
+
   // Local Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -210,7 +215,10 @@ export const ContentsTab = () => {
   } = useGetList("contents", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter: userId ? { creator: userId } : {},
+    filter:
+      userId && (!isSuperAdmin || viewMode === "mine")
+        ? { creator: userId }
+        : {},
     meta: {
       populate: {
         topic: { fields: ["name"] },
@@ -223,7 +231,7 @@ export const ContentsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page]);
+  }, [sortField, sortOrder, userId, page, viewMode]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -350,86 +358,114 @@ export const ContentsTab = () => {
 
       {/* Filters */}
       <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search content..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomSelect
-              value={typeFilter}
-              onChange={setTypeFilter}
-              options={typeOptions}
-              placeholder="All Types"
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomAsyncSelect
-              label=""
-              value={courseFilter}
-              onChange={(value) => {
-                setCourseFilter(value);
-                // Clear subject and topic when course changes
-                setSubjectFilter(null);
-                setTopicFilter(null);
-              }}
-              resource="courses"
-              optionText="name"
-              placeholder="Filter Course"
-              allowEmpty
-              searchable
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomAsyncSelect
-              label=""
-              value={subjectFilter}
-              onChange={(value) => {
-                setSubjectFilter(value);
-                // Clear topic filter when subject changes
-                setTopicFilter(null);
-              }}
-              resource="subjects"
-              optionText="name"
-              placeholder={
-                courseFilter ? "Filter Subject" : "Select Course first"
-              }
-              allowEmpty
-              searchable
-              disabled={!courseFilter}
-              filter={courseFilter ? { courses: courseFilter } : {}}
-            />
-          </div>
-          <div className="w-[180px]">
-            <CustomAsyncSelect
-              label=""
-              value={topicFilter}
-              onChange={setTopicFilter}
-              resource="topics"
-              optionText="name"
-              placeholder={
-                subjectFilter ? "Filter Topic" : "Select Subject first"
-              }
-              allowEmpty
-              searchable
-              disabled={!subjectFilter}
-              filter={subjectFilter ? { subject: subjectFilter } : {}}
-            />
-          </div>
+        <div className="flex flex-col gap-4">
+          {/* View Mode Toggle for SuperAdmin */}
+          {isSuperAdmin && (
+            <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
+              <button
+                onClick={() => setViewMode("mine")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "mine"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                My Creations
+              </button>
+              <button
+                onClick={() => setViewMode("all")}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "all"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                All Creations
+              </button>
+            </div>
+          )}
 
-          <button
-            onClick={resetFilters}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search content..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomSelect
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={typeOptions}
+                placeholder="All Types"
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomAsyncSelect
+                label=""
+                value={courseFilter}
+                onChange={(value) => {
+                  setCourseFilter(value);
+                  // Clear subject and topic when course changes
+                  setSubjectFilter(null);
+                  setTopicFilter(null);
+                }}
+                resource="courses"
+                optionText="name"
+                placeholder="Filter Course"
+                allowEmpty
+                searchable
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomAsyncSelect
+                label=""
+                value={subjectFilter}
+                onChange={(value) => {
+                  setSubjectFilter(value);
+                  // Clear topic filter when subject changes
+                  setTopicFilter(null);
+                }}
+                resource="subjects"
+                optionText="name"
+                placeholder={
+                  courseFilter ? "Filter Subject" : "Select Course first"
+                }
+                allowEmpty
+                searchable
+                disabled={!courseFilter}
+                filter={courseFilter ? { courses: courseFilter } : {}}
+              />
+            </div>
+            <div className="w-[180px]">
+              <CustomAsyncSelect
+                label=""
+                value={topicFilter}
+                onChange={setTopicFilter}
+                resource="topics"
+                optionText="name"
+                placeholder={
+                  subjectFilter ? "Filter Topic" : "Select Subject first"
+                }
+                allowEmpty
+                searchable
+                disabled={!subjectFilter}
+                filter={subjectFilter ? { subject: subjectFilter } : {}}
+              />
+            </div>
+
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
         </div>
       </div>
 
