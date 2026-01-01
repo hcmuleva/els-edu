@@ -221,7 +221,7 @@ export const ContentsTab = () => {
         : {},
     meta: {
       populate: {
-        topic: { fields: ["name"] },
+        topics: { fields: ["name"] },
         subjects: { fields: ["name"] },
         quizzes: { fields: ["title"] },
         resources: { fields: ["name"] },
@@ -511,8 +511,8 @@ export const ContentsTab = () => {
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Topic
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Topics
                   </th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Subjects
@@ -573,10 +573,17 @@ export const ContentsTab = () => {
                           {item.type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <span className="inline-block max-w-[150px] truncate text-[10px] font-bold text-indigo-600 px-2 py-1 bg-indigo-50 rounded-md border border-indigo-100">
-                          {item.topic?.name || "-"}
-                        </span>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Topics for ${item.title}`);
+                            setActiveCountItems(item.topics || []);
+                          }}
+                          className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95"
+                        >
+                          {item.topics?.length || 0} Topics
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
                         <button

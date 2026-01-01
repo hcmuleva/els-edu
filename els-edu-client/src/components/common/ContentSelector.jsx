@@ -117,7 +117,7 @@ export const ContentSelector = ({
       pagination: { page: 1, perPage: 20 },
       sort: { field: "createdAt", order: "DESC" },
       filter: queryFilter,
-      meta: { populate: ["subjects", "topic", "creator"] },
+      meta: { populate: ["subjects", "topics", "creator"] },
     },
     {
       enabled: open,

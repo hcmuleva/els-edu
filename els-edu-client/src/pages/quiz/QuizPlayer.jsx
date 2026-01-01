@@ -62,7 +62,7 @@ const QuizPlayer = () => {
         // Fetch quiz
         const { data } = await dataProvider.getOne("quizzes", {
           id,
-          meta: { populate: ["questions", "subject", "topic", "creator"] },
+          meta: { populate: ["questions", "subject", "topics", "creator"] },
         });
         setQuiz(data);
 
@@ -670,7 +670,9 @@ const QuizPlayer = () => {
                       {!result.isAttempted ? (
                         <p className="text-xs text-gray-500">Not attempted</p>
                       ) : result.isCorrect ? (
-                        <p className="text-xs text-green-600 font-medium">✓ Correct</p>
+                        <p className="text-xs text-green-600 font-medium">
+                          ✓ Correct
+                        </p>
                       ) : (
                         <p className="text-xs text-red-600">
                           ✗ Answer: {result.correctOption?.option}

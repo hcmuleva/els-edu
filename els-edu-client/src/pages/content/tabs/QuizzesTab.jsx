@@ -232,7 +232,7 @@ export const QuizzesTab = () => {
         : {},
     meta: {
       populate: {
-        topic: { fields: ["name"] },
+        topics: { fields: ["name"] },
         subject: { fields: ["name"] },
         content: { fields: ["title"] },
         questions: { fields: ["questionText"] },
@@ -517,8 +517,8 @@ export const QuizzesTab = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Subject
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Topic
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Topics
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Content
@@ -615,10 +615,17 @@ export const QuizzesTab = () => {
                           {item.subject?.name || "-"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.topic?.name || "-"}
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Topics for ${item.title}`);
+                            setActiveCountItems(item.topics || []);
+                          }}
+                          className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95"
+                        >
+                          {item.topics?.length || 0} Topics
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="text-sm font-bold text-gray-700">
