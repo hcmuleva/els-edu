@@ -379,14 +379,18 @@ export const ContentSelector = ({
                             </span>
                           </span>
 
-                          {content.topic?.name && (
+                          {content.topics && content.topics.length > 0 && (
                             <span className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
                               <FileText className="w-3 h-3 text-purple-500" />
                               <span
                                 className="truncate max-w-[150px]"
-                                title={content.topic.name}
+                                title={content.topics
+                                  .map((t) => t.name)
+                                  .join(", ")}
                               >
-                                {content.topic.name}
+                                {content.topics[0].name}
+                                {content.topics.length > 1 &&
+                                  ` +${content.topics.length - 1}`}
                               </span>
                             </span>
                           )}

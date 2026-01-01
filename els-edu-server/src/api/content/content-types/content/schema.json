@@ -56,9 +56,9 @@
     },
     "quizzes": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::quiz.quiz",
-      "mappedBy": "content"
+      "mappedBy": "contents"
     },
     "creator": {
       "type": "relation",

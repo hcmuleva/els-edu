@@ -137,7 +137,7 @@ const QuizViewModal = ({ quiz, onClose }) => {
               <div className="font-bold text-gray-900 text-lg">
                 <ReferenceField
                   record={quiz}
-                  source="subject.id"
+                  source="subjects.id"
                   reference="subjects"
                   link={false}
                 >
@@ -152,7 +152,7 @@ const QuizViewModal = ({ quiz, onClose }) => {
               <div className="font-bold text-gray-900 text-lg">
                 <ReferenceField
                   record={quiz}
-                  source="topic.id"
+                  source="topics.id"
                   reference="topics"
                   link={false}
                 >
@@ -233,8 +233,7 @@ export const QuizzesTab = () => {
     meta: {
       populate: {
         topics: { fields: ["name"] },
-        subject: { fields: ["name"] },
-        content: { fields: ["title"] },
+        subjects: { fields: ["name"] },
         questions: { fields: ["questionText"] },
       },
     },
@@ -301,7 +300,7 @@ export const QuizzesTab = () => {
 
     if (topicFilter) {
       content = content.filter((item) => {
-        const tId = item.topic?.id || item.topic;
+        const tId = item.topics?.id || item.topics;
         return (
           tId === topicFilter ||
           (typeof tId === "object" && tId?.id === topicFilter)
@@ -311,7 +310,7 @@ export const QuizzesTab = () => {
 
     if (subjectFilter) {
       content = content.filter((item) => {
-        const sId = item.subject?.id || item.subject;
+        const sId = item.subjects?.id || item.subjects;
         return (
           sId === subjectFilter ||
           (typeof sId === "object" && sId?.id === subjectFilter)
@@ -520,9 +519,7 @@ export const QuizzesTab = () => {
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Topics
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Content
-                  </th>
+
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleSort("createdAt")}
@@ -612,7 +609,7 @@ export const QuizzesTab = () => {
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="text-sm font-bold text-gray-700">
-                          {item.subject?.name || "-"}
+                          {item.subjects?.name || "-"}
                         </div>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
@@ -627,11 +624,7 @@ export const QuizzesTab = () => {
                           {item.topics?.length || 0} Topics
                         </button>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.content?.title || "-"}
-                        </div>
-                      </td>
+
                       <td className="px-6 py-4 align-middle">
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           {new Date(item.createdAt).toLocaleDateString()}

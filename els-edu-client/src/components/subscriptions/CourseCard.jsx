@@ -39,7 +39,11 @@ const CourseCard = ({ subscription, showStartButton = true }) => {
 
   const subjectCount =
     subscription?.subjects?.length || course?.subjects?.length || 0;
-  const topicCount = course?.topics?.length || 0;
+
+  // Calculate total topics from all subjects
+  const topicCount = (course?.subjects || []).reduce((total, subject) => {
+    return total + (subject?.topics?.length || 0);
+  }, 0);
 
   const typeStyle =
     TYPE_STYLES[subscription.subscription_type] || TYPE_STYLES.FREE;

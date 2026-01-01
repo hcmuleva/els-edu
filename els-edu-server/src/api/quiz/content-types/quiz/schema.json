@@ -133,15 +133,15 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
-    "subject": {
+    "subjects": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::subject.subject",
       "inversedBy": "quizzes"
     },
-    "content": {
+    "contents": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::content.content",
       "inversedBy": "quizzes"
     },

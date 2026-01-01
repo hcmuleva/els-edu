@@ -55,9 +55,9 @@
     },
     "topics": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::topic.topic",
-      "mappedBy": "subject"
+      "mappedBy": "subjects"
     },
     "contents": {
       "type": "relation",
@@ -67,9 +67,9 @@
     },
     "quizzes": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::quiz.quiz",
-      "mappedBy": "subject"
+      "mappedBy": "subjects"
     },
     "quizResults": {
       "type": "relation",
@@ -79,9 +79,9 @@
     },
     "questions": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::question.question",
-      "mappedBy": "subject"
+      "mappedBy": "subjects"
     },
     "courses": {
       "type": "relation",

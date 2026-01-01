@@ -9,6 +9,7 @@ import {
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 export const ContentCreate = () => {
   const notify = useNotify();
@@ -22,7 +23,7 @@ export const ContentCreate = () => {
     youtubeurl: "",
     json_description: null,
     description: "",
-    topic: null,
+    topics: [],
     subjects: [],
     multimedia: [],
   });
@@ -80,8 +81,8 @@ export const ContentCreate = () => {
         return;
       }
 
-      if (!formData.topic) {
-        notify("Please select a topic", { type: "warning" });
+      if (!formData.topics || formData.topics.length === 0) {
+        notify("Please select at least one topic", { type: "warning" });
         return;
       }
 
@@ -120,7 +121,7 @@ export const ContentCreate = () => {
             type: formData.type,
             youtubeurl: formData.youtubeurl || null,
             json_description: descriptionBlocks,
-            topic: formData.topic,
+            topics: formData.topics.length > 0 ? formData.topics : null,
             subjects: formData.subjects.length > 0 ? formData.subjects : null,
             creator: identity?.id,
             publishedAt: new Date(),
@@ -146,7 +147,7 @@ export const ContentCreate = () => {
             type: formData.type,
             youtubeurl: formData.youtubeurl || null,
             json_description: descriptionBlocks,
-            topic: formData.topic,
+            topics: formData.topics.length > 0 ? formData.topics : null,
             subjects: formData.subjects.length > 0 ? formData.subjects : null,
             creator: identity?.id,
           },
@@ -287,41 +288,43 @@ export const ContentCreate = () => {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-foreground">
-                Subject <span className="text-red-500">*</span>
+                Subjects <span className="text-red-500">*</span>
               </label>
-              <CustomAsyncSelect
+              <CustomAsyncMultiSelect
                 resource="subjects"
                 optionText="name"
-                value={formData.subjects[0] || null}
+                value={formData.subjects}
                 onChange={(val) =>
                   setFormData((prev) => ({
                     ...prev,
-                    subjects: val ? [val] : [],
-                    topic: null, // Clear topic when subject changes
+                    subjects: val,
+                    topics: [], // Clear topics when subjects change
                   }))
                 }
-                placeholder="Select subject first..."
+                placeholder="Select subjects..."
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-foreground">
-                Topic <span className="text-red-500">*</span>
+                Topics <span className="text-red-500">*</span>
               </label>
-              <CustomAsyncSelect
+              <CustomAsyncMultiSelect
                 resource="topics"
                 optionText="name"
-                value={formData.topic}
+                value={formData.topics}
                 onChange={(val) =>
-                  setFormData((prev) => ({ ...prev, topic: val }))
+                  setFormData((prev) => ({ ...prev, topics: val }))
                 }
                 placeholder={
-                  formData.subjects[0]
-                    ? "Select topic..."
-                    : "Select subject first"
+                  formData.subjects.length > 0
+                    ? "Select topics..."
+                    : "Select subjects first"
                 }
-                disabled={!formData.subjects[0]}
+                disabled={formData.subjects.length === 0}
                 filter={
-                  formData.subjects[0] ? { subject: formData.subjects[0] } : {}
+                  formData.subjects.length > 0
+                    ? { "subject[id][$in]": formData.subjects }
+                    : {}
                 }
               />
             </div>
