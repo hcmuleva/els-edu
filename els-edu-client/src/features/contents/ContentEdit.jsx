@@ -13,6 +13,7 @@ import { ArrowLeft, Upload, X, Eye, Edit2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 export const ContentEdit = () => {
   const { id } = useParams();
@@ -31,7 +32,7 @@ export const ContentEdit = () => {
     type: "TEXT",
     youtubeurl: "",
     description: "",
-    topic: null,
+    topics: [],
     subjects: [],
     multimedia: [],
   });
@@ -41,8 +42,8 @@ export const ContentEdit = () => {
   const [isPreview, setIsPreview] = useState(false);
 
   // Store full objects for initialData
-  const [initialTopic, setInitialTopic] = useState(null);
-  const [initialSubject, setInitialSubject] = useState(null);
+  const [initialTopics, setInitialTopics] = useState([]);
+  const [initialSubjects, setInitialSubjects] = useState([]);
 
   useEffect(() => {
     if (content) {
@@ -64,10 +65,8 @@ export const ContentEdit = () => {
         type: content.type || "TEXT",
         youtubeurl: content.youtubeurl || "",
         description: extractDescriptionInfo(content.json_description),
-        topic: content.topic?.id || null,
-        subjects:
-          content.subjects?.map((s) => (typeof s === "object" ? s.id : s)) ||
-          [],
+        topics: content.topics?.map((t) => t.documentId || t.id || t) || [],
+        subjects: content.subjects?.map((s) => s.documentId || s.id || s) || [],
         multimedia: [], // New files only
       });
 
@@ -76,11 +75,17 @@ export const ContentEdit = () => {
       }
 
       // Store full objects for initialData
-      if (content.topic && typeof content.topic === "object") {
-        setInitialTopic(content.topic);
+      if (content.topics && Array.isArray(content.topics)) {
+        const topicObjects = content.topics.filter(
+          (t) => typeof t === "object" && (t.documentId || t.id)
+        );
+        setInitialTopics(topicObjects);
       }
-      if (content.subjects?.[0] && typeof content.subjects[0] === "object") {
-        setInitialSubject(content.subjects[0]);
+      if (content.subjects && Array.isArray(content.subjects)) {
+        const subjectObjects = content.subjects.filter(
+          (s) => typeof s === "object" && (s.documentId || s.id)
+        );
+        setInitialSubjects(subjectObjects);
       }
     }
   }, [content]);
@@ -140,8 +145,8 @@ export const ContentEdit = () => {
         return;
       }
 
-      if (!formData.topic) {
-        notify("Please select a topic", { type: "warning" });
+      if (!formData.topics || formData.topics.length === 0) {
+        notify("Please select at least one topic", { type: "warning" });
         return;
       }
 
@@ -180,9 +185,8 @@ export const ContentEdit = () => {
             type: formData.type,
             youtubeurl: formData.youtubeurl || null,
             json_description: descriptionBlocks,
-            topic: formData.topic,
+            topics: formData.topics.length > 0 ? formData.topics : null,
             subjects: formData.subjects.length > 0 ? formData.subjects : null,
-            // Don't send creator on update typically, or keep original? Strapi usually handles this.
           })
         );
 
@@ -207,7 +211,7 @@ export const ContentEdit = () => {
             type: formData.type,
             youtubeurl: formData.youtubeurl || null,
             json_description: descriptionBlocks,
-            topic: formData.topic,
+            topics: formData.topics.length > 0 ? formData.topics : null,
             subjects: formData.subjects.length > 0 ? formData.subjects : null,
           },
         });
@@ -395,44 +399,46 @@ export const ContentEdit = () => {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-foreground">
-                Subject <span className="text-red-500">*</span>
+                Subjects <span className="text-red-500">*</span>
               </label>
-              <CustomAsyncSelect
+              <CustomAsyncMultiSelect
                 resource="subjects"
                 optionText="name"
-                value={formData.subjects[0] || null}
+                value={formData.subjects}
                 onChange={(val) =>
                   setFormData((prev) => ({
                     ...prev,
-                    subjects: val ? [val] : [],
-                    topic: null, // Clear topic when subject changes
+                    subjects: val,
+                    topics: [], // Clear topics when subjects change
                   }))
                 }
-                placeholder="Select subject first..."
-                initialData={initialSubject}
+                placeholder="Select subjects..."
+                initialData={initialSubjects}
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-foreground">
-                Topic <span className="text-red-500">*</span>
+                Topics <span className="text-red-500">*</span>
               </label>
-              <CustomAsyncSelect
+              <CustomAsyncMultiSelect
                 resource="topics"
                 optionText="name"
-                value={formData.topic}
+                value={formData.topics}
                 onChange={(val) =>
-                  setFormData((prev) => ({ ...prev, topic: val }))
+                  setFormData((prev) => ({ ...prev, topics: val }))
                 }
                 placeholder={
-                  formData.subjects[0]
-                    ? "Select topic..."
-                    : "Select subject first"
+                  formData.subjects.length > 0
+                    ? "Select topics..."
+                    : "Select subjects first"
                 }
-                disabled={!formData.subjects[0]}
+                disabled={formData.subjects.length === 0}
                 filter={
-                  formData.subjects[0] ? { subject: formData.subjects[0] } : {}
+                  formData.subjects.length > 0
+                    ? { "subject[id][$in]": formData.subjects }
+                    : {}
                 }
-                initialData={initialTopic}
+                initialData={initialTopics}
               />
             </div>
           </div>

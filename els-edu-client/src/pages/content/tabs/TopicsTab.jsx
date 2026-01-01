@@ -104,14 +104,22 @@ const TopicViewModal = ({ topic, onClose }) => {
                 Subject
               </span>
               <div className="font-bold text-gray-900">
-                <ReferenceField
-                  record={topic}
-                  source="subject.id"
-                  reference="subjects"
-                  link={false}
-                >
-                  <TextField source="name" />
-                </ReferenceField>
+                <div className="flex flex-wrap gap-2">
+                  {topic.subjects && topic.subjects.length > 0 ? (
+                    topic.subjects.map((sub) => (
+                      <span
+                        key={sub.id || sub.documentId}
+                        className="px-2 py-1 bg-gray-100 rounded-md text-sm"
+                      >
+                        {sub.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 font-normal">
+                      No subjects assigned
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex flex-col gap-1">
@@ -192,7 +200,7 @@ export const TopicsTab = () => {
         : {},
     meta: {
       populate: {
-        subject: { fields: ["name"] },
+        subjects: { fields: ["name"] },
         quizzes: { fields: ["title"] },
         contents: { fields: ["title"] },
         questions: { fields: ["questionText"] },
@@ -477,8 +485,13 @@ export const TopicsTab = () => {
                         </p>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <span className="inline-block max-w-[150px] truncate text-[10px] font-bold text-indigo-600 px-2 py-1 bg-indigo-50 rounded-md border border-indigo-100">
-                          {item.subject?.name || "-"}
+                        <span
+                          className="inline-block max-w-[150px] truncate text-[10px] font-bold text-indigo-600 px-2 py-1 bg-indigo-50 rounded-md border border-indigo-100"
+                          title={item.subjects?.map((s) => s.name).join(", ")}
+                        >
+                          {item.subjects?.[0]?.name || "-"}
+                          {item.subjects?.length > 1 &&
+                            ` +${item.subjects.length - 1}`}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">

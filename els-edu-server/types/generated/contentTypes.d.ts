@@ -557,7 +557,7 @@ export interface ApiContentContent extends Struct.CollectionTypeSchema {
       true
     >;
     publishedAt: Schema.Attribute.DateTime;
-    quizzes: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
+    quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
     subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     title: Schema.Attribute.String;
@@ -1223,7 +1223,7 @@ export interface ApiQuestionQuestion extends Struct.CollectionTypeSchema {
     quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     shuffleOptions: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     statistics: Schema.Attribute.JSON;
-    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
+    subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     tag_exams: Schema.Attribute.Relation<
       'manyToMany',
       'api::tag-exam.tag-exam'
@@ -1330,7 +1330,7 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
   attributes: {
     allowReview: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     certificate: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    content: Schema.Attribute.Relation<'manyToOne', 'api::content.content'>;
+    contents: Schema.Attribute.Relation<'manyToMany', 'api::content.content'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1396,7 +1396,7 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
       ['immediately', 'after-submission', 'never']
     > &
       Schema.Attribute.DefaultTo<'after-submission'>;
-    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
+    subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     tags: Schema.Attribute.JSON;
     timeLimit: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
@@ -1608,12 +1608,15 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
       'manyToMany',
       'plugin::users-permissions.user'
     >;
-    questions: Schema.Attribute.Relation<'oneToMany', 'api::question.question'>;
+    questions: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::question.question'
+    >;
     quizResults: Schema.Attribute.Relation<
       'oneToMany',
       'api::quiz-result.quiz-result'
     >;
-    quizzes: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
+    quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     subject_invoices: Schema.Attribute.Relation<
       'oneToMany',
       'api::invoice-item.invoice-item'
@@ -1623,7 +1626,7 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
       'api::pricing-offer.pricing-offer'
     >;
     thumbnail: Schema.Attribute.String;
-    topics: Schema.Attribute.Relation<'oneToMany', 'api::topic.topic'>;
+    topics: Schema.Attribute.Relation<'manyToMany', 'api::topic.topic'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1765,7 +1768,7 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
       'api::quiz-result.quiz-result'
     >;
     quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
-    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
+    subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

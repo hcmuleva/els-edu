@@ -93,9 +93,9 @@
     "tags": {
       "type": "json"
     },
-    "subject": {
+    "subjects": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::subject.subject",
       "inversedBy": "questions"
     },

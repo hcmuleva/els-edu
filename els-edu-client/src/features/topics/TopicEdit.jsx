@@ -9,7 +9,7 @@ import {
 } from "react-admin";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 export const TopicEdit = () => {
   const { id } = useParams();
@@ -21,7 +21,7 @@ export const TopicEdit = () => {
     "topics",
     { id },
     {
-      meta: { populate: ["subject"] },
+      meta: { populate: ["subjects"] },
     }
   );
 
@@ -29,11 +29,11 @@ export const TopicEdit = () => {
     name: "",
     description: "",
     icon: "",
-    subject: null,
+    subjects: [],
   });
 
-  // Store full subject object for initialData
-  const [initialSubject, setInitialSubject] = useState(null);
+  // Store full subject objects for initialData
+  const [initialSubjects, setInitialSubjects] = useState([]);
 
   // Load existing data when topic is fetched
   useEffect(() => {
@@ -42,18 +42,15 @@ export const TopicEdit = () => {
         name: topic.name || "",
         description: topic.description || "",
         icon: topic.icon || "",
-        // Extract numeric ID (not documentId) for subject - Strapi relations use numeric IDs
-        subject:
-          topic.subject && typeof topic.subject === "object"
-            ? topic.subject.id // Use numeric ID, not documentId
-            : topic.subject
-            ? Number(topic.subject)
-            : null, // Ensure it's a number
+        subjects: topic.subjects?.map((s) => s.documentId || s.id || s) || [],
       });
 
-      // Store the full subject object for initialData
-      if (topic.subject && typeof topic.subject === "object") {
-        setInitialSubject(topic.subject);
+      // Store the full subject objects for initialData
+      if (topic.subjects && Array.isArray(topic.subjects)) {
+        const subjectObjects = topic.subjects.filter(
+          (s) => typeof s === "object" && (s.documentId || s.id)
+        );
+        setInitialSubjects(subjectObjects);
       }
     }
   }, [topic]);
@@ -66,8 +63,8 @@ export const TopicEdit = () => {
         return;
       }
 
-      if (!formData.subject) {
-        notify("Please select a subject", { type: "warning" });
+      if (!formData.subjects || formData.subjects.length === 0) {
+        notify("Please select at least one subject", { type: "warning" });
         return;
       }
 
@@ -75,8 +72,7 @@ export const TopicEdit = () => {
         name: formData.name,
         description: formData.description || null,
         icon: formData.icon || null,
-        // Ensure subject is a number (Strapi expects numeric ID for manyToOne relations)
-        subject: formData.subject ? Number(formData.subject) : null,
+        subjects: formData.subjects,
       };
 
       await update("topics", { id, data: topicData });
@@ -168,18 +164,18 @@ export const TopicEdit = () => {
             />
           </div>
 
-          {/* Subject */}
+          {/* Subjects */}
           <div className="space-y-2">
-            <CustomAsyncSelect
-              label="Subject *"
+            <CustomAsyncMultiSelect
+              label="Subjects *"
               resource="subjects"
               optionText="name"
-              value={formData.subject}
+              value={formData.subjects}
               onChange={(val) =>
-                setFormData((prev) => ({ ...prev, subject: val }))
+                setFormData((prev) => ({ ...prev, subjects: val }))
               }
-              placeholder="Select subject..."
-              initialData={initialSubject}
+              placeholder="Select subjects..."
+              initialData={initialSubjects}
             />
           </div>
 

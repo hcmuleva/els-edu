@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 import { RichTextEditor } from "../../components/common/RichTextEditor";
 
 // Step indicator component
@@ -98,7 +99,7 @@ export const SubjectCreate = () => {
     grade: "",
     level: 3,
     coverpage: null,
-    courses: null,
+    courses: [],
   });
 
   const [coverPreview, setCoverPreview] = useState(null);
@@ -193,8 +194,8 @@ export const SubjectCreate = () => {
         creator: identity?.id,
       };
 
-      if (formData.courses) {
-        subjectData.courses = [formData.courses];
+      if (formData.courses && formData.courses.length > 0) {
+        subjectData.courses = formData.courses;
       }
 
       let result;
@@ -335,7 +336,8 @@ export const SubjectCreate = () => {
                   placeholder="Add a detailed description for this subject..."
                 />
                 <p className="text-xs text-gray-400">
-                  Use the toolbar to format your text (bold, italic, lists, links, etc.)
+                  Use the toolbar to format your text (bold, italic, lists,
+                  links, etc.)
                 </p>
               </div>
 
@@ -372,16 +374,16 @@ export const SubjectCreate = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-foreground flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-500" />
-                    Course
+                    Courses
                   </label>
-                  <CustomAsyncSelect
+                  <CustomAsyncMultiSelect
                     resource="courses"
                     optionText="name"
                     value={formData.courses}
                     onChange={(val) =>
                       setFormData((prev) => ({ ...prev, courses: val }))
                     }
-                    placeholder="Select course..."
+                    placeholder="Select courses..."
                   />
                 </div>
               </div>
@@ -467,9 +469,11 @@ export const SubjectCreate = () => {
                           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Description
                           </span>
-                          <div 
+                          <div
                             className="text-sm text-foreground mt-1 prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: formData.description }}
+                            dangerouslySetInnerHTML={{
+                              __html: formData.description,
+                            }}
                           />
                         </div>
                       )}
@@ -495,10 +499,14 @@ export const SubjectCreate = () => {
                       </div>
                       <div>
                         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                          Course
+                          Courses
                         </span>
                         <p className="font-bold text-foreground">
-                          {formData.courses ? "1 course selected" : "None"}
+                          {formData.courses && formData.courses.length > 0
+                            ? `${formData.courses.length} course${
+                                formData.courses.length !== 1 ? "s" : ""
+                              } selected`
+                            : "None"}
                         </p>
                       </div>
                     </div>

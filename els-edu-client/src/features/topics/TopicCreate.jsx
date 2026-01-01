@@ -7,7 +7,7 @@ import {
   useGetIdentity,
 } from "react-admin";
 import { ArrowLeft } from "lucide-react";
-import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 export const TopicCreate = () => {
   const notify = useNotify();
@@ -19,7 +19,7 @@ export const TopicCreate = () => {
     name: "",
     description: "",
     icon: "",
-    subject: null,
+    subjects: [],
   });
 
   const handleSave = async () => {
@@ -30,8 +30,8 @@ export const TopicCreate = () => {
         return;
       }
 
-      if (!formData.subject) {
-        notify("Please select a subject", { type: "warning" });
+      if (!formData.subjects || formData.subjects.length === 0) {
+        notify("Please select at least one subject", { type: "warning" });
         return;
       }
 
@@ -39,8 +39,7 @@ export const TopicCreate = () => {
         name: formData.name,
         description: formData.description || null,
         icon: formData.icon || null,
-        // Ensure subject is a number (Strapi expects numeric ID for manyToOne relations)
-        subject: formData.subject ? Number(formData.subject) : null,
+        subjects: formData.subjects,
         creator: identity?.id,
       };
 
@@ -122,17 +121,17 @@ export const TopicCreate = () => {
             />
           </div>
 
-          {/* Subject */}
+          {/* Subjects */}
           <div className="space-y-2">
-            <CustomAsyncSelect
-              label="Subject *"
+            <CustomAsyncMultiSelect
+              label="Subjects *"
               resource="subjects"
               optionText="name"
-              value={formData.subject}
+              value={formData.subjects}
               onChange={(val) =>
-                setFormData((prev) => ({ ...prev, subject: val }))
+                setFormData((prev) => ({ ...prev, subjects: val }))
               }
-              placeholder="Select subject..."
+              placeholder="Select subjects..."
             />
           </div>
 

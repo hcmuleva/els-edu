@@ -133,7 +133,14 @@ export const getUserSubscriptions = async (dataProvider, userDocumentId) => {
     meta: {
       populate: {
         course: {
-          populate: ["cover", "subjects"],
+          populate: {
+            cover: {
+              fields: ["url", "name", "formats"],
+            },
+            subjects: {
+              populate: ["topics"],
+            },
+          },
         },
         subjects: {
           fields: ["documentId", "id", "name", "grade", "level"],

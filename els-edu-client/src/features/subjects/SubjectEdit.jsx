@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 import { uploadFile } from "../../services/user";
 
 // Level options for dropdown
@@ -66,14 +67,14 @@ export const SubjectEdit = () => {
     grade: "",
     level: 3,
     coverpage: null,
-    courses: null,
+    courses: [],
   });
 
   const [coverPreview, setCoverPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  // Store full course object for initialData
-  const [initialCourse, setInitialCourse] = useState(null);
+  // Store full course objects for initialData
+  const [initialCourses, setInitialCourses] = useState([]);
 
   // Load existing data when subject is fetched
   useEffect(() => {
@@ -86,17 +87,19 @@ export const SubjectEdit = () => {
         grade: subject.grade || "",
         level: subject.level || 3,
         coverpage: null,
-        courses: subject.courses?.[0]?.id || null,
+        courses: subject.courses?.map((c) => c.documentId || c.id || c) || [],
       });
 
       if (subject.coverpage?.url) {
         setCoverPreview(subject.coverpage.url);
       }
 
-      // Store the full course object for initialData
-      if (subject.courses?.[0]) {
-        console.log("SubjectEdit - setting initialCourse:", subject.courses[0]);
-        setInitialCourse(subject.courses[0]);
+      // Store the full course objects for initialData
+      if (subject.courses && Array.isArray(subject.courses)) {
+        const courseObjects = subject.courses.filter(
+          (c) => typeof c === "object" && (c.documentId || c.id)
+        );
+        setInitialCourses(courseObjects);
       }
     }
   }, [subject]);
@@ -185,8 +188,8 @@ export const SubjectEdit = () => {
         level: formData.level,
       };
 
-      if (formData.courses) {
-        subjectData.courses = [formData.courses];
+      if (formData.courses && formData.courses.length > 0) {
+        subjectData.courses = formData.courses;
       }
 
       // Add coverpage if uploaded
@@ -257,7 +260,11 @@ export const SubjectEdit = () => {
               disabled={isLoading || uploading}
               className="px-5 py-2 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {uploading ? "Uploading..." : isLoading ? "Saving..." : "Save Changes"}
+              {uploading
+                ? "Uploading..."
+                : isLoading
+                ? "Saving..."
+                : "Save Changes"}
             </button>
           </div>
         </div>
@@ -316,17 +323,17 @@ export const SubjectEdit = () => {
             <div className="space-y-2">
               <label className="text-sm font-bold text-foreground flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-500" />
-                Course
+                Courses
               </label>
-              <CustomAsyncSelect
+              <CustomAsyncMultiSelect
                 resource="courses"
                 optionText="name"
                 value={formData.courses}
                 onChange={(val) =>
                   setFormData((prev) => ({ ...prev, courses: val }))
                 }
-                placeholder="Select course..."
-                initialData={initialCourse}
+                placeholder="Select courses..."
+                initialData={initialCourses}
               />
             </div>
           </div>

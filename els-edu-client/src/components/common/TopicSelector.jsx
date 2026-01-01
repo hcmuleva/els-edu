@@ -313,11 +313,18 @@ export const TopicSelector = ({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-sm text-muted-foreground">
-                          {topic.subject?.name && (
+                          {topic.subjects && topic.subjects.length > 0 && (
                             <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-md border border-amber-100">
                               <BookOpen className="w-3 h-3 text-amber-500" />
-                              <span className="text-xs font-medium text-amber-700">
-                                {topic.subject.name}
+                              <span
+                                className="text-xs font-medium text-amber-700"
+                                title={topic.subjects
+                                  .map((s) => s.name)
+                                  .join(", ")}
+                              >
+                                {topic.subjects[0].name}
+                                {topic.subjects.length > 1 &&
+                                  ` +${topic.subjects.length - 1}`}
                               </span>
                             </span>
                           )}

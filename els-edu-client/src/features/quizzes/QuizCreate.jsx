@@ -30,6 +30,7 @@ import { QuestionBuilder } from "../questions/components/QuestionBuilder";
 import { QuestionSelector } from "../../components/common/QuestionSelector";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 // Step components for cleaner code
 const StepIndicator = ({ currentStep, steps }) => (
@@ -117,8 +118,8 @@ export const QuizCreate = () => {
     isRandomized: false,
     showCorrectAnswers: "after-submission",
     allowReview: true,
-    topic: null,
-    subject: null,
+    topics: [],
+    subjects: [],
   });
 
   // Populate form data on edit
@@ -131,15 +132,17 @@ export const QuizCreate = () => {
         quizType: quizDataLoaded.quizType || "standalone",
         difficulty: quizDataLoaded.difficulty || "beginner",
         timeLimit: quizDataLoaded.timeLimit || 30,
-        maxAttempts: quizDataLoaded.maxAttempts ?? 3, // Preserve 0 for infinite
+        maxAttempts: quizDataLoaded.maxAttempts ?? 3,
         passingScore: quizDataLoaded.passingScore || 70,
         isActive: quizDataLoaded.isActive ?? true,
         isRandomized: quizDataLoaded.isRandomized ?? false,
         showCorrectAnswers:
           quizDataLoaded.showCorrectAnswers || "after-submission",
         allowReview: quizDataLoaded.allowReview ?? true,
-        topic: quizDataLoaded.topic?.id || quizDataLoaded.topic || null,
-        subject: quizDataLoaded.subject?.id || quizDataLoaded.subject || null,
+        topics:
+          quizDataLoaded.topics?.map((t) => t.documentId || t.id || t) || [],
+        subjects:
+          quizDataLoaded.subjects?.map((s) => s.documentId || s.id || s) || [],
       });
 
       // Populate questions if available
@@ -214,12 +217,12 @@ export const QuizCreate = () => {
         notify("Please enter a quiz title", { type: "warning" });
         return;
       }
-      if (!formData.topic) {
-        notify("Please select a topic", { type: "warning" });
+      if (!formData.topics || formData.topics.length === 0) {
+        notify("Please select at least one topic", { type: "warning" });
         return;
       }
-      if (!formData.subject) {
-        notify("Please select a subject", { type: "warning" });
+      if (!formData.subjects || formData.subjects.length === 0) {
+        notify("Please select at least one subject", { type: "warning" });
         return;
       }
     }
@@ -273,8 +276,8 @@ export const QuizCreate = () => {
       const quizData = {
         ...formData,
         questions: allQuestionIds,
-        topic: formData.topic, // Assuming ID from CustomAsyncSelect
-        subject: formData.subject, // Assuming ID from CustomAsyncSelect
+        topics: formData.topics,
+        subjects: formData.subjects,
       };
 
       if (!isEdit) {
@@ -403,36 +406,38 @@ export const QuizCreate = () => {
                   <div className="grid grid-cols-2 gap-8 pt-2">
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-foreground">
-                        Subject <span className="text-red-500">*</span>
+                        Subjects <span className="text-red-500">*</span>
                       </label>
-                      <CustomAsyncSelect
+                      <CustomAsyncMultiSelect
                         resource="subjects"
                         optionText="name"
-                        value={formData.subject}
+                        value={formData.subjects}
                         onChange={(val) => {
-                          updateFormData("subject", val);
-                          updateFormData("topic", null); // Clear topic when subject changes
+                          updateFormData("subjects", val);
+                          updateFormData("topics", []); // Clear topics when subjects change
                         }}
-                        placeholder="Select subject first..."
+                        placeholder="Select subjects..."
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-foreground">
-                        Topic <span className="text-red-500">*</span>
+                        Topics <span className="text-red-500">*</span>
                       </label>
-                      <CustomAsyncSelect
+                      <CustomAsyncMultiSelect
                         resource="topics"
                         optionText="name"
-                        value={formData.topic}
-                        onChange={(val) => updateFormData("topic", val)}
+                        value={formData.topics}
+                        onChange={(val) => updateFormData("topics", val)}
                         placeholder={
-                          formData.subject
-                            ? "Select topic..."
-                            : "Select subject first"
+                          formData.subjects.length > 0
+                            ? "Select topics..."
+                            : "Select subjects first"
                         }
-                        disabled={!formData.subject}
+                        disabled={formData.subjects.length === 0}
                         filter={
-                          formData.subject ? { subject: formData.subject } : {}
+                          formData.subjects.length > 0
+                            ? { "subject[id][$in]": formData.subjects }
+                            : {}
                         }
                       />
                     </div>
