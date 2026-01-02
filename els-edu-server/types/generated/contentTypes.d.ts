@@ -560,6 +560,7 @@ export interface ApiContentContent extends Struct.CollectionTypeSchema {
     quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     resources: Schema.Attribute.Relation<'oneToMany', 'api::resource.resource'>;
     subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
+    thumbnail: Schema.Attribute.String;
     title: Schema.Attribute.String;
     topics: Schema.Attribute.Relation<'manyToMany', 'api::topic.topic'>;
     type: Schema.Attribute.Enumeration<
