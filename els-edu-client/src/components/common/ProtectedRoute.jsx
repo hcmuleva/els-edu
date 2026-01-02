@@ -13,20 +13,26 @@ import { Navigate } from "react-router-dom";
 export const ProtectedRoute = ({
   children,
   allowedRoles = [],
-  redirectTo = "/",
+  redirectTo = "/login",
 }) => {
   // Get current user from localStorage
-  let userRole = "STUDENT";
+  let user = null;
   try {
-    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-    userRole = storedUser?.user_role || "STUDENT";
+    user = JSON.parse(localStorage.getItem("user"));
   } catch {
-    userRole = "STUDENT";
+    user = null;
   }
 
-  // Check if user's role is in the allowed roles
-  if (!allowedRoles.includes(userRole)) {
+  // 1. Check if user exists (Authentication)
+  if (!user || !user.documentId) {
     return <Navigate to={redirectTo} replace />;
+  }
+
+  // 2. Check if user's role is in the allowed roles (Authorization)
+  // If allowedRoles is empty, it means any authenticated user is allowed
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.user_role)) {
+    // If authenticated but wrong role, send to unauthorized page
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;

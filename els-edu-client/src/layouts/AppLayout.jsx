@@ -2,6 +2,7 @@ import React from "react";
 import { Notification } from "react-admin";
 import Menu from "./Menu";
 import MobileBottomNav from "./MobileBottomNav";
+import ScrollToTopButton from "../components/common/ScrollToTopButton";
 
 const AppLayout = ({ children }) => (
   <div className="flex h-screen w-full bg-background overflow-hidden relative">
@@ -14,10 +15,16 @@ const AppLayout = ({ children }) => (
     </aside>
 
     {/* Main Content Area */}
-    <main className="flex-1 h-full overflow-y-auto overflow-x-hidden relative flex flex-col z-10 bg-background pb-28 lg:pb-0 mt-10 lg:mt-0">
+    <main
+      id="main-content"
+      className="flex-1 h-full overflow-y-auto overflow-x-hidden relative flex flex-col z-10 bg-background pb-32 lg:pb-0 mt-10 lg:mt-0"
+    >
       <div className="flex-1 p-4 md:p-6 fade-in animate-in duration-300">
         {children}
       </div>
+
+      {/* Floating Scroll Button */}
+      <ScrollToTopButton containerSelector="#main-content" />
     </main>
 
     {/* Mobile Bottom Navigation - Visible on mobile/tablet only */}

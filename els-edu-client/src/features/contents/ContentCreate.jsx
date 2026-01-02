@@ -295,11 +295,7 @@ export const ContentCreate = () => {
                 optionText="name"
                 value={formData.subjects}
                 onChange={(val) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    subjects: val,
-                    topics: [], // Clear topics when subjects change
-                  }))
+                  setFormData((prev) => ({ ...prev, subjects: val }))
                 }
                 placeholder="Select subjects..."
               />
@@ -315,17 +311,7 @@ export const ContentCreate = () => {
                 onChange={(val) =>
                   setFormData((prev) => ({ ...prev, topics: val }))
                 }
-                placeholder={
-                  formData.subjects.length > 0
-                    ? "Select topics..."
-                    : "Select subjects first"
-                }
-                disabled={formData.subjects.length === 0}
-                filter={
-                  formData.subjects.length > 0
-                    ? { "subject[id][$in]": formData.subjects }
-                    : {}
-                }
+                placeholder="Select topics..."
               />
             </div>
           </div>

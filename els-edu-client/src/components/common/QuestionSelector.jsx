@@ -37,6 +37,7 @@ export const QuestionSelector = ({
   const [filters, setFilters] = useState({
     difficulty: "all",
     questionType: "all",
+    subject: null,
     topic: null,
   });
 
@@ -47,11 +48,15 @@ export const QuestionSelector = ({
   // Build filter object for the query
   const queryFilter = useMemo(() => {
     const filter = {};
+    // Use 'q' for search - dataProvider handles it correctly for localized fields
     if (searchTerm) filter.q = searchTerm;
     if (filters.difficulty !== "all") filter.difficulty = filters.difficulty;
     if (filters.questionType !== "all")
       filter.questionType = filters.questionType;
-    if (filters.topic) filter.topic = filters.topic;
+    // Filter by subject documentId if selected
+    if (filters.subject) filter["subjects.documentId[$in]"] = [filters.subject];
+    // Filter by topic documentId if selected
+    if (filters.topic) filter["topics.documentId[$in]"] = [filters.topic];
     if (viewMode === "my" && identity?.id) filter.creator = identity.id;
     return filter;
   }, [searchTerm, filters, viewMode, identity?.id]);
@@ -89,7 +94,12 @@ export const QuestionSelector = ({
   );
 
   const resetFilters = () => {
-    setFilters({ difficulty: "all", questionType: "all", topic: null });
+    setFilters({
+      difficulty: "all",
+      questionType: "all",
+      subject: null,
+      topic: null,
+    });
     setSearchTerm("");
     setLocalSelected([]); // Also reset selected questions
   };
@@ -227,7 +237,20 @@ export const QuestionSelector = ({
                 className="w-full pl-11 pr-4 py-2 rounded-xl border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-gray-50/50 focus:bg-white h-[42px]"
               />
             </div>
-            <div className="col-span-3">
+            <div className="col-span-2">
+              <CustomAsyncSelect
+                resource="subjects"
+                optionText="name"
+                value={filters.subject}
+                onChange={(val) =>
+                  setFilters((prev) => ({ ...prev, subject: val }))
+                }
+                placeholder="Filter by Subject"
+                className="w-full"
+                allowEmpty
+              />
+            </div>
+            <div className="col-span-2">
               <CustomAsyncSelect
                 resource="topics"
                 optionText="name"
@@ -237,6 +260,7 @@ export const QuestionSelector = ({
                 }
                 placeholder="Filter by Topic"
                 className="w-full"
+                allowEmpty
               />
             </div>
             <div className="col-span-2">

@@ -123,37 +123,52 @@ export const updateSubscriptionSubjects = async (
  * @param {string} userDocumentId - User document ID
  * @returns {Promise<Array>} Array of subscriptions with course data
  */
-export const getUserSubscriptions = async (dataProvider, userDocumentId) => {
-  const { data } = await dataProvider.getList("usersubscriptions", {
-    pagination: { page: 1, perPage: 100 },
+export const getUserSubscriptions = async (
+  dataProvider,
+  userDocumentId,
+  { page = 1, perPage = 10 } = {}
+) => {
+  const { data, total } = await dataProvider.getList("usersubscriptions", {
+    pagination: { page, perPage },
     sort: { field: "createdAt", order: "DESC" },
     filter: {
       "user[documentId]": userDocumentId,
+      paymentstatus: "ACTIVE",
     },
     meta: {
       populate: {
         course: {
+          fields: ["documentId", "name", "description"],
           populate: {
             cover: {
-              fields: ["url", "name", "formats"],
+              fields: ["url", "formats"],
             },
             subjects: {
-              populate: ["topics"],
+              fields: ["documentId", "name"],
+              limit: -1,
             },
           },
         },
         subjects: {
-          fields: ["documentId", "id", "name", "grade", "level"],
-          populate: ["coverpage"],
-        },
-        org: {
-          fields: ["documentId", "org_name"],
+          fields: ["documentId", "name", "grade", "level"],
+          limit: -1,
+          populate: {
+            coverpage: { fields: ["url"] },
+            topics: {
+              fields: ["documentId", "name", "description"],
+              limit: -1,
+            },
+            quizzes: {
+              fields: ["documentId", "title"],
+              limit: -1,
+            },
+          },
         },
       },
     },
   });
 
-  return data || [];
+  return { data: data || [], total };
 };
 
 /**
@@ -249,7 +264,11 @@ export const syncUserSubscriptions = async (
   assignedCourses
 ) => {
   // Get current subscriptions
-  const currentSubs = await getUserSubscriptions(dataProvider, userDocumentId);
+  const { data: currentSubs } = await getUserSubscriptions(
+    dataProvider,
+    userDocumentId,
+    { page: 1, perPage: 1000 }
+  );
   const currentCourseIds = new Set(
     currentSubs.map((s) => s.course?.documentId).filter(Boolean)
   );
@@ -362,7 +381,13 @@ export const getOrderStatus = async (_authToken, orderId) => {
  * @returns
  */
 export const getPurchaseHistory = async (_authToken) => {
-  const response = await api.get("/payment/history");
+  const response = await api.get("/payment/history", {
+    headers: {
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+    },
+  });
   return response.data;
 };
 
@@ -436,6 +461,71 @@ export const finalizeSubscription = async (_authToken, orderId) => {
   return response.data;
 };
 
+/**
+ * Refresh a subscription to sync with current course subjects
+ * Called when user manually clicks refresh button
+ *
+ * @param {string} subscriptionDocumentId - Subscription document ID
+ * @returns {Promise<Object>} - { success, subjectCount, changes, hasChanges }
+ */
+export const refreshSubscription = async (subscriptionDocumentId) => {
+  const response = await api.post(
+    `/usersubscriptions/${subscriptionDocumentId}/refresh`
+  );
+  return response.data;
+};
+
+/**
+ * Check if subscription is in sync with course subjects
+ *
+ * @param {string} subscriptionDocumentId - Subscription document ID
+ * @returns {Promise<Object>} - { inSync, changes: { added, removed } }
+ */
+export const checkSyncStatus = async (subscriptionDocumentId) => {
+  const response = await api.get(
+    `/usersubscriptions/${subscriptionDocumentId}/sync-status`
+  );
+  return response.data;
+};
+
+/**
+ * Get counts (subjects, topics, quizzes) for all user subscriptions
+ * Uses efficient SQL COUNT queries on server
+ *
+ * @param {string} userDocumentId - User document ID
+ * @returns {Promise<Object>} - Map of subscriptionDocumentId -> { subjectCount, topicCount, quizCount }
+ */
+export const getSubscriptionCounts = async (userDocumentId) => {
+  const response = await api.get(
+    `/custom-counts/subscription-counts/${userDocumentId}`
+  );
+  return response.data;
+};
+
+/**
+ * Get counts for a course (subjects, topics, quizzes)
+ * @param {string} courseDocumentId
+ * @returns {Promise<Object>} { subjectCount, topicCount, quizCount }
+ */
+export const getCourseCounts = async (courseDocumentId) => {
+  const response = await api.get(
+    `/custom-counts/course-counts/${courseDocumentId}`
+  );
+  return response.data?.data || response.data;
+};
+
+/**
+ * Get counts for a subject (topics, quizzes)
+ * @param {string} subjectDocumentId
+ * @returns {Promise<Object>} { topicCount, quizCount }
+ */
+export const getSubjectCounts = async (subjectDocumentId) => {
+  const response = await api.get(
+    `/custom-counts/subject-counts/${subjectDocumentId}`
+  );
+  return response.data?.data || response.data;
+};
+
 // Export as service object for convenience
 export const subscriptionService = {
   createSubscription,
@@ -454,6 +544,11 @@ export const subscriptionService = {
   getPendingPayments,
   resumePayment,
   finalizeSubscription,
+  refreshSubscription,
+  checkSyncStatus,
+  getSubscriptionCounts,
+  getCourseCounts,
+  getSubjectCounts,
 };
 
 export default subscriptionService;

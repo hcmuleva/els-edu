@@ -14,6 +14,7 @@ import {
 import SubjectCard from "../../components/subjects/SubjectCard";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { subscriptionService } from "../../services/subscriptionService";
+import Pagination from "../../components/common/Pagination";
 
 const GRADE_OPTIONS = [
   { id: null, name: "All Grades" },
@@ -52,11 +53,38 @@ const CourseSubjectsPage = () => {
   const [subscription, setSubscription] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [filteredSubjects, setFilteredSubjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedGrade, setSelectedGrade] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const [error, setError] = useState(null);
+  const [courseCounts, setCourseCounts] = useState({
+    subjectCount: 0,
+    topicCount: 0,
+    quizCount: 0,
+  });
+  const [subjectBreakdown, setSubjectBreakdown] = useState({});
+
+  // Pagination State
+  const [subjectPage, setSubjectPage] = useState(1);
+  const [totalSubjects, setTotalSubjects] = useState(0);
+  const subjectsPerPage = 10;
+
+  // Loading States
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setSubjectPage(1); // Reset to page 1 on new search
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   // Fetch subscription and subjects
   useEffect(() => {
@@ -64,58 +92,112 @@ const CourseSubjectsPage = () => {
       if (!identity?.documentId || !courseId) return;
 
       try {
-        setLoading(true);
+        if (!subscription) {
+          setInitialLoading(true);
+        } else {
+          setIsFetching(true);
+        }
         setError(null);
 
-        const sub = await subscriptionService.getSubscriptionByCourse(
-          dataProvider,
-          identity.documentId,
-          courseId
-        );
-
-        if (!sub) {
-          setError("Subscription not found");
-          setLoading(false);
-          return;
+        // 1. Get Subscription (First time or if needed)
+        // We need this to get subscription.documentId for filtering subjects
+        let currentSub = subscription;
+        if (!currentSub) {
+          currentSub = await subscriptionService.getSubscriptionByCourse(
+            dataProvider,
+            identity.documentId,
+            courseId
+          );
+          if (!currentSub) {
+            setError("Subscription not found");
+            setInitialLoading(false);
+            setIsFetching(false);
+            return;
+          }
+          setSubscription(currentSub);
         }
 
-        setSubscription(sub);
-        const subjectList = sub.subjects || sub.course?.subjects || [];
-        setSubjects(subjectList);
-        setFilteredSubjects(subjectList);
+        // 2. Fetch Subjects Paginated
+        const { data: subjectsData, total } = await dataProvider.getList(
+          "subjects",
+          {
+            pagination: { page: subjectPage, perPage: subjectsPerPage },
+            sort: { field: "name", order: "ASC" },
+            filter: {
+              "filters[usersubscriptions][documentId][$eq]":
+                currentSub.documentId,
+              ...(debouncedSearchQuery && {
+                "filters[name][$containsi]": debouncedSearchQuery,
+              }),
+              ...(selectedGrade && { "filters[grade][$eq]": selectedGrade }),
+              ...(selectedLevel !== null && {
+                "filters[level][$eq]": selectedLevel,
+              }),
+            },
+            meta: {
+              populate: {
+                coverpage: { fields: ["url"] },
+                topics: { fields: ["documentId"] },
+              },
+            },
+          }
+        );
+
+        setSubjects(subjectsData);
+        setFilteredSubjects(subjectsData);
+        // setTotalSubjects(total || subjectsData.length); // Fallback if total undefined
+        // We will set total subjects from courseCounts to be more accurate across pagination
       } catch (e) {
         console.error("Error fetching course subjects:", e);
         setError(e.message || "Failed to load course subjects");
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
+        setIsFetching(false);
+      }
+    };
+
+    // Helper to fetch counts
+    const fetchCounts = async () => {
+      if (!courseId) return;
+      try {
+        const counts = await subscriptionService.getCourseCounts(courseId);
+        if (counts) {
+          setCourseCounts({
+            subjectCount: counts.subjectCount,
+            topicCount: counts.topicCount,
+            quizCount: counts.quizCount,
+          });
+          setTotalSubjects(counts.subjectCount);
+          if (counts.breakdown) {
+            setSubjectBreakdown(counts.breakdown);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch course counts", err);
       }
     };
 
     if (!identityLoading) {
       fetchData();
+      fetchCounts();
     }
-  }, [dataProvider, identity?.documentId, courseId, identityLoading]);
+  }, [
+    dataProvider,
+    identity?.documentId,
+    courseId,
+    identityLoading,
+    subjectPage,
+    debouncedSearchQuery,
+    selectedGrade,
+    selectedLevel,
+  ]); // Added params to dependency tracking
 
-  // Apply filters
+  // Client-side filtering removed as we moved to server-side filtering in useEffect
+  // kept logic structure if needed but effectively overridden by server fetch
   useEffect(() => {
-    let filtered = subjects;
-
-    if (searchQuery) {
-      filtered = filtered.filter((subject) =>
-        subject.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (selectedGrade) {
-      filtered = filtered.filter((subject) => subject.grade === selectedGrade);
-    }
-
-    if (selectedLevel !== null) {
-      filtered = filtered.filter((subject) => subject.level === selectedLevel);
-    }
-
-    setFilteredSubjects(filtered);
-  }, [searchQuery, selectedGrade, selectedLevel, subjects]);
+    // Just sync filteredSubjects with subjects when they change (handled by fetch)
+    setFilteredSubjects(subjects);
+  }, [subjects]);
 
   const handleResetFilters = () => {
     setSearchQuery("");
@@ -130,7 +212,7 @@ const CourseSubjectsPage = () => {
   const hasActiveFilters =
     searchQuery || selectedGrade || selectedLevel !== null;
 
-  if (identityLoading || loading) {
+  if (identityLoading || initialLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
         <div className="max-w-6xl mx-auto px-6 py-8">
@@ -218,19 +300,23 @@ const CourseSubjectsPage = () => {
                 )}
               </div>
 
-              <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-gray-400">
-                <span className="flex items-center gap-1">
-                  <BookOpen className="w-4 h-4" />
-                  <span className="font-medium">
-                    {subjects.length} Subjects
-                  </span>
+              <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs font-semibold text-gray-500 mt-1">
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-lg border border-gray-100">
+                  <BookOpen className="w-3.5 h-3.5 text-primary-500" />
+                  <span>{courseCounts.subjectCount} Subjects</span>
                 </span>
-                <div className="w-1 h-1 rounded-full bg-gray-200 self-center" />
-                <span className="flex items-center gap-1">
-                  <Layers className="w-4 h-4" />
-                  <span className="font-medium">
-                    {subscription.subscription_type || "FREE"}
-                  </span>
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-lg border border-gray-100">
+                  <Layers className="w-3.5 h-3.5 text-violet-500" />
+                  <span>{courseCounts.topicCount} Topics</span>
+                </span>
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-lg border border-gray-100">
+                  <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>{courseCounts.quizCount} Quizzes</span>
+                </span>
+                <div className="w-px h-4 bg-gray-200 self-center hidden sm:block" />
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg border border-amber-100 text-amber-700">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{subscription.subscription_type || "FREE"} Plan</span>
                 </span>
               </div>
             </div>
@@ -300,20 +386,37 @@ const CourseSubjectsPage = () => {
             <BookOpen className="w-4 h-4 text-gray-400" />
             <p className="text-sm text-gray-500">
               <span className="font-semibold text-gray-700">
-                {filteredSubjects.length}
+                {hasActiveFilters ? filteredSubjects.length : totalSubjects}
               </span>{" "}
-              subject{filteredSubjects.length !== 1 ? "s" : ""}
+              subject{totalSubjects !== 1 ? "s" : ""}
             </p>
           </div>
         )}
 
         {/* Subjects Grid */}
-        {filteredSubjects.length > 0 ? (
+        {isFetching ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60 pointer-events-none">
+            {/* Show skeleton or keep verified content dimmed */}
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white h-48 rounded-2xl border border-gray-100 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : filteredSubjects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSubjects.map((subject) => (
               <SubjectCard
                 key={subject.documentId || subject.id}
                 subject={subject}
+                courseId={courseId}
+                counts={
+                  subjectBreakdown[subject.documentId || subject.id] || {
+                    topicCount: 0,
+                    quizCount: 0,
+                  }
+                }
               />
             ))}
           </div>
@@ -341,6 +444,15 @@ const CourseSubjectsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalSubjects > subjectsPerPage && (
+        <Pagination
+          currentPage={subjectPage}
+          totalPages={Math.ceil(totalSubjects / subjectsPerPage)}
+          onPageChange={setSubjectPage}
+        />
+      )}
     </div>
   );
 };
