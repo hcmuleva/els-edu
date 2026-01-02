@@ -171,7 +171,7 @@ const CustomMenuItem = ({
         isOpen && "mx-3 px-3 my-1 rounded-xl min-h-[44px]",
         // Collapsed: fixed square 40px (w-10), centered, no padding
         !isOpen &&
-          "mx-auto w-10 h-10 my-1 rounded-xl p-0 flex justify-center items-center",
+        "mx-auto w-10 h-10 my-1 rounded-xl p-0 flex justify-center items-center",
         className
       )}
       sx={{
@@ -403,9 +403,12 @@ const AppMenu = (props) => {
           )}
         >
           {/* Standardized sized logo container: w-10 h-10 to match menu items */}
-          <div className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20">
-            K
-          </div>
+          <div className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 rounded-xl flex items-center justify-center text-white font-black text-xl ">  <img
+    src="/logo.png"
+    alt="Logo"
+    className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 rounded-xl "
+  />
+</div>
           {/* Explicit width/opacity transition for text to prevent layout jumping */}
           <div
             className={cn(
@@ -414,7 +417,7 @@ const AppMenu = (props) => {
             )}
           >
             <span className="text-xl font-heading font-bold text-foreground tracking-tight whitespace-nowrap">
-              ELS Kids
+              ELS
             </span>
           </div>
         </div>
@@ -493,8 +496,8 @@ const AppMenu = (props) => {
           {(canAccess("my-subscriptions") ||
             canAccess("browse-courses") ||
             canAccess("progress")) && (
-            <SectionHeader title="Learning" isOpen={open} />
-          )}
+              <SectionHeader title="Learning" isOpen={open} />
+            )}
 
           {/* My Subscriptions - visible to: STUDENT, SUPERADMIN */}
           {canAccess("my-subscriptions") && (
@@ -597,8 +600,7 @@ const AppMenu = (props) => {
                       <img
                         src={
                           identity?.avatar ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                            identity?.fullName || "User"
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${identity?.fullName || "User"
                           }`
                         }
                         alt="User"
