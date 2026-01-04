@@ -112,10 +112,10 @@ const BrowseCourseCard = ({
   return (
     <div
       onClick={() => onClick && onClick(course)}
-      className="group relative transition-all duration-300 cursor-pointer"
+      className="group relative transition-all duration-300 cursor-pointer flex flex-col h-full bg-white rounded-2xl border border-gray-100 hover:shadow-lg overflow-hidden"
     >
       {/* Cover Image */}
-      <div className="relative h-40 md:h-48 rounded-2xl md:rounded-3xl bg-gradient-to-br from-primary-50 via-violet-50 to-pink-50 overflow-hidden shadow-sm">
+      <div className="relative h-40 md:h-48 bg-gradient-to-br from-primary-50 via-violet-50 to-pink-50 overflow-hidden shrink-0">
         {course?.cover?.url ? (
           <img
             src={course.cover.url}
@@ -169,23 +169,25 @@ const BrowseCourseCard = ({
       </div>
 
       {/* Content */}
-      <div className="pt-4 px-1">
+      <div className="p-4 flex flex-col flex-grow">
         {/* Title */}
         <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors leading-snug">
           {course.name}
         </h3>
 
         {/* Description */}
-        {course?.description && (
+        {course?.description ? (
           <p className="text-sm text-gray-500 line-clamp-2 mb-3 leading-relaxed">
             {typeof course.description === "string"
               ? course.description.replace(/<[^>]*>/g, "").slice(0, 80)
               : "Explore this course..."}
           </p>
+        ) : (
+          <div className="mb-3 h-10"></div> /* Placeholder for alignment if needed, or rely on mt-auto */
         )}
 
         {/* Stats Row */}
-        <div className="flex items-center gap-3 text-xs text-gray-400 mb-4">
+        <div className="flex items-center gap-3 text-xs text-gray-400 mb-4 mt-auto">
           <div className="flex items-center gap-1">
             <BookOpen className="w-3.5 h-3.5" />
             <span className="font-medium">{subjectCount} subjects</span>
@@ -217,8 +219,8 @@ const BrowseCourseCard = ({
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
+        {/* Action Buttons - Pushed to bottom via parent flex-grow or self mt-auto */}
+        <div className={`flex gap-2 ${!hasPartialEnrollment ? "mt-auto" : ""}`}>
           {isPending ? (
             <>
               <button

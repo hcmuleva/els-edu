@@ -355,8 +355,8 @@ const ProfilePage = () => {
       <Title title="My Profile" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
-        <div className="px-4 py-4 max-w-4xl mx-auto">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 mb-4">
+        <div className="px-4 py-4 md:px-6 md:py-6 max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <h1 className="text-lg md:text-xl font-bold text-gray-900">
               My Profile

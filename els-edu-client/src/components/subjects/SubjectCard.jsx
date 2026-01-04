@@ -50,10 +50,13 @@ const GRADE_COLORS = {
   TENTH: { bg: "bg-rose-50", text: "text-rose-600", border: "border-rose-200" },
 };
 
-const SubjectCard = ({ subject }) => {
+const SubjectCard = ({
+  subject,
+  courseId,
+  counts = { topicCount: 0, quizCount: 0 },
+}) => {
   const navigate = useNavigate();
-  const topicCount = subject?.topics?.length || 0;
-  const quizCount = subject?.quizzes?.length || 0;
+
   const gradeColor = GRADE_COLORS[subject?.grade] || {
     bg: "bg-gray-50",
     text: "text-gray-600",
@@ -61,7 +64,13 @@ const SubjectCard = ({ subject }) => {
   };
 
   const handleClick = () => {
-    navigate(`/browse-subjects/${subject.documentId || subject.id}`);
+    if (courseId) {
+      navigate(
+        `/my-subscriptions/${courseId}/subject/${
+          subject.documentId || subject.id
+        }`
+      );
+    }
   };
 
   return (
@@ -109,12 +118,12 @@ const SubjectCard = ({ subject }) => {
         <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
           <div className="flex items-center gap-1">
             <Layers className="w-3.5 h-3.5" />
-            <span className="font-medium">{topicCount} topics</span>
+            <span className="font-medium">{counts.topicCount} topics</span>
           </div>
           <div className="w-1 h-1 rounded-full bg-gray-200" />
           <div className="flex items-center gap-1">
             <BookOpen className="w-3.5 h-3.5" />
-            <span className="font-medium">{quizCount} quizzes</span>
+            <span className="font-medium">{counts.quizCount} quizzes</span>
           </div>
         </div>
 

@@ -11,7 +11,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import BrowseCourseCard from "../../components/courses/BrowseCourseCard";
-import CourseDetailsDrawer from "../../components/courses/CourseDetailsDrawer";
+// import CourseDetailsDrawer from "../../components/courses/CourseDetailsDrawer"; // Removed
 import EnrollModal from "../../components/courses/EnrollModal";
 import SuccessModal from "../../components/courses/SuccessModal";
 import { CustomSelect } from "../../components/common/CustomSelect";
@@ -20,6 +20,7 @@ import {
   cancelPayment,
   getPendingPayments,
 } from "../../services/subscriptionService";
+import Pagination from "../../components/common/Pagination";
 
 const CATEGORY_OPTIONS = [
   { id: null, name: "All Categories" },
@@ -61,6 +62,11 @@ const BrowseCoursesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PER_PAGE = 9; // Grid friendly (3x3)
+
   // Pending payments state
   const [pendingPayments, setPendingPayments] = useState({});
 
@@ -70,8 +76,6 @@ const BrowseCoursesPage = () => {
   const [enrolledSubjectIds, setEnrolledSubjectIds] = useState(new Set());
 
   // Modal/Drawer state
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
   const [enrollingCourse, setEnrollingCourse] = useState(null);
   const [enrollingSubject, setEnrollingSubject] = useState(null);
@@ -88,22 +92,36 @@ const BrowseCoursesPage = () => {
       try {
         setLoading(true);
 
-        const { data: coursesData } = await dataProvider.getList("courses", {
-          pagination: { page: 1, perPage: 10 },
-          sort: { field: "name", order: "ASC" },
-          filter: {},
-          meta: {
-            populate: {
-              cover: { fields: ["url", "name"] },
-              subjects: { populate: ["topics", "coverpage"] },
+        const filter = {};
+        if (searchQuery) {
+          filter.name = { $containsi: searchQuery };
+        }
+        if (selectedCategory) {
+          filter.category = selectedCategory;
+        }
+        if (selectedSubcategory) {
+          filter.subcategory = selectedSubcategory;
+        }
+
+        const { data: coursesData, total: totalCount } =
+          await dataProvider.getList("courses", {
+            pagination: { page, perPage: PER_PAGE },
+            sort: { field: "name", order: "ASC" },
+            filter: filter, // Using server-side filtering
+            meta: {
+              populate: {
+                cover: { fields: ["url", "name"] },
+                subjects: { populate: ["topics", "coverpage"] },
+              },
             },
-          },
-        });
+          });
+
+        setTotal(totalCount);
 
         const { data: pricingsData } = await dataProvider.getList(
           "course-pricings",
           {
-            pagination: { page: 1, perPage: 10 },
+            pagination: { page: 1, perPage: 100 }, // Fetch enough pricings
             filter: {},
             meta: {
               populate: {
@@ -135,7 +153,7 @@ const BrowseCoursesPage = () => {
     };
 
     fetchCourses();
-  }, [dataProvider]);
+  }, [dataProvider, page, searchQuery, selectedCategory, selectedSubcategory]);
 
   // Fetch user subscriptions
   useEffect(() => {
@@ -143,9 +161,10 @@ const BrowseCoursesPage = () => {
       if (!identity?.documentId) return;
 
       try {
-        const subs = await subscriptionService.getUserSubscriptions(
+        const { data: subs } = await subscriptionService.getUserSubscriptions(
           dataProvider,
-          identity.documentId
+          identity.documentId,
+          { page: 1, perPage: 1000 } // Fetch all potentially active subs
         );
         setUserSubscriptions(subs);
 
@@ -279,50 +298,15 @@ const BrowseCoursesPage = () => {
     }
   };
 
-  // Filtered courses
-  const filteredCourses = useMemo(() => {
-    let filtered = courses;
-
-    if (searchQuery) {
-      filtered = filtered.filter((course) =>
-        course.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter(
-        (course) => course.category === selectedCategory
-      );
-    }
-
-    if (selectedSubcategory) {
-      filtered = filtered.filter(
-        (course) => course.subcategory === selectedSubcategory
-      );
-    }
-
-    return filtered;
-  }, [courses, searchQuery, selectedCategory, selectedSubcategory]);
-
   // Handlers
   const handleCourseClick = (course) => {
-    setSelectedCourse(course);
-    setDrawerOpen(true);
-  };
-
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false);
-    setSelectedCourse(null);
+    // Navigate directly to detail page
+    navigate(`/browse-courses/${course.documentId}`);
   };
 
   const handleEnrollCourse = (course) => {
     setEnrollingCourse(course);
     setEnrollingSubject(null);
-    setEnrollModalOpen(true);
-  };
-
-  const handleEnrollSubject = (subject) => {
-    setEnrollingSubject(subject);
     setEnrollModalOpen(true);
   };
 
@@ -332,37 +316,13 @@ const BrowseCoursesPage = () => {
     try {
       setEnrolling(true);
 
-      const course = enrollingCourse || selectedCourse;
+      const course = enrollingCourse; // Enrolling from card directly uses enrollingCourse
       const org = identity.org?.documentId || null;
       const coursePricing = course.coursePricing;
 
       if (enrollingSubject) {
-        const subjectPricing = coursePricing?.subject_pricings?.find(
-          (sp) => sp.subject?.documentId === enrollingSubject.documentId
-        );
-        const amount = subjectPricing?.amount || 0;
-
-        if (amount > 0 && subjectPricing?.documentId) {
-          const token = localStorage.getItem("token");
-          if (!token) throw new Error("Authentication required");
-
-          await subscriptionService.initiatePayment(token, {
-            coursePricingId: coursePricing.documentId,
-            subjectPricingId: subjectPricing.documentId,
-            type: "SUBJECT",
-          });
-          return;
-        } else {
-          await subscriptionService.createSubscription(dataProvider, {
-            userDocumentId: identity.documentId,
-            courseDocumentId: course.documentId,
-            orgDocumentId: org,
-            subscriptionType: "FREE",
-            paymentStatus: "ACTIVE",
-            subjectDocumentIds: [enrollingSubject.documentId],
-          });
-          setEnrolledItem({ course, subject: enrollingSubject });
-        }
+        // ... (Subject enrollment logic if needed, but primarily course enrollment from browse page)
+        // Keeping this structure if reused, but simplify if possible
       } else {
         const amount =
           coursePricing?.final_amount || coursePricing?.base_amount || 0;
@@ -389,16 +349,19 @@ const BrowseCoursesPage = () => {
       }
 
       // Refresh subscriptions
-      const subs = await subscriptionService.getUserSubscriptions(
+      const { data: subs } = await subscriptionService.getUserSubscriptions(
         dataProvider,
-        identity.documentId
+        identity.documentId,
+        { page: 1, perPage: 1000 }
       );
       setUserSubscriptions(subs);
 
+      // Update maps
       const courseSubjectsMap = new Map();
       const subjectIds = new Set();
       subs.forEach((sub) => {
         if (sub.course?.documentId) {
+          // ... same map logic
           const courseId = sub.course.documentId;
           if (!courseSubjectsMap.has(courseId)) {
             courseSubjectsMap.set(courseId, new Set());
@@ -415,7 +378,6 @@ const BrowseCoursesPage = () => {
       setEnrolledSubjectIds(subjectIds);
 
       setEnrollModalOpen(false);
-      setDrawerOpen(false);
       setSuccessModalOpen(true);
     } catch (error) {
       console.error("Enrollment error:", error);
@@ -424,13 +386,29 @@ const BrowseCoursesPage = () => {
     }
   };
 
+  // Filter change handlers
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+    setPage(1); // Reset to page 1
+  };
+
+  const handleCategoryChange = (val) => {
+    setSelectedCategory(val);
+    setPage(1);
+  };
+
+  const handleSubcategoryChange = (val) => {
+    setSelectedSubcategory(val);
+    setPage(1);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
       <Title title="Browse Courses" />
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-6 md:py-8">
           {/* Top row with title and purchase history */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
@@ -464,12 +442,12 @@ const BrowseCoursesPage = () => {
                 type="text"
                 placeholder="Search for courses..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-12 pr-12 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => handleSearchChange("")}
                   className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                 >
                   <X className="w-3.5 h-3.5 text-gray-600" />
@@ -483,7 +461,7 @@ const BrowseCoursesPage = () => {
               <div className="w-48">
                 <CustomSelect
                   value={selectedCategory}
-                  onChange={setSelectedCategory}
+                  onChange={handleCategoryChange}
                   options={CATEGORY_OPTIONS}
                   placeholder="Category"
                 />
@@ -493,7 +471,7 @@ const BrowseCoursesPage = () => {
               <div className="w-48">
                 <CustomSelect
                   value={selectedSubcategory}
-                  onChange={setSelectedSubcategory}
+                  onChange={handleSubcategoryChange}
                   options={SUBCATEGORY_OPTIONS}
                   placeholder="Subcategory"
                 />
@@ -503,9 +481,9 @@ const BrowseCoursesPage = () => {
               {(searchQuery || selectedCategory || selectedSubcategory) && (
                 <button
                   onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory(null);
-                    setSelectedSubcategory(null);
+                    handleSearchChange("");
+                    handleCategoryChange(null);
+                    handleSubcategoryChange(null);
                   }}
                   className="inline-flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold transition-colors border border-gray-200"
                 >
@@ -521,14 +499,12 @@ const BrowseCoursesPage = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 pb-20">
         {/* Results Count */}
-        {!loading && filteredCourses.length > 0 && (
+        {!loading && courses.length > 0 && (
           <div className="flex items-center gap-2 mb-6">
             <BookOpen className="w-4 h-4 text-gray-400" />
             <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">
-                {filteredCourses.length}
-              </span>{" "}
-              course{filteredCourses.length !== 1 ? "s" : ""} available
+              <span className="font-semibold text-gray-700">{total}</span>{" "}
+              course{total !== 1 ? "s" : ""} available
             </p>
           </div>
         )}
@@ -554,35 +530,46 @@ const BrowseCoursesPage = () => {
               </div>
             ))}
           </div>
-        ) : filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {filteredCourses.map((course) => {
-              const courseSubjectIds = (course.subjects || []).map(
-                (s) => s.documentId
-              );
-              const enrolledSet =
-                enrolledCourseIds.get(course.documentId) || new Set();
-              const isFullyEnrolled =
-                courseSubjectIds.length > 0 &&
-                courseSubjectIds.every((id) => enrolledSet.has(id));
+        ) : courses.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+              {courses.map((course) => {
+                const courseSubjectIds = (course.subjects || []).map(
+                  (s) => s.documentId
+                );
+                const enrolledSet =
+                  enrolledCourseIds.get(course.documentId) || new Set();
+                const isFullyEnrolled =
+                  courseSubjectIds.length > 0 &&
+                  courseSubjectIds.every((id) => enrolledSet.has(id));
 
-              return (
-                <BrowseCourseCard
-                  key={course.documentId || course.id}
-                  course={course}
-                  coursePricing={course.coursePricing}
-                  isEnrolled={isFullyEnrolled}
-                  enrolledSubjectCount={enrolledSet.size}
-                  totalSubjectCount={courseSubjectIds.length}
-                  pendingPayment={pendingPayments[course.documentId]}
-                  onEnroll={handleEnrollCourse}
-                  onResumePayment={handleResumePayment}
-                  onCancelPayment={handleCancelPaymentAction}
-                  onClick={handleCourseClick}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <BrowseCourseCard
+                    key={course.documentId || course.id}
+                    course={course}
+                    coursePricing={course.coursePricing}
+                    isEnrolled={isFullyEnrolled}
+                    enrolledSubjectCount={enrolledSet.size}
+                    totalSubjectCount={courseSubjectIds.length}
+                    pendingPayment={pendingPayments[course.documentId]}
+                    onEnroll={handleEnrollCourse}
+                    onResumePayment={handleResumePayment}
+                    onCancelPayment={handleCancelPaymentAction}
+                    onClick={handleCourseClick}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Pagination Component */}
+            <div className="mt-8">
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(total / PER_PAGE)}
+                onPageChange={setPage}
+              />
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-100 to-violet-100 flex items-center justify-center mb-6">
@@ -597,9 +584,9 @@ const BrowseCoursesPage = () => {
             {(searchQuery || selectedCategory || selectedSubcategory) && (
               <button
                 onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory(null);
-                  setSelectedSubcategory(null);
+                  handleSearchChange("");
+                  handleCategoryChange(null);
+                  handleSubcategoryChange(null);
                 }}
                 className="mt-6 px-6 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-colors"
               >
@@ -610,25 +597,12 @@ const BrowseCoursesPage = () => {
         )}
       </div>
 
-      {/* Course Details Drawer */}
-      <CourseDetailsDrawer
-        course={selectedCourse}
-        isOpen={drawerOpen}
-        onClose={handleCloseDrawer}
-        isEnrolled={
-          selectedCourse && enrolledCourseIds.has(selectedCourse.documentId)
-        }
-        enrolledSubjectIds={[...enrolledSubjectIds]}
-        onEnroll={handleEnrollCourse}
-        onSubjectEnroll={handleEnrollSubject}
-      />
-
       {/* Enroll Confirmation Modal */}
       <EnrollModal
         isOpen={enrollModalOpen}
         onClose={() => setEnrollModalOpen(false)}
         onConfirm={handleConfirmEnroll}
-        course={enrollingCourse || selectedCourse}
+        course={enrollingCourse}
         subject={enrollingSubject}
         loading={enrolling}
       />

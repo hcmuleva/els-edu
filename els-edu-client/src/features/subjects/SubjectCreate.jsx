@@ -222,7 +222,7 @@ export const SubjectCreate = () => {
       // Redirect based on the created subject's ID
       if (result?.data?.id) {
         setTimeout(() => {
-          redirect(`/browse-subjects/${result.data.id}`);
+          redirect("/my-contents");
         }, 500);
       } else {
         setTimeout(() => {

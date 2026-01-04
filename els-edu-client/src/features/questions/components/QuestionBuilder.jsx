@@ -3,6 +3,7 @@ import { X, Plus } from "lucide-react";
 import { useDataProvider } from "react-admin";
 import { CustomSelect } from "../../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
+import { CustomAsyncMultiSelect } from "../../../components/common/CustomAsyncMultiSelect";
 import {
   DndContext,
   closestCenter,
@@ -291,39 +292,33 @@ export const QuestionBuilder = ({
 
       {/* Subject and Topic Reference - Body Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <CustomAsyncSelect
-          label="Subject Reference"
-          value={question.subject}
-          onChange={(subjectId) => {
+        <CustomAsyncMultiSelect
+          label="Subjects"
+          resource="subjects"
+          optionText="name"
+          value={question.subjects || []}
+          onChange={(subjectIds) => {
             if (readOnly) return;
             onChange(index, {
               ...question,
-              subject: subjectId,
-              topic: null, // Clear topic when subject changes
+              subjects: subjectIds,
             });
           }}
-          resource="subjects"
-          optionText="name"
-          placeholder="Select subject first..."
-          allowEmpty
-          helperText="Optional categorization"
+          placeholder="Select subjects..."
           disabled={readOnly}
+          helperText="Optional categorization"
         />
-        <CustomAsyncSelect
-          label="Topic Reference"
-          value={question.topic}
-          onChange={(topicId) =>
-            !readOnly && onChange(index, { ...question, topic: topicId })
-          }
+        <CustomAsyncMultiSelect
+          label="Topics"
           resource="topics"
           optionText="name"
-          placeholder={
-            question.subject ? "Select topic..." : "Select subject first"
+          value={question.topics || []}
+          onChange={(topicIds) =>
+            !readOnly && onChange(index, { ...question, topics: topicIds })
           }
-          allowEmpty
+          placeholder="Select topics..."
+          disabled={readOnly}
           helperText="Optional categorization"
-          disabled={readOnly || !question.subject}
-          filter={question.subject ? { subject: question.subject } : {}}
         />
       </div>
 

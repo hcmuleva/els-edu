@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Title, useDataProvider, useGetIdentity } from "react-admin";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,12 +7,14 @@ import {
   RotateCcw,
   X,
   Sparkles,
-  BookOpen,
   TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import CourseCard from "../../components/subscriptions/CourseCard";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { subscriptionService } from "../../services/subscriptionService";
+import { subscribeToSubscriptionUpdates } from "../../services/ably";
+import Pagination from "../../components/common/Pagination"; // Import Pagination
 
 const SUBSCRIPTION_TYPE_OPTIONS = [
   { id: null, name: "All Types" },
@@ -37,35 +39,76 @@ const MySubscriptionsPage = () => {
 
   const [subscriptions, setSubscriptions] = useState([]);
   const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
+  const [subscriptionCounts, setSubscriptionCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const [updateNotification, setUpdateNotification] = useState(null);
 
-  // Fetch subscriptions
+  // Pagination State (Client-side)
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 9;
+
+  // Fetch subscriptions and counts - extracted for reuse as refresh callback
+  const fetchSubscriptions = useCallback(async () => {
+    if (!identity?.documentId) return;
+
+    try {
+      setLoading(true);
+
+      // Fetch subscriptions (fetch all for client-side filtering/pagination)
+      const { data } = await subscriptionService.getUserSubscriptions(
+        dataProvider,
+        identity.documentId,
+        { page: 1, perPage: 1000 }
+      );
+      setSubscriptions(data);
+      setFilteredSubscriptions(data);
+
+      // Fetch counts separately (efficient SQL queries)
+      const countsResponse = await subscriptionService.getSubscriptionCounts(
+        identity.documentId
+      );
+      setSubscriptionCounts(countsResponse?.data || {});
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [dataProvider, identity?.documentId]);
+
+  // Initial fetch on mount
   useEffect(() => {
-    const fetchSubscriptions = async () => {
-      if (!identity?.documentId) return;
-
-      try {
-        setLoading(true);
-        const data = await subscriptionService.getUserSubscriptions(
-          dataProvider,
-          identity.documentId
-        );
-        setSubscriptions(data);
-        setFilteredSubscriptions(data);
-      } catch (error) {
-        console.error("Error fetching subscriptions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (!identityLoading && identity?.documentId) {
       fetchSubscriptions();
     }
-  }, [dataProvider, identity?.documentId, identityLoading]);
+  }, [fetchSubscriptions, identityLoading, identity?.documentId]);
+
+  // Subscribe to real-time subscription updates via Ably
+  useEffect(() => {
+    if (!identity?.documentId) return;
+
+    const unsubscribe = subscribeToSubscriptionUpdates(
+      identity.documentId,
+      (eventName, data) => {
+        if (eventName === "course:subjects-updated") {
+          console.log("[ABLY] Received subscription update:", data);
+
+          // Auto-refresh if already synced by backend
+          if (data.autoSynced) {
+            fetchSubscriptions();
+            setUpdateNotification("Course content updated!");
+            setTimeout(() => setUpdateNotification(null), 4000);
+          }
+        }
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [identity?.documentId, fetchSubscriptions]);
 
   // Apply filters
   useEffect(() => {
@@ -88,6 +131,7 @@ const MySubscriptionsPage = () => {
     }
 
     setFilteredSubscriptions(filtered);
+    setPage(1); // Reset to page 1 when filters change
   }, [searchQuery, selectedType, selectedStatus, subscriptions]);
 
   const handleResetFilters = () => {
@@ -95,6 +139,12 @@ const MySubscriptionsPage = () => {
     setSelectedType(null);
     setSelectedStatus(null);
   };
+
+  // Calculate paginated subscriptions
+  const paginatedSubscriptions = filteredSubscriptions.slice(
+    (page - 1) * PER_PAGE,
+    page * PER_PAGE
+  );
 
   const hasActiveFilters = searchQuery || selectedType || selectedStatus;
 
@@ -115,9 +165,17 @@ const MySubscriptionsPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
       <Title title="My Subscriptions" />
 
+      {/* Update Notification Banner */}
+      {updateNotification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-emerald-500 text-white rounded-xl shadow-lg animate-fade-in flex items-center gap-2">
+          <RefreshCw className="w-4 h-4" />
+          <span className="font-medium">{updateNotification}</span>
+        </div>
+      )}
+
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 mb-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-6">
           {/* Title Row */}
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-lg md:text-xl font-bold text-gray-900">
@@ -188,14 +246,26 @@ const MySubscriptionsPage = () => {
             ))}
           </div>
         ) : filteredSubscriptions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSubscriptions.map((subscription) => (
-              <CourseCard
-                key={subscription.documentId || subscription.id}
-                subscription={subscription}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedSubscriptions.map((subscription) => (
+                <CourseCard
+                  key={subscription.documentId || subscription.id}
+                  subscription={subscription}
+                  counts={subscriptionCounts[subscription.documentId]}
+                  onRefresh={fetchSubscriptions}
+                />
+              ))}
+            </div>
+
+            <div className="mt-8">
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(filteredSubscriptions.length / PER_PAGE)}
+                onPageChange={setPage}
               />
-            ))}
-          </div>
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-100 to-violet-100 flex items-center justify-center mb-6">

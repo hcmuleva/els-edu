@@ -85,44 +85,47 @@ const ContentPage = () => {
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       <Title title="My Studio" />
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-gray-800 font-heading">
-            Content Studio
-          </h1>
-          <p className="text-gray-500 font-medium">
-            {studioMode === "create"
-              ? "Create and manage your educational resources"
-              : "Manage content assignments and relationships"}
-          </p>
-        </div>
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-20 bg-white -mx-6 -mt-6 px-6 py-6 border-b border-gray-100 shadow-sm mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-black text-gray-800 font-heading">
+              Content Studio
+            </h1>
+            <p className="text-gray-500 font-medium">
+              {studioMode === "create"
+                ? "Create and manage your educational resources"
+                : "Manage content assignments and relationships"}
+            </p>
+          </div>
 
-        {/* Main Mode Tabs - Only show Assign tab for Admin/SuperAdmin */}
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
-          <button
-            onClick={() => setStudioMode("create")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
-              studioMode === "create"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <PlusCircle className="w-4 h-4" />
-            Create
-          </button>
-          {canCreateFullContent && (
+          {/* Main Mode Tabs - Only show Assign tab for Admin/SuperAdmin */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
             <button
-              onClick={() => setStudioMode("assign")}
+              onClick={() => setStudioMode("create")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                studioMode === "assign"
+                studioMode === "create"
                   ? "bg-white text-primary shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Link2 className="w-4 h-4" />
-              Assign
+              <PlusCircle className="w-4 h-4" />
+              Create
             </button>
-          )}
+            {canCreateFullContent && (
+              <button
+                onClick={() => setStudioMode("assign")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                  studioMode === "assign"
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Link2 className="w-4 h-4" />
+                Assign
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
