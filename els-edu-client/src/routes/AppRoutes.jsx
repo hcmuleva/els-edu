@@ -2,7 +2,6 @@ import { Route } from "react-router-dom";
 import { CustomRoutes } from "react-admin";
 import RegisterPage from "../pages/auth/RegisterPage";
 import ContentPage from "../pages/content/ContentPage";
-import BrowseSubjectsPage from "../pages/subjects/BrowseSubjectsPage";
 import BrowseCoursesPage from "../pages/courses/BrowseCoursesPage";
 import CourseDetailPage from "../pages/courses/CourseDetailPage";
 import SubjectDetailPage from "../pages/subjects/SubjectDetailPage";
@@ -19,13 +18,17 @@ import PaymentStatusPage from "../pages/payment/PaymentStatusPage";
 import PurchaseHistoryPage from "../pages/payment/PurchaseHistoryPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 
+import UnauthorizedPage from "../pages/auth/UnauthorizedPage";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 
 const AppRoutes = () => (
   <>
+    {/* <ScrollToTop /> */}
+
     <CustomRoutes noLayout>
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/payment/status" element={<PaymentStatusPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
     </CustomRoutes>
     <CustomRoutes>
       {/* My Studio - protected for TEACHER, ADMIN, SUPERADMIN */}
@@ -37,19 +40,83 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
-      <Route path="/purchase-history" element={<PurchaseHistoryPage />} />
-      <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
+
+      {/* General Protected Routes (Any logged in user) */}
+      <Route
+        path="/purchase-history"
+        element={
+          <ProtectedRoute>
+            <PurchaseHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-subscriptions"
+        element={
+          <ProtectedRoute>
+            <MySubscriptionsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/my-subscriptions/:courseId"
-        element={<CourseSubjectsPage />}
+        element={
+          <ProtectedRoute>
+            <CourseSubjectsPage />
+          </ProtectedRoute>
+        }
       />
-      <Route path="/browse-courses" element={<BrowseCoursesPage />} />
-      <Route path="/browse-courses/:courseId" element={<CourseDetailPage />} />
-      <Route path="/browse-subjects" element={<BrowseSubjectsPage />} />
-      <Route path="/browse-subjects/:id" element={<SubjectDetailPage />} />
-      <Route path="/quiz/:id/play" element={<QuizPlayer />} />
-      <Route path="/progress" element={<ProgressPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route
+        path="/my-subscriptions/:courseId/subject/:id"
+        element={
+          <ProtectedRoute>
+            <SubjectDetailPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/browse-courses"
+        element={
+          <ProtectedRoute>
+            <BrowseCoursesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/browse-courses/:courseId"
+        element={
+          <ProtectedRoute>
+            <CourseDetailPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/quiz/:id/play"
+        element={
+          <ProtectedRoute>
+            <QuizPlayer />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/progress"
+        element={
+          <ProtectedRoute>
+            <ProgressPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Manage page - only SUPERADMIN */}
       <Route
         path="/manage"

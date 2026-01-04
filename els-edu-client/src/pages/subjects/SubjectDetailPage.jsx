@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Title, useDataProvider, useGetIdentity } from "react-admin";
 import {
   ArrowLeft,
@@ -14,11 +14,15 @@ import {
 } from "lucide-react";
 import TopicContentPlayer from "../../components/subjects/TopicContentPlayer";
 import QuizCard from "../../components/quiz/QuizCard";
+import { CustomSelect } from "../../components/common/CustomSelect";
 
 const SubjectDetailPage = () => {
-  const { id } = useParams();
+  const { id, courseId: paramCourseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const courseId = paramCourseId || location.state?.courseId;
   const dataProvider = useDataProvider();
+
   const { data: identity } = useGetIdentity();
   const topicScrollRef = useRef(null);
 
@@ -38,6 +42,14 @@ const SubjectDetailPage = () => {
   // Scroll indicators
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+
+  // Quiz Filters
+  const [quizSearch, setQuizSearch] = useState("");
+  const [quizType, setQuizType] = useState("");
+  const [quizDifficulty, setQuizDifficulty] = useState("");
+  const [quizTopic, setQuizTopic] = useState(null);
+
+  // Scroll to top handled globally by ScrollToTop
 
   // Fetch Subject
   useEffect(() => {
@@ -124,27 +136,38 @@ const SubjectDetailPage = () => {
   // Lazy Load Quizzes
   useEffect(() => {
     const fetchQuizzes = async () => {
-      if (
-        quizzesLoaded ||
-        quizzesLoading ||
-        activeTab !== "quizzes" ||
-        !subject?.id
-      )
-        return;
+      if (quizzesLoaded || quizzesLoading || !subject?.id) return;
 
       try {
         setQuizzesLoading(true);
         const { data } = await dataProvider.getList("quizzes", {
-          filter: { subject: subject.id },
+          filter: {
+            "subjects.documentId[$in]": [subject.documentId || subject.id],
+          },
           pagination: { page: 1, perPage: 100 },
           sort: { field: "title", order: "ASC" },
           meta: {
             populate: {
               questions: { fields: ["id", "documentId"] },
+              subjects: { fields: ["id", "documentId", "name"] },
+              topics: { fields: ["id", "documentId", "name"] },
             },
           },
         });
-        setQuizzes(data || []);
+
+        // Client-side filter to ensure only quizzes with valid subject relation are shown
+        const filteredQuizzes = (data || []).filter((quiz) => {
+          // Check if quiz has subjects array and it includes the current subject
+          if (!quiz.subjects || !Array.isArray(quiz.subjects)) {
+            return false;
+          }
+          const subjectDocId = subject.documentId || subject.id;
+          return quiz.subjects.some(
+            (s) => s.documentId === subjectDocId || s.id === subjectDocId
+          );
+        });
+
+        setQuizzes(filteredQuizzes);
 
         if (identity?.id && data?.length > 0) {
           try {
@@ -226,18 +249,59 @@ const SubjectDetailPage = () => {
   };
 
   const handleBack = () => {
-    if (window.history.length > 1) {
+    if (courseId) {
+      navigate(`/my-subscriptions/${courseId}`);
+    } else if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/browse-subjects");
+      navigate("/my-subscriptions");
     }
   };
 
+  // Filter topics by search
   // Filter topics by search
   const filteredTopics =
     subject?.topics?.filter((topic) =>
       topic.name?.toLowerCase().includes(topicSearchQuery.toLowerCase())
     ) || [];
+
+  // Filter Quizzes
+  const getFilteredQuizzes = () => {
+    return quizzes.filter((quiz) => {
+      // Search
+      if (
+        quizSearch &&
+        !quiz.title?.toLowerCase().includes(quizSearch.toLowerCase())
+      ) {
+        return false;
+      }
+      // Type
+      if (quizType && quiz.quizType !== quizType) {
+        return false;
+      }
+      // Difficulty
+      if (quizDifficulty && quiz.difficulty !== quizDifficulty) {
+        return false;
+      }
+      // Topic
+      if (quizTopic) {
+        const hasTopic = quiz.topics?.some(
+          (t) => (t.documentId || t.id) === quizTopic
+        );
+        if (!hasTopic) return false;
+      }
+      return true;
+    });
+  };
+
+  const visibleQuizzes = getFilteredQuizzes();
+
+  const handleResetQuizFilters = () => {
+    setQuizSearch("");
+    setQuizType("");
+    setQuizDifficulty("");
+    setQuizTopic(null);
+  };
 
   if (loading) {
     return (
@@ -278,7 +342,7 @@ const SubjectDetailPage = () => {
 
   const topicCount = subject.topics?.length || 0;
   const contentCount = subject.contents?.length || 0;
-  const quizCount = quizzes.length;
+  const quizCount = quizzes.length; // Shows total available, filters affect grid only
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
@@ -349,65 +413,30 @@ const SubjectDetailPage = () => {
               <div className="space-y-6">
                 {topicCount > 0 ? (
                   <>
-                    {/* Topic Search */}
-                    <div className="relative max-w-md">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search topics..."
-                        value={topicSearchQuery}
-                        onChange={(e) => setTopicSearchQuery(e.target.value)}
-                        className="w-full pl-11 pr-10 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400"
-                      />
-                      {topicSearchQuery && (
-                        <button
-                          onClick={() => setTopicSearchQuery("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
-                        >
-                          <X className="w-3 h-3 text-gray-600" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Topic Selector with Scroll Arrows */}
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                        Select Topic ({filteredTopics.length})
-                      </h3>
-                      <div className="relative">
-                        {/* Left Fade Overlay */}
-                        {showLeftArrow && (
-                          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none z-10" />
-                        )}
-
-                        {/* Topics List */}
-                        <div
-                          ref={topicScrollRef}
-                          className="flex gap-3 overflow-x-auto pb-4 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                        >
-                          {filteredTopics.map((topic) => (
-                            <button
-                              key={topic.id}
-                              onClick={() => setSelectedTopic(topic)}
-                              className={`flex-none px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
-                                selectedTopic?.id === topic.id
-                                  ? "bg-gradient-to-r from-primary-500 to-violet-500 text-white shadow-md shadow-primary-200 scale-105"
-                                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200 hover:scale-105"
-                              }`}
-                            >
-                              {topic.name}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Right Fade Overlay */}
-                        {showRightArrow && (
-                          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
+                    {/* Topic Header & Search & Controls */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      {/* Search */}
+                      <div className="relative w-full md:max-w-xs">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search topics..."
+                          value={topicSearchQuery}
+                          onChange={(e) => setTopicSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-10 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400"
+                        />
+                        {topicSearchQuery && (
+                          <button
+                            onClick={() => setTopicSearchQuery("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                          >
+                            <X className="w-3 h-3 text-gray-600" />
+                          </button>
                         )}
                       </div>
 
-                      {/* Previous/Next Topic Navigation */}
-                      <div className="flex items-center justify-between gap-3 mt-3">
+                      {/* Navigation Buttons (Moved here for better layout) */}
+                      <div className="flex items-center gap-2 self-end md:self-auto">
                         <button
                           onClick={() => {
                             const currentIndex = filteredTopics.findIndex(
@@ -417,7 +446,7 @@ const SubjectDetailPage = () => {
                               setSelectedTopic(
                                 filteredTopics[currentIndex - 1]
                               );
-                              // Scroll the topic into view
+                              // Scroll logic...
                               setTimeout(() => {
                                 const topicButtons =
                                   topicScrollRef.current?.querySelectorAll(
@@ -443,10 +472,10 @@ const SubjectDetailPage = () => {
                               (t) => t.id === selectedTopic?.id
                             ) === 0
                           }
-                          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-primary-300 transition-all disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed shadow-sm"
+                          className="p-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+                          title="Previous Topic"
                         >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Previous Topic</span>
+                          <ChevronLeft className="w-5 h-5" />
                         </button>
 
                         <button
@@ -458,7 +487,6 @@ const SubjectDetailPage = () => {
                               setSelectedTopic(
                                 filteredTopics[currentIndex + 1]
                               );
-                              // Scroll the topic into view
                               setTimeout(() => {
                                 const topicButtons =
                                   topicScrollRef.current?.querySelectorAll(
@@ -485,12 +513,49 @@ const SubjectDetailPage = () => {
                             ) ===
                             filteredTopics.length - 1
                           }
-                          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:border-primary-300 transition-all disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed shadow-sm"
+                          className="p-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+                          title="Next Topic"
                         >
-                          <span>Next Topic</span>
-                          <ChevronRight className="w-4 h-4" />
+                          <ChevronRight className="w-5 h-5" />
                         </button>
                       </div>
+                    </div>
+
+                    {/* Topic Selector List */}
+                    <div className="space-y-2">
+                      <div className="relative group">
+                        {/* Left Fade Overlay */}
+                        {showLeftArrow && (
+                          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none z-10" />
+                        )}
+
+                        {/* Topics List */}
+                        <div
+                          ref={topicScrollRef}
+                          className="flex gap-3 overflow-x-auto pb-4 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                        >
+                          {filteredTopics.map((topic) => (
+                            <button
+                              key={topic.id}
+                              onClick={() => setSelectedTopic(topic)}
+                              className={`flex-none px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
+                                selectedTopic?.id === topic.id
+                                  ? "bg-gradient-to-r from-primary-500 to-violet-500 text-white shadow-md shadow-primary-200"
+                                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                              }`}
+                            >
+                              {topic.name}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Right Fade Overlay */}
+                        {showRightArrow && (
+                          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-white/90 to-transparent pointer-events-none z-10" />
+                        )}
+                      </div>
+
+                      {/* Old nav buttons removed from here */}
                     </div>
 
                     {/* Topic Content with Skeleton Loading */}
@@ -532,40 +597,123 @@ const SubjectDetailPage = () => {
             )}
 
             {activeTab === "quizzes" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {quizzesLoading ? (
-                  [...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-100 rounded-2xl h-64 animate-pulse"
-                    />
-                  ))
-                ) : quizzes.length > 0 ? (
-                  quizzes.map((quiz) => (
-                    <QuizCard
-                      key={quiz.documentId || quiz.id}
-                      quiz={quiz}
-                      questionCount={quiz.questions?.length || 0}
-                      attemptsUsed={
-                        quizAttempts[quiz.id] ||
-                        quizAttempts[quiz.documentId] ||
-                        0
-                      }
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-100 to-violet-100 flex items-center justify-center mb-6">
-                      <Sparkles className="w-10 h-10 text-primary-400" />
+              <div className="space-y-6">
+                {/* Quiz Filters */}
+                {quizzes.length > 0 && (
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Search */}
+                        <div className="relative flex-1 min-w-[200px]">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Search quizzes..."
+                            value={quizSearch}
+                            onChange={(e) => setQuizSearch(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 focus:border-primary-300 outline-none transition-all"
+                          />
+                        </div>
+
+                        {/* Topic Filter */}
+                        <div className="w-[160px]">
+                          <CustomSelect
+                            value={quizTopic}
+                            onChange={setQuizTopic}
+                            options={[
+                              { id: null, name: "All Topics" },
+                              ...(subject.topics || []).map((t) => ({
+                                id: t.documentId || t.id,
+                                name: t.name,
+                              })),
+                            ]}
+                            placeholder="Topic"
+                          />
+                        </div>
+
+                        {/* Type Filter */}
+                        <div className="w-[150px]">
+                          <CustomSelect
+                            value={quizType}
+                            onChange={setQuizType}
+                            options={[
+                              { id: "", name: "All Types" },
+                              { id: "standalone", name: "Standalone" },
+                              { id: "kit", name: "Kit" },
+                              { id: "level", name: "Level Check" },
+                              { id: "lesson", name: "Lesson" },
+                            ]}
+                            placeholder="Type"
+                          />
+                        </div>
+
+                        {/* Difficulty Filter */}
+                        <div className="w-[150px]">
+                          <CustomSelect
+                            value={quizDifficulty}
+                            onChange={setQuizDifficulty}
+                            options={[
+                              { id: "", name: "All Levels" },
+                              { id: "beginner", name: "Beginner" },
+                              { id: "intermediate", name: "Intermediate" },
+                              { id: "advanced", name: "Advanced" },
+                            ]}
+                            placeholder="Difficulty"
+                          />
+                        </div>
+
+                        {(quizSearch ||
+                          quizType ||
+                          quizDifficulty ||
+                          quizTopic) && (
+                          <button
+                            onClick={handleResetQuizFilters}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Reset Filters"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      No quizzes available yet
-                    </h3>
-                    <p className="text-gray-500 leading-relaxed">
-                      Quizzes will appear here once they are added
-                    </p>
                   </div>
                 )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {quizzesLoading ? (
+                    [...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-100 rounded-2xl h-64 animate-pulse"
+                      />
+                    ))
+                  ) : visibleQuizzes.length > 0 ? (
+                    visibleQuizzes.map((quiz) => (
+                      <QuizCard
+                        key={quiz.documentId || quiz.id}
+                        quiz={quiz}
+                        questionCount={quiz.questions?.length || 0}
+                        attemptsUsed={
+                          quizAttempts[quiz.id] ||
+                          quizAttempts[quiz.documentId] ||
+                          0
+                        }
+                      />
+                    ))
+                  ) : (
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-100 to-violet-100 flex items-center justify-center mb-6">
+                        <Sparkles className="w-10 h-10 text-primary-400" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        No quizzes available yet
+                      </h3>
+                      <p className="text-gray-500 leading-relaxed">
+                        Quizzes will appear here once they are added
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

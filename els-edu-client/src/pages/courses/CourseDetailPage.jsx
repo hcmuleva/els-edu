@@ -21,6 +21,7 @@ import {
 } from "../../services/subscriptionService";
 import EnrollModal from "../../components/courses/EnrollModal";
 import SuccessModal from "../../components/courses/SuccessModal";
+import Pagination from "../../components/common/Pagination";
 
 const CATEGORY_COLORS = {
   KIDS: "bg-pink-100 text-pink-700",
@@ -46,6 +47,12 @@ const CourseDetailPage = () => {
   const [subjectPricings, setSubjectPricings] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // State for separate subjects list
+  const [subjectsList, setSubjectsList] = useState([]);
+  const [subjectPage, setSubjectPage] = useState(1);
+  const [totalSubjects, setTotalSubjects] = useState(0);
+  const subjectsPerPage = 10;
 
   // User subscription state
   const [existingSubscription, setExistingSubscription] = useState(null);
@@ -73,7 +80,7 @@ const CourseDetailPage = () => {
         const pSubjectId = item?.subject?.documentId;
         if (
           pSubjectId &&
-          course?.subjects?.some((s) => s.documentId === pSubjectId)
+          subjectsList.some((s) => s.documentId === pSubjectId)
         ) {
           return true;
         }
@@ -96,10 +103,10 @@ const CourseDetailPage = () => {
   };
 
   useEffect(() => {
-    if (identity?.documentId && course) {
+    if (identity?.documentId && course && subjectsList.length > 0) {
       fetchPending();
     }
-  }, [identity?.documentId, course]);
+  }, [identity?.documentId, course, subjectsList]);
 
   const handleResumePayment = async () => {
     if (!pendingPayment) return;
@@ -182,6 +189,13 @@ const CourseDetailPage = () => {
   // Image modal state
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
+  // Counts state
+  const [courseCounts, setCourseCounts] = useState({
+    subjectCount: 0,
+    topicCount: 0,
+    quizCount: 0,
+  });
+
   // Fetch course data
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -189,26 +203,58 @@ const CourseDetailPage = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch course
+        // Fetch counts from API (Efficient)
+        try {
+          const countsData = await subscriptionService.getCourseCounts(
+            courseId
+          );
+          if (countsData) {
+            setCourseCounts(countsData?.data || countsData);
+          }
+        } catch (e) {
+          console.error("Error fetching course counts:", e);
+        }
+
+        // Fetch course (Basic info + minimal populate)
         const { data: courseData } = await dataProvider.getOne("courses", {
           id: courseId,
           meta: {
             populate: {
               cover: { fields: ["url", "name"] },
-              subjects: {
-                populate: {
-                  topics: {
-                    populate: {
-                      contents: { fields: ["documentId"] },
-                    },
-                  },
-                  coverpage: { fields: ["url"] },
-                },
-              },
+              // We don't populate subjects deep here anymore to avoid limits
             },
           },
         });
         setCourse(courseData);
+
+        // Fetch Subjects Separately (With Pagination)
+        const { data: subjectsData, total: totalSub } =
+          await dataProvider.getList("subjects", {
+            pagination: { page: subjectPage, perPage: subjectsPerPage },
+            sort: { field: "name", order: "ASC" },
+            filter: {
+              "filters[courses][documentId][$eq]": courseId,
+            },
+            meta: {
+              populate: {
+                topics: {
+                  limit: -1, // Use standard limit override if supported by controller, else relies on default
+                  populate: {
+                    contents: { fields: ["documentId"] },
+                  },
+                },
+                coverpage: { fields: ["url"] },
+                quizzes: { fields: ["documentId"] },
+              },
+            },
+          });
+        setSubjectsList(subjectsData);
+        if (totalSub !== undefined) {
+          setTotalSubjects(totalSub);
+        } else {
+          // Fallback if provider doesn't return total
+          setTotalSubjects(subjectsData.length); // Only accurate for first page
+        }
 
         // Fetch course-pricing
         const { data: pricingsData } = await dataProvider.getList(
@@ -252,7 +298,7 @@ const CourseDetailPage = () => {
     if (courseId) {
       fetchCourseData();
     }
-  }, [dataProvider, courseId]);
+  }, [dataProvider, courseId, subjectPage]); // Re-run when page changes
 
   // Fetch user subscriptions
   useEffect(() => {
@@ -284,9 +330,13 @@ const CourseDetailPage = () => {
   }, [dataProvider, identity?.documentId, courseId, identityLoading]);
 
   // Calculations
-  const subjects = course?.subjects || [];
-  const subjectCount = subjects.length;
-  const topicCount = subjects.reduce((t, s) => t + (s?.topics?.length || 0), 0);
+  const subjects = subjectsList;
+  // Use API counts if available, otherwise fallback to local calculation
+  const subjectCount = courseCounts.subjectCount || subjects.length;
+  // Use API counts for topics
+  const topicCount =
+    courseCounts.topicCount ||
+    subjects.reduce((t, s) => t + (s?.topics?.length || 0), 0);
 
   const isBundleFree =
     !coursePricing ||
@@ -364,7 +414,7 @@ const CourseDetailPage = () => {
         }
 
         // Free Bundle Logic (Existing)
-        const allSubjectIds = subjects.map((s) => s.documentId);
+        const allSubjectIds = subjectsList.map((s) => s.documentId);
 
         if (existingSubscription) {
           const existingIds = (existingSubscription.subjects || []).map(
@@ -599,15 +649,15 @@ const CourseDetailPage = () => {
             {course.cover?.url && (
               <button
                 onClick={() => setImageModalOpen(true)}
-                className="group relative w-full md:w-64 aspect-video rounded-2xl overflow-hidden border border-gray-100 hover:border-primary-200 transition-all shadow-sm flex-shrink-0"
+                className="group relative w-full md:w-64 aspect-video rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 hover:border-primary-200 transition-all shadow-sm flex-shrink-0"
               >
                 <img
                   src={course.cover.url}
                   alt={course.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
+                  <ZoomIn className="w-8 h-8 text-gray-800 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
                 </div>
               </button>
             )}
@@ -738,6 +788,17 @@ const CourseDetailPage = () => {
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {totalSubjects > subjectsPerPage && (
+          <div className="mt-8">
+            <Pagination
+              currentPage={subjectPage}
+              totalPages={Math.ceil(totalSubjects / subjectsPerPage)}
+              onPageChange={setSubjectPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Fullscreen Image Modal */}

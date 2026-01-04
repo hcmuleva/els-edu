@@ -414,7 +414,6 @@ export const QuizCreate = () => {
                         value={formData.subjects}
                         onChange={(val) => {
                           updateFormData("subjects", val);
-                          updateFormData("topics", []); // Clear topics when subjects change
                         }}
                         placeholder="Select subjects..."
                       />
@@ -428,17 +427,7 @@ export const QuizCreate = () => {
                         optionText="name"
                         value={formData.topics}
                         onChange={(val) => updateFormData("topics", val)}
-                        placeholder={
-                          formData.subjects.length > 0
-                            ? "Select topics..."
-                            : "Select subjects first"
-                        }
-                        disabled={formData.subjects.length === 0}
-                        filter={
-                          formData.subjects.length > 0
-                            ? { "subject[id][$in]": formData.subjects }
-                            : {}
-                        }
+                        placeholder="Select topics..."
                       />
                     </div>
                   </div>
