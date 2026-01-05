@@ -23,7 +23,7 @@ import {
   Building2,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRoleNavigation } from "../hooks/useRoleNavigation";
@@ -171,7 +171,7 @@ const CustomMenuItem = ({
         isOpen && "mx-3 px-3 my-1 rounded-xl min-h-[44px]",
         // Collapsed: fixed square 40px (w-10), centered, no padding
         !isOpen &&
-        "mx-auto w-10 h-10 my-1 rounded-xl p-0 flex justify-center items-center",
+          "mx-auto w-10 h-10 my-1 rounded-xl p-0 flex justify-center items-center",
         className
       )}
       sx={{
@@ -396,19 +396,21 @@ const AppMenu = (props) => {
         )}
       >
         {/* Branding */}
-        <div
+        <Link
+          to="/"
           className={cn(
-            "flex items-center transition-all duration-300",
+            "flex items-center transition-all duration-300 no-underline",
             open ? "gap-3" : "gap-0"
           )}
         >
           {/* Standardized sized logo container: w-10 h-10 to match menu items */}
-          <div className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 rounded-xl flex items-center justify-center text-white font-black text-xl ">  <img
-    src="/logo.png"
-    alt="Logo"
-    className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 rounded-xl "
-  />
-</div>
+          <div className="w-10 h-10 min-w-[40px] min-h-[40px] shrink-0 rounded-xl flex items-center justify-center bg-white shadow-sm overflow-hidden p-1">
+            <img
+              src={`${import.meta.env.BASE_URL}logo.png`}
+              alt="Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
           {/* Explicit width/opacity transition for text to prevent layout jumping */}
           <div
             className={cn(
@@ -420,7 +422,7 @@ const AppMenu = (props) => {
               ELS
             </span>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Menu Items */}
@@ -496,8 +498,8 @@ const AppMenu = (props) => {
           {(canAccess("my-subscriptions") ||
             canAccess("browse-courses") ||
             canAccess("progress")) && (
-              <SectionHeader title="Learning" isOpen={open} />
-            )}
+            <SectionHeader title="Learning" isOpen={open} />
+          )}
 
           {/* My Subscriptions - visible to: STUDENT, SUPERADMIN */}
           {canAccess("my-subscriptions") && (
@@ -600,7 +602,8 @@ const AppMenu = (props) => {
                       <img
                         src={
                           identity?.avatar ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${identity?.fullName || "User"
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+                            identity?.fullName || "User"
                           }`
                         }
                         alt="User"

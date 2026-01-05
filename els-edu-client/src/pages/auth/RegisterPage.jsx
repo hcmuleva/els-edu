@@ -106,6 +106,13 @@ const RegisterPage = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-md bg-card p-8 rounded-3xl border border-border/50 shadow-xl animate-in fade-in zoom-in duration-300">
         <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-border/50 overflow-hidden flex items-center justify-center p-2 mx-auto mb-4">
+            <img
+              src={`${import.meta.env.BASE_URL}logo.png`}
+              alt="Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
           <h2 className="text-3xl font-black text-foreground font-heading mb-2">
             Create Account
           </h2>
