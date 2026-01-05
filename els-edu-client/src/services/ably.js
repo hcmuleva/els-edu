@@ -36,7 +36,7 @@ export const getAblyClient = () => {
     });
 
     ablyClient.connection.on("connected", () => {
-      console.log("✅ [ABLY] Connected:", ablyClient.connection.id);
+      // Connected
     });
 
     ablyClient.connection.on("failed", (error) => {
@@ -65,19 +65,17 @@ export const subscribeToSubscriptionUpdates = (userId, callback) => {
   const channel = client.channels.get(channelName);
 
   channel.on("attached", () => {
-    console.log("✅ [ABLY] Subscribed to subscription updates:", channelName);
+    // Subscribed
   });
 
   // Subscribe to subscription update events
   channel.subscribe((message) => {
-    console.log("📡 [ABLY] Subscription update received:", message.name);
     callback(message.name, message.data);
   });
 
   // Return cleanup function
   return () => {
     channel.unsubscribe();
-    console.log("[ABLY] Unsubscribed from:", channelName);
   };
 };
 
@@ -107,13 +105,42 @@ export const subscribeToProgressUpdates = (userId, callback) => {
 };
 
 /**
+ * Subscribe to global course updates (for Browse Courses page)
+ * This channel broadcasts when any course's subjects are modified.
+ * @param {function} callback - Callback function(eventName, data)
+ * @returns {function} Cleanup function to unsubscribe
+ */
+export const subscribeToGlobalCourseUpdates = (callback) => {
+  const client = getAblyClient();
+
+  if (!client) {
+    console.warn("[ABLY] Client not initialized - using manual refresh only");
+    return () => {};
+  }
+
+  const channelName = "global:courses";
+  const channel = client.channels.get(channelName);
+
+  channel.on("attached", () => {
+    // Subscribed to global updates
+  });
+
+  channel.subscribe((message) => {
+    callback(message.name, message.data);
+  });
+
+  return () => {
+    channel.unsubscribe();
+  };
+};
+
+/**
  * Close Ably connection
  */
 export const closeAblyConnection = () => {
   if (ablyClient) {
     ablyClient.close();
     ablyClient = null;
-    console.log("[ABLY] Connection closed");
   }
 };
 
@@ -121,5 +148,6 @@ export default {
   getAblyClient,
   subscribeToSubscriptionUpdates,
   subscribeToProgressUpdates,
+  subscribeToGlobalCourseUpdates,
   closeAblyConnection,
 };

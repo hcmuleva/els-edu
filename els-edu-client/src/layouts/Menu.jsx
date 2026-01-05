@@ -355,7 +355,6 @@ const AppMenu = (props) => {
   if (identity?.user_role && !availableRoles.includes(identity.user_role)) {
     availableRoles.push(identity.user_role);
   }
-  console.log("identity", identity);
   const uniqueRoles = [...new Set(availableRoles)];
 
   const handleRoleSwitch = async (newRole) => {
