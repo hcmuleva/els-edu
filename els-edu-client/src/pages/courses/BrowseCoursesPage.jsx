@@ -21,6 +21,7 @@ import {
   getPendingPayments,
 } from "../../services/subscriptionService";
 import Pagination from "../../components/common/Pagination";
+import { subscribeToGlobalCourseUpdates } from "../../services/ably";
 
 const CATEGORY_OPTIONS = [
   { id: null, name: "All Categories" },
@@ -85,6 +86,9 @@ const BrowseCoursesPage = () => {
     course: null,
     subject: null,
   });
+
+  // Refetch trigger for Ably updates
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   // Fetch courses and course-pricings
   useEffect(() => {
@@ -153,7 +157,14 @@ const BrowseCoursesPage = () => {
     };
 
     fetchCourses();
-  }, [dataProvider, page, searchQuery, selectedCategory, selectedSubcategory]);
+  }, [
+    dataProvider,
+    page,
+    searchQuery,
+    selectedCategory,
+    selectedSubcategory,
+    refetchTrigger,
+  ]);
 
   // Fetch user subscriptions
   useEffect(() => {
@@ -197,6 +208,20 @@ const BrowseCoursesPage = () => {
       fetchUserSubscriptions();
     }
   }, [dataProvider, identity?.documentId, identityLoading]);
+
+  // Subscribe to global course updates via Ably
+  useEffect(() => {
+    const unsubscribe = subscribeToGlobalCourseUpdates((eventName, data) => {
+      if (eventName === "course:subjects-updated") {
+        // Trigger a refetch of courses
+        setRefetchTrigger((prev) => prev + 1);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Fetch Pending Payments
   const fetchPending = async () => {

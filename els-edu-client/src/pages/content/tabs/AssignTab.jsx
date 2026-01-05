@@ -365,8 +365,8 @@ export const AssignTab = () => {
     if (gradeFilter) queryFilter.grade = gradeFilter;
   }
   if (activeTab === "topics") {
-    // Filter topics by subject's grade if selected
-    if (gradeFilter) queryFilter["subject.grade"] = gradeFilter;
+    // Filter topics by subjects' grade if selected
+    if (gradeFilter) queryFilter["subjects.grade"] = gradeFilter;
   }
 
   // Fetch Main Table Data
@@ -384,7 +384,7 @@ export const AssignTab = () => {
             ? { topics: { populate: "*" } }
             : {
                 contents: { populate: "*" },
-                subject: { fields: ["name"] },
+                subjects: { fields: ["name"] },
               },
       },
     },
@@ -406,10 +406,10 @@ export const AssignTab = () => {
         filter = { courses: parent.id };
       } else if (activeTab === "subjects") {
         // Topics of a subject
-        filter = { subject: parent.id };
+        filter = { subjects: parent.id };
       } else if (activeTab === "topics") {
         // Contents of a topic
-        filter = { topic: parent.id };
+        filter = { topics: parent.id };
       }
 
       const { data } = await dataProvider.getList(resource, {
@@ -598,13 +598,13 @@ export const AssignTab = () => {
       return [
         { key: "name", label: "Topic Name" },
         {
-          key: "subject",
+          key: "subjects",
           label: "Subject",
           render: (row) =>
-            row.subject?.name ? (
+            row.subjects && row.subjects.length > 0 ? (
               <span className="flex items-center gap-1.5 text-xs text-gray-600">
                 <Layers className="w-3 h-3" />
-                {row.subject.name}
+                {row.subjects[0].name}
               </span>
             ) : (
               "-"

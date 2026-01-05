@@ -13,7 +13,10 @@ import {
 import CourseCard from "../../components/subscriptions/CourseCard";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { subscriptionService } from "../../services/subscriptionService";
-import { subscribeToSubscriptionUpdates } from "../../services/ably";
+import {
+  subscribeToSubscriptionUpdates,
+  subscribeToGlobalCourseUpdates,
+} from "../../services/ably";
 import Pagination from "../../components/common/Pagination"; // Import Pagination
 
 const SUBSCRIPTION_TYPE_OPTIONS = [
@@ -93,8 +96,6 @@ const MySubscriptionsPage = () => {
       identity.documentId,
       (eventName, data) => {
         if (eventName === "course:subjects-updated") {
-          console.log("[ABLY] Received subscription update:", data);
-
           // Auto-refresh if already synced by backend
           if (data.autoSynced) {
             fetchSubscriptions();
@@ -109,6 +110,21 @@ const MySubscriptionsPage = () => {
       unsubscribe();
     };
   }, [identity?.documentId, fetchSubscriptions]);
+
+  // Also subscribe to global course updates for comprehensive coverage
+  useEffect(() => {
+    const unsubscribe = subscribeToGlobalCourseUpdates((eventName, data) => {
+      if (eventName === "course:subjects-updated") {
+        fetchSubscriptions();
+        setUpdateNotification("Course content updated!");
+        setTimeout(() => setUpdateNotification(null), 4000);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchSubscriptions]);
 
   // Apply filters
   useEffect(() => {
