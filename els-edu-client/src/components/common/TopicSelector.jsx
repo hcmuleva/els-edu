@@ -72,7 +72,7 @@ export const TopicSelector = ({
       pagination: { page: 1, perPage: 20 },
       sort: { field: "createdAt", order: "DESC" },
       filter: queryFilter,
-      meta: { populate: ["subject", "creator"] },
+      meta: { populate: ["subjects", "creator"] },
     },
     {
       enabled: open,

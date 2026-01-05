@@ -52,7 +52,6 @@ const fetchFullUserData = async (token, userId) => {
     }
 
     const data = await response.json();
-    console.log("fetchFullUserData - raw response:", data);
     return data;
   } catch (error) {
     console.error("Error fetching full user data:", error);
@@ -83,7 +82,6 @@ export const refreshUser = async () => {
     localStorage.setItem("userDocumentId", user.documentId);
   }
 
-  console.log("refreshUser - User data refreshed:", user);
   return user;
 };
 
@@ -117,10 +115,6 @@ export const authProvider = {
       }
 
       if (fullUser) {
-        console.log("Full user data fetched:", fullUser);
-        console.log("profile_picture:", fullUser.profile_picture);
-        console.log("role:", fullUser.role);
-        console.log("assigned_roles:", fullUser.assigned_roles);
         // Merge full user data with auth user data
         Object.assign(user, fullUser);
       }
@@ -178,11 +172,6 @@ export const authProvider = {
         localStorage.removeItem("userDocumentId");
         return Promise.reject({ redirectTo: "/login" });
       }
-
-      console.log("checkAuth - Refreshed user data:", user);
-      console.log("checkAuth - profile_picture:", user.profile_picture);
-      console.log("checkAuth - role:", user.role);
-      console.log("checkAuth - assigned_roles:", user.assigned_roles);
 
       // Update stored user data with fresh data
       user.permissions = normalizePermissions(user);
@@ -284,8 +273,6 @@ export const authProvider = {
     };
 
     const avatarUrl = getAvatarUrl();
-    console.log("getIdentity - user.profile_picture:", user.profile_picture);
-    console.log("getIdentity - avatarUrl:", avatarUrl);
 
     return Promise.resolve({
       id: user.id,
