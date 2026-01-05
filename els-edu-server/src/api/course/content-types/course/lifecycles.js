@@ -22,7 +22,8 @@ module.exports = {
 
         // Fetch the updated course with its subjects
         // Fetch the updated course with its subjects using Query Engine (no limits)
-        const updatedCourse = await strapi.db
+        const strapiInstance = global.strapi || event.strapi;
+        const updatedCourse = await strapiInstance.db
           .query("api::course.course")
           .findOne({
             where: { documentId: courseDocumentId },
@@ -39,7 +40,7 @@ module.exports = {
           );
 
           // Trigger subscription sync
-          const syncResult = await strapi
+          const syncResult = await strapiInstance
             .service("api::usersubscription.subscription-sync")
             .syncCourseSubscriptions(
               courseDocumentId,
