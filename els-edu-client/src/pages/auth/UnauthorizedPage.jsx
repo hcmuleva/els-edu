@@ -11,6 +11,13 @@ const UnauthorizedPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 flex flex-col items-center justify-center px-6">
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full text-center">
+        <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-border/50 overflow-hidden flex items-center justify-center p-2 mx-auto mb-6">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="Logo"
+            className="w-full h-full object-contain"
+          />
+        </div>
         <div className="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center mx-auto mb-6">
           <ShieldAlert className="w-10 h-10 text-red-500" />
         </div>

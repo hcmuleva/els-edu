@@ -497,7 +497,7 @@ export const checkSyncStatus = async (subscriptionDocumentId) => {
  */
 export const getSubscriptionCounts = async (userDocumentId) => {
   const response = await api.get(
-    `/custom-counts/subscription-counts/${userDocumentId}`
+    `/custom-counts/subscription-counts/${userDocumentId}?_t=${new Date().getTime()}`
   );
   return response.data;
 };
