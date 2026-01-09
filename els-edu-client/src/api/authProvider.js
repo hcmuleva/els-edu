@@ -154,7 +154,7 @@ export const authProvider = {
     const userDocumentId = localStorage.getItem("userDocumentId");
 
     if (!token) {
-      return Promise.reject({ redirectTo: "/login" });
+      return Promise.reject({ redirectTo: "/login", message: false });
     }
 
     // Refresh user data on every checkAuth (page refresh/navigation)
@@ -170,7 +170,7 @@ export const authProvider = {
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
         localStorage.removeItem("userDocumentId");
-        return Promise.reject({ redirectTo: "/login" });
+        return Promise.reject({ redirectTo: "/login", message: false });
       }
 
       // Update stored user data with fresh data
@@ -190,7 +190,7 @@ export const authProvider = {
       localStorage.removeItem("user");
       localStorage.removeItem("userId");
       localStorage.removeItem("userDocumentId");
-      return Promise.reject({ redirectTo: "/login" });
+      return Promise.reject({ redirectTo: "/login", message: false });
     }
   },
   checkError: (error) => {
@@ -204,7 +204,7 @@ export const authProvider = {
       localStorage.removeItem("userDocumentId");
       localStorage.removeItem("activeRoleId");
       localStorage.removeItem("activeRole");
-      return Promise.reject({ redirectTo: "/login" });
+      return Promise.reject({ redirectTo: "/login", message: false });
     }
     return Promise.resolve();
   },
@@ -241,9 +241,8 @@ export const authProvider = {
       if (typeof user.profile_picture === "string") {
         return user.profile_picture.startsWith("http")
           ? user.profile_picture
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
-              user.profile_picture
-            }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${user.profile_picture
+          }`;
       }
 
       // Strapi v5 structure: profile_picture object with direct url property
@@ -256,17 +255,15 @@ export const authProvider = {
       if (user.profile_picture.data?.url) {
         return user.profile_picture.data.url.startsWith("http")
           ? user.profile_picture.data.url
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
-              user.profile_picture.data.url
-            }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${user.profile_picture.data.url
+          }`;
       }
 
       if (user.profile_picture.attributes?.url) {
         return user.profile_picture.attributes.url.startsWith("http")
           ? user.profile_picture.attributes.url
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
-              user.profile_picture.attributes.url
-            }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${user.profile_picture.attributes.url
+          }`;
       }
 
       return null;
@@ -293,6 +290,8 @@ export const authProvider = {
       role: user.role, // users-permissions role relation
       assigned_roles: user.assigned_roles, // JSON array of roles (replaces user_roles)
       profile_picture: user.profile_picture, // Also include raw profile_picture for debugging
+      control_type: user.control_type,
+      parental_lock_code: user.parental_lock_code,
     });
   },
   // Custom method to switch role

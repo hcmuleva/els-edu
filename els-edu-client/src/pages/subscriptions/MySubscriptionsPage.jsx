@@ -167,7 +167,7 @@ const MySubscriptionsPage = () => {
   if (identityLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-12 bg-gray-200 rounded-xl w-1/3" />
             <div className="h-64 bg-gray-200 rounded-2xl" />
@@ -178,7 +178,7 @@ const MySubscriptionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-32">
       <Title title="My Subscriptions" />
 
       {/* Update Notification Banner */}
@@ -190,12 +190,12 @@ const MySubscriptionsPage = () => {
       )}
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 mb-4">
-        <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-6">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-6">
           {/* Title Row */}
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-lg md:text-xl font-bold text-gray-900">
-              My Subscriptions
+              My Subscriptions ({filteredSubscriptions.length})
             </h1>
             <button
               onClick={() => navigate("/progress")}
@@ -240,7 +240,7 @@ const MySubscriptionsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-4 pb-20">
+      <div className="max-w-6xl mx-auto py-4">
         {/* Courses Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLogin, useNotify } from "react-admin";
 import { Link } from "react-router-dom";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import {
   addUserToDefaultOrg,
   updateUserData,
@@ -16,6 +17,9 @@ const RegisterPage = () => {
     password: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const login = useLogin();
   const notify = useNotify();
@@ -103,7 +107,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center bg-background px-4 py-8 md:py-0 overflow-y-auto">
       <div className="w-full max-w-md bg-card p-8 rounded-3xl border border-border/50 shadow-xl animate-in fade-in zoom-in duration-300">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-border/50 overflow-hidden flex items-center justify-center p-2 mx-auto mb-4">
@@ -113,6 +117,9 @@ const RegisterPage = () => {
               className="w-full h-full object-contain"
             />
           </div>
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2 mt-4">
+            ELS Edu
+          </h1>
           <h2 className="text-3xl font-black text-foreground font-heading mb-2">
             Create Account
           </h2>
@@ -132,7 +139,7 @@ const RegisterPage = () => {
               required
               value={formData.username}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              className="w-full px-4 py-3.5 rounded-xl bg-secondary/5 border border-border/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10 transition-all outline-none text-base"
               placeholder="Pick a username"
             />
           </div>
@@ -146,7 +153,7 @@ const RegisterPage = () => {
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              className="w-full px-4 py-3.5 rounded-xl bg-secondary/5 border border-border/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10 transition-all outline-none text-base"
               placeholder="you@example.com"
             />
           </div>
@@ -154,35 +161,86 @@ const RegisterPage = () => {
             <label className="block text-sm font-bold text-foreground mb-2">
               Password
             </label>
-            <input
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3.5 rounded-xl bg-secondary/5 border border-border/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10 transition-all outline-none text-base pr-12"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-bold text-foreground mb-2">
               Confirm Password
             </label>
-            <input
-              name="confirmPassword"
-              type="password"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl bg-secondary/10 border border-transparent focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full px-4 py-3.5 rounded-xl bg-secondary/5 border border-border/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10 transition-all outline-none text-base pr-12"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
+
+          <div className="flex items-center gap-3 mt-4 mb-2">
+            <input
+              type="checkbox"
+              id="acceptTerms"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="w-5 h-5 rounded-lg border-border/50 bg-secondary/10 text-primary focus:ring-primary focus:ring-offset-background transition-all cursor-pointer"
+            />
+            <label
+              htmlFor="acceptTerms"
+              className="text-sm text-muted-foreground leading-tight cursor-pointer select-none"
+            >
+              I agree to the{" "}
+              <a
+                href="https://emeelan.com/els-edu/terms-and-conditions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-bold hover:underline"
+              >
+                Terms and Conditions
+              </a>
+            </label>
+          </div>
+
+          {!acceptTerms && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-wider mb-2 animate-in fade-in slide-in-from-top-1 duration-300">
+              <AlertCircle size={12} className="stroke-[3]" />
+              Need to accept terms to register
+            </div>
+          )}
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={loading || !acceptTerms}
+            className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {loading ? "Creating Account..." : "Sign Up"}
           </button>

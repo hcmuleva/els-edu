@@ -570,8 +570,8 @@ const OrgManagePage = () => {
         console.error(e);
         setError(
           e.response?.data?.error?.message ||
-            e.message ||
-            "Failed to load organization data"
+          e.message ||
+          "Failed to load organization data"
         );
       } finally {
         setLoading(false);
@@ -666,8 +666,8 @@ const OrgManagePage = () => {
       console.error(e);
       setError(
         e.response?.data?.error?.message ||
-          e.message ||
-          "Failed to load table data"
+        e.message ||
+        "Failed to load table data"
       );
     } finally {
       setLoading(false);
@@ -932,8 +932,8 @@ const OrgManagePage = () => {
                 row.status === "APPROVED" || row.status === "ACTIVE"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : row.status === "REJECTED" || row.status === "BLOCKED"
-                  ? "bg-red-50 text-red-700 border-red-200"
-                  : "bg-amber-50 text-amber-700 border-amber-200"
+                    ? "bg-red-50 text-red-700 border-red-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200"
               )}
             >
               {row.status}
@@ -979,8 +979,8 @@ const OrgManagePage = () => {
               row.status === "APPROVED"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : row.status === "DRAFT" || row.status === "REVIEW"
-                ? "bg-amber-50 text-amber-700 border-amber-200"
-                : "bg-red-50 text-red-700 border-red-200"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-red-50 text-red-700 border-red-200"
             )}
           >
             {row.status}
@@ -1012,7 +1012,7 @@ const OrgManagePage = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <Title title={`${org?.org_name || "Organization"} | ELS Kids`} />
+      <Title title={`${org?.org_name || "Organization"} | ELS Edu`} />
 
       {/* Success Toast */}
       {successMessage && (
@@ -1341,8 +1341,8 @@ const OrgManagePage = () => {
                       (selectedUser.blocked
                         ? "BLOCKED"
                         : selectedUser.confirmed
-                        ? "APPROVED"
-                        : "PENDING")
+                          ? "APPROVED"
+                          : "PENDING")
                     }
                     onChange={(e) =>
                       setSelectedUser((prev) => ({
@@ -1384,7 +1384,7 @@ const OrgManagePage = () => {
                     } catch (e) {
                       setError(
                         e.response?.data?.error?.message ||
-                          "Failed to update user"
+                        "Failed to update user"
                       );
                     } finally {
                       setUpdatingUser(false);
@@ -1573,7 +1573,7 @@ const OrgManagePage = () => {
                     } catch (e) {
                       setError(
                         e.response?.data?.error?.message ||
-                          "Failed to update course"
+                        "Failed to update course"
                       );
                     } finally {
                       setUpdatingCourse(false);
@@ -1611,9 +1611,9 @@ const OrgManagePage = () => {
         subtitle={
           selectedUser
             ? `${selectedUser.username} (${selectedUser.documentId?.slice(
-                0,
-                8
-              )}...)`
+              0,
+              8
+            )}...)`
             : ""
         }
         availableItems={allCourses}

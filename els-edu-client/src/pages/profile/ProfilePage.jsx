@@ -18,16 +18,20 @@ import {
   Award,
   BookOpen,
   Trophy,
+  Target,
   Clock,
   Camera,
   Phone,
   LogOut,
   ChevronDown,
   Check,
+  Repeat,
+  Users
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { refreshUser } from "../../api/authProvider";
 import { uploadFile } from "../../services/user";
+import ParentalLockModal from "../../components/auth/ParentalLockModal";
 
 const ProfilePage = () => {
   const { identity, refetch } = useGetIdentity();
@@ -105,6 +109,10 @@ const ProfilePage = () => {
   };
 
   // Handle logout
+  const confirmAndLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
   const handleLogout = async () => {
     try {
       await authProvider.logout();
@@ -129,6 +137,9 @@ const ProfilePage = () => {
     averageScore: 0,
     totalTimeSpent: 0,
   });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteLock, setShowDeleteLock] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Initialize form data
   useEffect(() => {
@@ -169,9 +180,9 @@ const ProfilePage = () => {
         const averageScore =
           results.length > 0
             ? Math.round(
-                results.reduce((sum, r) => sum + r.percentage, 0) /
-                  results.length
-              )
+              results.reduce((sum, r) => sum + r.percentage, 0) /
+              results.length
+            )
             : 0;
 
         const totalTime = results.reduce(
@@ -292,9 +303,8 @@ const ProfilePage = () => {
         // Update preview immediately with the new URL to reflect change
         const serverUrl = uploadedImage.url.startsWith("http")
           ? uploadedImage.url
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
-              uploadedImage.url
-            }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${uploadedImage.url
+          }`;
         setImagePreview(serverUrl);
       }
 
@@ -355,8 +365,8 @@ const ProfilePage = () => {
       <Title title="My Profile" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 mb-4">
-        <div className="px-4 py-4 md:px-6 md:py-6 max-w-4xl mx-auto">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-6 w-full">
           <div className="flex items-center justify-between">
             <h1 className="text-lg md:text-xl font-bold text-gray-900">
               My Profile
@@ -375,8 +385,8 @@ const ProfilePage = () => {
       </div>
 
       {/* Content */}
-      <div className="px-4 py-4 pb-20 space-y-4 max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+      <div className="py-4 pb-20 space-y-4 w-full">
+        <div className="bg-white md:rounded-2xl border-y md:border border-gray-100 p-4 shadow-sm">
           {/* Avatar & Basic Info */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4 pb-4 border-b border-gray-100">
             <div className="relative shrink-0">
@@ -415,6 +425,7 @@ const ProfilePage = () => {
               )}
             </div>
           </div>
+
 
           {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -595,164 +606,225 @@ const ProfilePage = () => {
             </div>
           )}
 
-          {/* Stats - Integrated */}
+          {/* Account Actions */}
+          {/* Account Actions */}
           {!isEditing && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                Learning Stats
+            <div className="mt-8 pt-8 border-t border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 px-1">
+                Account & Settings
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="text-center p-3 rounded-xl bg-blue-50">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-2">
-                    <BookOpen className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-2xl font-black text-blue-600">
-                    {stats.totalSubscriptions}
-                  </p>
-                  <p className="text-xs text-blue-700 font-medium">Courses</p>
-                </div>
 
-                <div className="text-center p-3 rounded-xl bg-violet-50">
-                  <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center mx-auto mb-2">
-                    <Trophy className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-2xl font-black text-violet-600">
-                    {stats.totalQuizAttempts}
-                  </p>
-                  <p className="text-xs text-violet-700 font-medium">Quizzes</p>
-                </div>
-
-                <div className="text-center p-3 rounded-xl bg-emerald-50">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center mx-auto mb-2">
-                    <Award className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-2xl font-black text-emerald-600">
-                    {stats.averageScore}%
-                  </p>
-                  <p className="text-xs text-emerald-700 font-medium">
-                    Avg Score
-                  </p>
-                </div>
-
-                <div className="text-center p-3 rounded-xl bg-orange-50">
-                  <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center mx-auto mb-2">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-2xl font-black text-orange-600">
-                    {stats.totalTimeSpent}m
-                  </p>
-                  <p className="text-xs text-orange-700 font-medium">
-                    Time Spent
-                  </p>
-                </div>
-              </div>
-
-              {/* View Progress Button */}
-              <button
-                onClick={() => navigate("/progress")}
-                className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all text-sm flex items-center justify-center gap-2 shadow-md"
-              >
-                <Trophy className="w-4 h-4" />
-                View My Progress
-              </button>
-
-              {/* Mobile Account Actions - Only visible on mobile */}
-              <div className="mt-4 pt-4 border-t border-gray-100 md:hidden">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Account
-                </h3>
-
-                {/* Current Role Display */}
-                <div className="mb-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">
-                      Current Role:{" "}
-                      <span className="font-semibold text-primary-600">
-                        {permissions || identity?.user_role || "Guest"}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Role Switcher - Only show if user has 2+ roles */}
-                {uniqueRoles.length > 1 && (
-                  <div className="relative mb-3">
+              <div className="space-y-6">
+                {/* Identity Management Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Switch Profile (Kid/Parent) */}
+                  {identity?.control_type === "PARENT" && (
                     <button
-                      ref={roleButtonRef}
                       onClick={() => {
-                        // Calculate dropdown direction before opening
-                        if (!roleDropdownOpen && roleButtonRef.current) {
-                          const rect =
-                            roleButtonRef.current.getBoundingClientRect();
-                          const spaceBelow = window.innerHeight - rect.bottom;
-                          const estimatedDropdownHeight =
-                            uniqueRoles.length * 50 + 60; // Approx height
-                          setDropdownDirection(
-                            spaceBelow < estimatedDropdownHeight ? "up" : "down"
-                          );
-                        }
-                        setRoleDropdownOpen(!roleDropdownOpen);
+                        localStorage.removeItem("current_role");
+                        navigate("/role-selection");
                       }}
-                      className="w-full px-4 py-3 bg-violet-50 border border-violet-200 text-violet-700 rounded-xl font-semibold hover:bg-violet-100 transition-all text-sm flex items-center justify-between gap-2"
+                      className="group relative w-full px-6 py-5 bg-indigo-50/50 hover:bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-200 text-indigo-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4"
                     >
-                      <span>Switch Role</span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-violet-500 transition-transform ${
-                          roleDropdownOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    {/* Role Dropdown - opens up or down based on available space */}
-                    {roleDropdownOpen && (
-                      <div
-                        className={`absolute left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden ${
-                          dropdownDirection === "up"
-                            ? "bottom-full mb-2"
-                            : "top-full mt-2"
-                        }`}
-                      >
-                        <div className="p-2">
-                          <p className="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                            Available Roles
-                          </p>
-                          {uniqueRoles.map((role) => (
-                            <button
-                              key={role}
-                              onClick={() => handleRoleSwitch(role)}
-                              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between gap-2 transition-colors ${
-                                role === permissions
-                                  ? "bg-primary-50 text-primary-600"
-                                  : "text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              <span>{role}</span>
-                              {role === permissions && (
-                                <Check className="w-4 h-4" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                        <Users className="w-5 h-5" />
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div>
+                        <div className="text-base">Switch Profile</div>
+                        <div className="text-xs text-indigo-400 font-medium opacity-75">Parent / Student View</div>
+                      </div>
+                    </button>
+                  )}
 
-                {/* Logout Button */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-3 bg-red-50 border border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-all text-sm flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
+                  {/* Current Role Display */}
+                  <div className="w-full px-6 py-5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Current Role</div>
+                      <div className="text-base font-black text-gray-900 capitalize">
+                        {permissions || identity?.user_role || "Guest"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Role Switcher Button */}
+                  {uniqueRoles.length > 1 && (
+                    <div className="relative">
+                      <button
+                        ref={roleButtonRef}
+                        onClick={() => {
+                          if (!roleDropdownOpen && roleButtonRef.current) {
+                            const rect = roleButtonRef.current.getBoundingClientRect();
+                            const spaceBelow = window.innerHeight - rect.bottom;
+                            const estimatedDropdownHeight = uniqueRoles.length * 50 + 60;
+                            setDropdownDirection(spaceBelow < estimatedDropdownHeight ? "up" : "down");
+                          }
+                          setRoleDropdownOpen(!roleDropdownOpen);
+                        }}
+                        className="group w-full px-6 py-5 bg-violet-50/50 hover:bg-violet-50 border-2 border-violet-100 hover:border-violet-200 text-violet-900 rounded-2xl font-bold transition-all text-left flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 group-hover:scale-110 transition-transform">
+                            <Users className="w-5 h-5" />
+                          </div>
+                          <span>Switch Account Role</span>
+                        </div>
+                        <ChevronDown
+                          className={`w-5 h-5 text-violet-400 transition-transform ${roleDropdownOpen ? "rotate-180" : ""
+                            }`}
+                        />
+                      </button>
+
+                      {roleDropdownOpen && (
+                        <div
+                          className={`absolute left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden ${dropdownDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
+                            }`}
+                        >
+                          <div className="p-2">
+                            <p className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50 mb-1">
+                              Available Roles
+                            </p>
+                            {uniqueRoles.map((role) => (
+                              <button
+                                key={role}
+                                onClick={() => handleRoleSwitch(role)}
+                                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 transition-all my-1 ${role === permissions ? "bg-primary-50 text-primary-700" : "text-gray-600 hover:bg-gray-50"
+                                  }`}
+                              >
+                                <span>{role}</span>
+                                {role === permissions && <Check className="w-4 h-4" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Primary Actions Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* View Progress Button */}
+                  <button
+                    onClick={() => navigate("/progress")}
+                    className="group px-6 py-4 bg-gradient-to-r from-primary-500 to-violet-600 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-primary-500/20 transition-all text-sm flex items-center justify-center gap-2"
+                  >
+                    <Trophy className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    View My Progress
+                  </button>
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={() => confirmAndLogout()}
+                    className="px-6 py-4 bg-white border-2 border-red-50 text-red-500 rounded-2xl font-bold hover:bg-red-50 hover:border-red-100 transition-all text-sm flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                  </button>
+
+                  {/* Delete Account */}
+                  {(!identity?.control_type || identity.control_type === "PARENT") && (
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="px-6 py-4 bg-transparent border-2 border-gray-100 text-gray-400 rounded-2xl font-semibold hover:bg-gray-50 hover:text-gray-600 transition-all text-sm flex items-center justify-center gap-2"
+                    >
+                      Delete Account
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+      {/* Delete Confirmation Warning */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <LogOut className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Account?</h3>
+              <p className="text-gray-600 text-sm mb-6">
+                If you delete your account, <strong>you cannot recover it</strong>. All your purchases, subscriptions, and progress will be permanently lost.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setShowDeleteLock(true);
+                  }}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PIN Verification for Deletion */}
+      <ParentalLockModal
+        isOpen={showDeleteLock}
+        onClose={() => setShowDeleteLock(false)}
+        correctPin={identity?.parental_lock_code}
+        onSuccess={async () => {
+          setShowDeleteLock(false);
+          try {
+            await dataProvider.delete("users", { id: identity.id, previousData: identity });
+            // Logout after delete
+            authProvider.logout();
+          } catch (error) {
+            console.error("Delete failed", error);
+            notify("Failed to delete account. Please try again.", { type: 'error' });
+          }
+        }}
+      />
+
+
+      {/* Logout Confirmation Modal */}
+      {
+        showLogoutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <LogOut className="w-8 h-8 text-blue-500" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Sign Out?</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  Are you sure you want to sign out of your account?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-200"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 };
 

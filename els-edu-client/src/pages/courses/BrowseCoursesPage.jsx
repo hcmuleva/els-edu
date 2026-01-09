@@ -115,7 +115,16 @@ const BrowseCoursesPage = () => {
             meta: {
               populate: {
                 cover: { fields: ["url", "name"] },
-                subjects: { populate: ["topics", "coverpage"] },
+                subjects: {
+                  populate: {
+                    topics: {
+                      populate: {
+                        contents: { fields: ["documentId"] },
+                      },
+                    },
+                    coverpage: { fields: ["url"] },
+                  },
+                },
               },
             },
           });
@@ -428,12 +437,12 @@ const BrowseCoursesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-32">
       <Title title="Browse Courses" />
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-6 md:py-8">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-4 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-6">
           {/* Top row with title and purchase history */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
@@ -522,7 +531,7 @@ const BrowseCoursesPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 pb-20">
+      <div className="max-w-6xl mx-auto py-6 md:py-10">
         {/* Results Count */}
         {!loading && courses.length > 0 && (
           <div className="flex items-center gap-2 mb-6">

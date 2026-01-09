@@ -2461,6 +2461,7 @@ export interface PluginUsersPermissionsUser
     >;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    control_type: Schema.Attribute.Enumeration<['PARENT', 'STUDENT']>;
     created_items: Schema.Attribute.Relation<
       'oneToMany',
       'api::invoice-item.invoice-item'
@@ -2518,6 +2519,11 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.Private;
     mobile_number: Schema.Attribute.BigInteger;
     org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
+    parental_lock_code: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 4;
+        minLength: 4;
+      }>;
     password: Schema.Attribute.Password &
       Schema.Attribute.Private &
       Schema.Attribute.SetMinMaxLength<{

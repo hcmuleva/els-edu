@@ -44,10 +44,22 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
+    -webkit-transition-delay: 9999s;
+  }
+
+  html,
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    overscroll-behavior-y: none;
+    height: 100%;
   }
 
   h1,
@@ -63,12 +75,15 @@
 /* Utilities */
 @layer utilities {
   .hide-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
   .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
   }
 }
 
@@ -112,7 +127,7 @@
   }
 
   /* Enhanced spacing for readability */
-  .book-style-content > * + * {
+  .book-style-content>*+* {
     @apply mt-6;
   }
 
@@ -130,8 +145,8 @@
   }
 
   /* Spacing between rules */
-  .book-style-content br + strong,
-  .book-style-content br + b {
+  .book-style-content br+strong,
+  .book-style-content br+b {
     margin-top: 1rem;
     display: inline-block;
   }
@@ -139,6 +154,7 @@
 
 /* Mobile Date Picker Fix - Constrain calendar to viewport */
 @layer utilities {
+
   /* Force date input calendar to be contained */
   input[type="date"] {
     position: relative;
@@ -176,24 +192,13 @@
 
 /* Mobile Safe Area Support for Capacitor Apps */
 @layer utilities {
-  /* Safe area padding for iOS notch and Android status bar */
+
+  /* Safe area padding/margin for iOS notch and Android status bar */
   .pt-safe {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   }
 
   .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  /* Mobile header height with safe area - smaller padding */
-  .mobile-header {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
-    padding-bottom: 0.5rem;
-  }
-
-  /* Mobile bottom nav with safe area */
-  .mobile-bottom-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
-    min-height: calc(5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   }
 }

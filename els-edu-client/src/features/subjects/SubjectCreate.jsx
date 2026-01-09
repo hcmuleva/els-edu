@@ -36,10 +36,9 @@ const StepIndicator = ({ currentStep, steps }) => (
             <div
               className={`
                 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2
-                ${
-                  isCompleted
-                    ? "bg-green-500 border-green-500 text-white"
-                    : isCurrent
+                ${isCompleted
+                  ? "bg-green-500 border-green-500 text-white"
+                  : isCurrent
                     ? "bg-primary border-primary text-white shadow-lg shadow-primary/30 scale-110"
                     : "bg-white border-gray-200 text-gray-400"
                 }
@@ -52,22 +51,20 @@ const StepIndicator = ({ currentStep, steps }) => (
               )}
             </div>
             <span
-              className={`text-xs font-bold uppercase tracking-wider ${
-                isCurrent
+              className={`text-xs font-bold uppercase tracking-wider ${isCurrent
                   ? "text-primary"
                   : isCompleted
-                  ? "text-green-600"
-                  : "text-gray-400"
-              }`}
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
             >
               {step.label}
             </span>
           </div>
           {index < steps.length - 1 && (
             <div
-              className={`w-24 h-0.5 mx-4 transition-all duration-500 ${
-                isCompleted ? "bg-green-500" : "bg-gray-200"
-              }`}
+              className={`w-24 h-0.5 mx-4 transition-all duration-500 ${isCompleted ? "bg-green-500" : "bg-gray-200"
+                }`}
             />
           )}
         </div>
@@ -195,7 +192,9 @@ export const SubjectCreate = () => {
       };
 
       if (formData.courses && formData.courses.length > 0) {
-        subjectData.courses = formData.courses;
+        subjectData.courses = formData.courses.map(
+          (c) => c.documentId || c.id || c
+        );
       }
 
       let result;
@@ -503,9 +502,8 @@ export const SubjectCreate = () => {
                         </span>
                         <p className="font-bold text-foreground">
                           {formData.courses && formData.courses.length > 0
-                            ? `${formData.courses.length} course${
-                                formData.courses.length !== 1 ? "s" : ""
-                              } selected`
+                            ? `${formData.courses.length} course${formData.courses.length !== 1 ? "s" : ""
+                            } selected`
                             : "None"}
                         </p>
                       </div>

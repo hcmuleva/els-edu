@@ -121,8 +121,14 @@ export const ContentCreate = () => {
             type: formData.type,
             youtubeurl: formData.youtubeurl || null,
             json_description: descriptionBlocks,
-            topics: formData.topics.length > 0 ? formData.topics : null,
-            subjects: formData.subjects.length > 0 ? formData.subjects : null,
+            topics:
+              formData.topics.length > 0
+                ? formData.topics.map((t) => t.documentId || t.id || t)
+                : null,
+            subjects:
+              formData.subjects.length > 0
+                ? formData.subjects.map((s) => s.documentId || s.id || s)
+                : null,
             creator: identity?.id,
             publishedAt: new Date(),
           })
@@ -147,8 +153,14 @@ export const ContentCreate = () => {
             type: formData.type,
             youtubeurl: formData.youtubeurl || null,
             json_description: descriptionBlocks,
-            topics: formData.topics.length > 0 ? formData.topics : null,
-            subjects: formData.subjects.length > 0 ? formData.subjects : null,
+            topics:
+              formData.topics.length > 0
+                ? formData.topics.map((t) => t.documentId || t.id || t)
+                : null,
+            subjects:
+              formData.subjects.length > 0
+                ? formData.subjects.map((s) => s.documentId || s.id || s)
+                : null,
             creator: identity?.id,
           },
         });
@@ -367,8 +379,8 @@ export const ContentCreate = () => {
                     {formData.type === "IMAGE"
                       ? "PNG, JPG, GIF"
                       : formData.type === "VIDEO"
-                      ? "MP4, MOV, AVI"
-                      : "Any file type"}{" "}
+                        ? "MP4, MOV, AVI"
+                        : "Any file type"}{" "}
                     up to 50MB
                   </p>
                 </div>
@@ -380,8 +392,8 @@ export const ContentCreate = () => {
                     formData.type === "IMAGE"
                       ? "image/*"
                       : formData.type === "VIDEO"
-                      ? "video/*"
-                      : "*"
+                        ? "video/*"
+                        : "*"
                   }
                   onChange={handleMultimediaChange}
                 />

@@ -240,7 +240,7 @@ const CourseDetailPage = () => {
                 topics: {
                   limit: -1, // Use standard limit override if supported by controller, else relies on default
                   populate: {
-                    contents: { fields: ["documentId"] },
+                    contents: { fields: ["documentId", "title"] },
                   },
                 },
                 coverpage: { fields: ["url"] },
@@ -536,161 +536,108 @@ const CourseDetailPage = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto pb-safe">
+    <div className="max-w-6xl mx-auto py-2 pb-32">
       <Title title={course.name} />
 
-      {/* Header Title Section */}
-      <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-        <button
-          onClick={handleBack}
-          className="p-3 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-xl transition-all shadow-sm shrink-0 group"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
-        </button>
-        <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
-            {course.name}
-          </h1>
-          {course.category && (
-            <span
-              className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide ${categoryColor}`}
-            >
-              {course.category}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Main Action Section - Moved Below Header */}
-      <div className="mb-10">
-        {!hasFullCourse && (
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-xl shadow-primary-500/5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <p className="text-sm font-semibold text-gray-500 mb-1">
-                  Total Course Bundle
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-gray-900">
-                    {isBundleFree ? "FREE" : `₹${bundlePrice.toLocaleString()}`}
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-8">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+              <button
+                onClick={handleBack}
+                className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-xl font-bold text-gray-900 truncate">
+                  {course.name}
+                </h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${categoryColor}`}>
+                    {course.category}
                   </span>
-                  {individualTotal > bundlePrice && (
-                    <span className="text-sm text-gray-400 line-through decoration-gray-300">
-                      ₹{individualTotal.toLocaleString()}
-                    </span>
-                  )}
+                  <span className="text-gray-300">•</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    {subjectCount} Subjects
+                  </span>
                 </div>
-                {savings > 0 && !isBundleFree && (
-                  <span className="inline-block mt-2 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">
-                    Save {savings}% on bundle
-                  </span>
-                )}
               </div>
+            </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto min-w-[200px]">
-                {/* Pending Payment Controls */}
-                {pendingPayment ? (
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <button
-                      onClick={handleCancelPaymentAction}
-                      className="flex-1 px-6 py-4 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors text-sm"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleResumePayment}
-                      className="flex-[2] flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200 transition-all animate-pulse text-sm"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                      Continue Payment
-                    </button>
+            {/* Header Actions - Minimal Purchase/Enroll */}
+            <div className="flex items-center gap-3">
+              {!hasFullCourse && !pendingPayment && (
+                <div className="flex items-center gap-3">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-lg font-black text-gray-900 leading-none">
+                      {isBundleFree ? "FREE" : `₹${bundlePrice.toLocaleString()}`}
+                    </div>
                   </div>
-                ) : (
                   <button
                     onClick={handleBuyBundle}
-                    className={`w-full md:w-auto flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl active:scale-95 ${
-                      isBundleFree
-                        ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-green-200"
-                        : "bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-700 hover:to-violet-700 text-white shadow-primary-200"
-                    }`}
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 ${isBundleFree
+                      ? "bg-green-500 text-white shadow-green-200"
+                      : "bg-primary-500 text-white shadow-primary-200"
+                      }`}
                   >
-                    <ShoppingCart className="w-5 h-5" />
-                    {isBundleFree ? "Enroll Now - Free" : "Buy Full Course"}
+                    {isBundleFree ? "Enroll Free" : "Buy Bundle"}
                   </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {hasFullCourse && (
-          <div className="bg-green-50 rounded-2xl p-6 border border-green-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-green-900">
-                You are enrolled!
-              </h3>
-              <p className="text-green-700">
-                You have full access to all subjects in this course.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Course Info Card */}
-      <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden mb-12 shadow-sm">
-        <div className="p-6 md:p-8">
-          {/* Info Row: Image thumbnail + Description + Stats */}
-          <div className="flex flex-col md:flex-row items-start gap-8">
-            {/* Expandable Image Thumbnail */}
-            {course.cover?.url && (
-              <button
-                onClick={() => setImageModalOpen(true)}
-                className="group relative w-full md:w-64 aspect-video rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 hover:border-primary-200 transition-all shadow-sm flex-shrink-0"
-              >
-                <img
-                  src={course.cover.url}
-                  alt={course.name}
-                  className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
-                  <ZoomIn className="w-8 h-8 text-gray-800 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
-                </div>
-              </button>
-            )}
-
-            {/* Info content */}
-            <div className="flex-1 min-w-0 space-y-6">
-              {course.description && (
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary-500" />
-                    About this course
-                  </h3>
-                  <div
-                    className="prose prose-sm prose-gray max-w-none text-gray-600 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: course.description }}
-                  />
                 </div>
               )}
-
-              <div className="flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 font-medium">
-                  <BookOpen className="w-4 h-4 text-primary-500" />
-                  <span>{subjectCount} Subjects</span>
+              {pendingPayment && (
+                <button
+                  onClick={handleResumePayment}
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm bg-orange-500 text-white shadow-lg shadow-orange-200 transition-all animate-pulse"
+                >
+                  Resume Payment
+                </button>
+              )}
+              {hasFullCourse && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl text-green-700 font-bold text-sm border border-green-100">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Enrolled</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 font-medium">
-                  <Layers className="w-4 h-4 text-primary-500" />
-                  <span>{topicCount} Topics</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Course Description & Stats Section */}
+      <div className="px-1 mb-10 space-y-6">
+        {course.cover?.url && (
+          <div className="relative aspect-video max-h-[300px] rounded-3xl overflow-hidden border border-gray-100 bg-gray-50 group">
+            <img
+              src={course.cover.url}
+              alt={course.name}
+              className="w-full h-full object-contain p-4 group-hover:scale-[1.02] transition-transform duration-500"
+            />
+            <button
+              onClick={() => setImageModalOpen(true)}
+              className="absolute bottom-4 right-4 p-2 bg-white/80 backdrop-blur-md rounded-xl border border-gray-200 text-gray-700 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+            >
+              <ZoomIn className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {course.description && (
+          <div className="max-w-4xl">
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary-500" />
+              Course Description
+            </h3>
+            <div
+              className="prose prose-sm prose-gray max-w-none text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: course.description }}
+            />
+          </div>
+        )}
+      </div>
+
+
 
       {/* Subjects Section */}
       <div>
@@ -829,6 +776,7 @@ const CourseDetailPage = () => {
         onConfirm={handleConfirmEnroll}
         course={enrollingItem.course}
         subject={enrollingItem.isBundle ? null : enrollingItem.subject}
+        totalSubjectCount={courseCounts.subjectCount}
         loading={enrolling}
       />
 

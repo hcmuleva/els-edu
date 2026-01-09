@@ -39,7 +39,7 @@ export const TopicCreate = () => {
         name: formData.name,
         description: formData.description || null,
         icon: formData.icon || null,
-        subjects: formData.subjects,
+        subjects: formData.subjects.map((s) => s.documentId || s.id || s),
         creator: identity?.id,
       };
 

@@ -1,4 +1,7 @@
+import React, { useEffect } from "react";
 import { Admin, Resource } from "react-admin";
+import { useNavigate, useLocation } from "react-router-dom";
+import { App as CapApp } from "@capacitor/app";
 import { compositeDataProvider } from "./data/compositeDataProvider";
 import { authProvider } from "./api/authProvider";
 import { theme } from "./config/theme";
@@ -31,6 +34,34 @@ import {
 } from "./features/invoices";
 import AppRoutes from "./routes/AppRoutes";
 
+const BackButtonHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const backListener = CapApp.addListener("backButton", (data) => {
+      const { pathname } = location;
+
+      // Define root/main pages where back button should exit the app
+      const rootPages = ["/", "/dashboard", "/login", "/role-selection", "/my-subscriptions", "/browse-courses", "/progress", "/profile"];
+
+      if (rootPages.includes(pathname)) {
+        // On root pages, let Capacitor handle exit or minimize behavior
+        CapApp.exitApp();
+      } else {
+        // Otherwise, navigate back within the app
+        navigate(-1);
+      }
+    });
+
+    return () => {
+      backListener.then((listener) => listener.remove());
+    };
+  }, [location, navigate]);
+
+  return null;
+};
+
 const App = () => (
   <Admin
     theme={theme}
@@ -40,6 +71,7 @@ const App = () => (
     dashboard={Dashboard}
     loginPage={LoginPage}
   >
+    <BackButtonHandler />
     {AppRoutes()}
 
     <Resource

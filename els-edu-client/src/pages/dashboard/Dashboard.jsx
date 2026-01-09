@@ -35,7 +35,18 @@ const Dashboard = () => {
     if (!hasSeenTour && identity) {
       setShowTour(true);
     }
-  }, [identity]);
+
+    // Check for Role Selection (Parental Lock)
+    // 1. If no control_type (Legacy User), force setup
+    // 2. If PARENT control type but no session role selected, force selection
+    if (identity) {
+      if (!identity.control_type) {
+        navigate("/role-selection");
+      } else if (identity.control_type === "PARENT" && !localStorage.getItem("current_role")) {
+        navigate("/role-selection");
+      }
+    }
+  }, [identity, navigate]);
 
   // Fetch stats
   useEffect(() => {
@@ -60,9 +71,9 @@ const Dashboard = () => {
         const averageScore =
           results.length > 0
             ? Math.round(
-                results.reduce((sum, r) => sum + r.percentage, 0) /
-                  results.length
-              )
+              results.reduce((sum, r) => sum + r.percentage, 0) /
+              results.length
+            )
             : 0;
 
         const passed = results.filter((r) => r.isPassed).length;
@@ -111,8 +122,8 @@ const Dashboard = () => {
       <Title title="Dashboard" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 pt-safe">
-        <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-8">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 pt-safe -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-8">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg shadow-primary-200 shrink-0">
               <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
@@ -130,7 +141,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-8 space-y-6">
+      <div className="max-w-6xl mx-auto py-4 md:py-8 space-y-6">
         {/* Tour Guide Modal */}
         {showTour && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">

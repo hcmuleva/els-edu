@@ -42,23 +42,21 @@ const QuizResultExpand = ({ record }) => {
         {record.questionAnalysis.map((q, index) => (
           <div
             key={index}
-            className={`p-3 rounded-xl border ${
-              !q.isAttempted
-                ? "border-gray-200 bg-white"
-                : q.isCorrect
+            className={`p-3 rounded-xl border ${!q.isAttempted
+              ? "border-gray-200 bg-white"
+              : q.isCorrect
                 ? "border-emerald-200 bg-emerald-50"
                 : "border-rose-200 bg-rose-50"
-            }`}
+              }`}
           >
             <div className="flex items-start gap-2">
               <div
-                className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-                  !q.isAttempted
-                    ? "bg-gray-300 text-gray-700"
-                    : q.isCorrect
+                className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${!q.isAttempted
+                  ? "bg-gray-300 text-gray-700"
+                  : q.isCorrect
                     ? "bg-emerald-500 text-white"
                     : "bg-rose-500 text-white"
-                }`}
+                  }`}
               >
                 {index + 1}
               </div>
@@ -177,9 +175,9 @@ const ProgressPage = () => {
     averageScore:
       timeFilteredResults.length > 0
         ? Math.round(
-            timeFilteredResults.reduce((sum, r) => sum + r.percentage, 0) /
-              timeFilteredResults.length
-          )
+          timeFilteredResults.reduce((sum, r) => sum + r.percentage, 0) /
+          timeFilteredResults.length
+        )
         : 0,
     totalTimeSpent: timeFilteredResults.reduce(
       (sum, r) => sum + (r.timeTaken || 0),
@@ -305,8 +303,8 @@ const ProgressPage = () => {
       <Title title="My Progress" />
 
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-4 md:-mx-6 md:-mt-6 mb-4">
-        <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-6">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-6">
           {/* Title */}
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-md shadow-violet-200">
@@ -337,11 +335,10 @@ const ProgressPage = () => {
                   setActiveTimeFilter(filter.id);
                   setActiveResultFilter("all"); // Reset result filter when changing time
                 }}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  activeTimeFilter === filter.id
-                    ? "bg-primary-500 text-white shadow-md shadow-primary-200"
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
-                }`}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTimeFilter === filter.id
+                  ? "bg-primary-500 text-white shadow-md shadow-primary-200"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                  }`}
               >
                 {filter.label}
               </button>
@@ -351,7 +348,7 @@ const ProgressPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-4 pb-20 space-y-6">
+      <div className="max-w-6xl mx-auto py-4 pb-20 space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all">
@@ -557,23 +554,22 @@ const ProgressPage = () => {
                 key={filter.id}
                 onClick={() => setActiveResultFilter(filter.id)}
                 disabled={filter.count === 0}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  isActive
-                    ? filter.color === "primary"
-                      ? "bg-primary-500 text-white"
-                      : filter.color === "emerald"
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${isActive
+                  ? filter.color === "primary"
+                    ? "bg-primary-500 text-white"
+                    : filter.color === "emerald"
                       ? "bg-emerald-500 text-white"
                       : filter.color === "rose"
-                      ? "bg-rose-500 text-white"
-                      : filter.color === "orange"
-                      ? "bg-orange-500 text-white"
-                      : filter.color === "amber"
-                      ? "bg-amber-500 text-white"
-                      : "bg-violet-500 text-white"
-                    : filter.count === 0
+                        ? "bg-rose-500 text-white"
+                        : filter.color === "orange"
+                          ? "bg-orange-500 text-white"
+                          : filter.color === "amber"
+                            ? "bg-amber-500 text-white"
+                            : "bg-violet-500 text-white"
+                  : filter.count === 0
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {Icon && <Icon className="w-3.5 h-3.5" />}
                 {filter.label} ({filter.count})
@@ -668,11 +664,10 @@ const ProgressPage = () => {
                           {/* Score Badge */}
                           <div className="flex-shrink-0">
                             <div
-                              className={`px-3 py-1.5 rounded-lg font-black text-base ${
-                                record.isPassed
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-rose-100 text-rose-700"
-                              }`}
+                              className={`px-3 py-1.5 rounded-lg font-black text-base ${record.isPassed
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-rose-100 text-rose-700"
+                                }`}
                             >
                               {record.percentage}%
                             </div>
@@ -682,11 +677,10 @@ const ProgressPage = () => {
                         {/* Badges Row */}
                         <div className="flex flex-wrap gap-2 mb-3">
                           <span
-                            className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                              record.isPassed
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-rose-100 text-rose-700"
-                            }`}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold ${record.isPassed
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
+                              }`}
                           >
                             {record.isPassed ? "✓ Passed" : "✗ Failed"}
                           </span>
@@ -743,8 +737,7 @@ const ProgressPage = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(
-                                `/quiz/${
-                                  record.quiz?.documentId || record.quiz?.id
+                                `/quiz/${record.quiz?.documentId || record.quiz?.id
                                 }/play`
                               );
                             }}
@@ -769,8 +762,7 @@ const ProgressPage = () => {
                                     ...new Set(wrongQuestions),
                                   ];
                                   navigate(
-                                    `/quiz/${
-                                      record.quiz?.documentId || record.quiz?.id
+                                    `/quiz/${record.quiz?.documentId || record.quiz?.id
                                     }/play?replay=${uniqueQuestions.join(",")}`
                                   );
                                 }}
@@ -795,8 +787,7 @@ const ProgressPage = () => {
                                     ...new Set(unansweredQuestions),
                                   ];
                                   navigate(
-                                    `/quiz/${
-                                      record.quiz?.documentId || record.quiz?.id
+                                    `/quiz/${record.quiz?.documentId || record.quiz?.id
                                     }/play?replay=${uniqueQuestions.join(",")}`
                                   );
                                 }}
