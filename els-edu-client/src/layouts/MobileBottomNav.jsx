@@ -95,7 +95,7 @@ const MobileBottomNav = () => {
   const navItems = allNavItems.filter((item) => item.show);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border shadow-lg lg:hidden h-24 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border shadow-lg lg:hidden h-28 pb-safe">
       <div className="flex justify-around items-center h-full px-2">
         {navItems.map((item) => {
           const isActive =
@@ -106,25 +106,25 @@ const MobileBottomNav = () => {
             <Link
               key={item.id}
               to={item.path}
-              className="relative flex flex-col items-center justify-center w-16 h-full group"
+              className="relative flex flex-col items-center justify-center flex-1 h-full group min-w-0"
             >
               <div
                 className={cn(
-                  "absolute transition-all duration-300 ease-spring",
+                  "absolute transition-all duration-300 ease-spring flex items-center justify-center",
                   isActive
-                    ? "-translate-y-5 bg-primary text-primary-foreground shadow-lg shadow-primary/30 rounded-full p-3"
-                    : "translate-y-0 text-muted-foreground p-2"
+                    ? "-translate-y-7 bg-primary text-primary-foreground shadow-lg shadow-primary/30 rounded-full p-2.5"
+                    : "-translate-y-3 text-muted-foreground p-1"
                 )}
               >
-                <item.icon size={isActive ? 20 : 22} />
+                <item.icon size={22} />
               </div>
 
               <span
                 className={cn(
-                  "absolute bottom-2 text-[10px] font-bold transition-all duration-300 truncate max-w-full px-1",
+                  "absolute text-[10px] uppercase tracking-wider font-bold transition-all duration-300 truncate max-w-full px-1",
                   isActive
-                    ? "opacity-100 translate-y-0 text-primary"
-                    : "opacity-0 translate-y-2"
+                    ? "opacity-100 bottom-3 text-primary scale-110"
+                    : "opacity-60 bottom-3 text-muted-foreground"
                 )}
               >
                 {item.label}

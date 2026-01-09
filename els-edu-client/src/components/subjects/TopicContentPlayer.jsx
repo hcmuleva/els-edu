@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useDataProvider } from "react-admin";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -26,6 +26,8 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(10);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [showBottomFade, setShowBottomFade] = useState(false);
+  const scrollRef = useRef(null);
 
   // Initialize selected content
   useEffect(() => {
@@ -93,6 +95,19 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + 10);
   };
+
+  // Check scroll for bottom fade
+  const checkScroll = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight - 10;
+      setShowBottomFade(!isAtBottom && hasMore);
+    }
+  }, [hasMore]);
+
+  useEffect(() => {
+    checkScroll();
+  }, [visibleContent, hasMore, checkScroll]);
 
   if (!topic || !topic.contents || topic.contents.length === 0) {
     return (
@@ -181,7 +196,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
             // YouTube Video
             if (isYoutubeType && hasYoutube) {
               return (
-                <div className="bg-black rounded-3xl overflow-hidden shadow-lg aspect-video relative group border border-border/50">
+                <div className="bg-black md:rounded-3xl overflow-hidden aspect-video relative group ">
                   <iframe
                     src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
                     title={selectedContent.title}
@@ -200,7 +215,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
               );
               if (video) {
                 return (
-                  <div className="bg-black rounded-3xl overflow-hidden shadow-lg aspect-video relative group border border-border/50">
+                  <div className="bg-black md:rounded-3xl overflow-hidden aspect-video relative group">
                     <video
                       src={video.url}
                       controls
@@ -220,7 +235,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
               );
               if (image) {
                 return (
-                  <div className="bg-gray-100 rounded-3xl overflow-hidden shadow-sm border border-border/50">
+                  <div className="bg-gray-100 md:rounded-3xl overflow-hidden">
                     <img
                       src={image.url}
                       alt={selectedContent.title}
@@ -239,7 +254,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
               );
               if (doc) {
                 return (
-                  <div className="bg-gray-50 rounded-3xl border border-border/50 shadow-sm overflow-hidden">
+                  <div className="bg-gray-50 md:rounded-3xl overflow-hidden">
                     <div className="flex items-center justify-between p-4 bg-white border-b border-border/50">
                       <div className="flex items-center gap-3">
                         <FileText className="w-8 h-8 text-red-500" />
@@ -277,7 +292,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
 
           {/* Content Details */}
           {selectedContent && (
-            <div className="bg-white rounded-2xl p-6 border border-border/50 shadow-sm transition-all hover:shadow-md">
+            <div className="bg-white md:rounded-2xl p-4 md:p-6 transition-all hover:shadow-sm">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                 <div>
                   <h2 className="text-2xl font-black text-gray-800 mb-1">
@@ -289,7 +304,7 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Actions */}
                 <div className="flex items-center gap-3">
                   {nextContent && (
@@ -307,28 +322,28 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
               {/* Related Quizzes - Below Title */}
               {(contentDetails?.quizzes?.length > 0 ||
                 topicQuizzes.length > 0) && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {/* Content Specific Quizzes */}
-                  {contentDetails?.quizzes?.map((quiz) => (
-                    <button
-                      key={quiz.id}
-                      onClick={() => onQuizStart && onQuizStart(quiz)}
-                      className="flex items-center gap-1.5 px-3 py-1 bg-violet-600 text-white hover:bg-violet-700 rounded-lg font-bold text-xs transition-colors shadow-sm shadow-violet-200"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Quiz: {quiz.title}</span>
-                    </button>
-                  ))}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {/* Content Specific Quizzes */}
+                    {contentDetails?.quizzes?.map((quiz) => (
+                      <button
+                        key={quiz.id}
+                        onClick={() => onQuizStart && onQuizStart(quiz)}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-violet-600 text-white hover:bg-violet-700 rounded-lg font-bold text-xs transition-colors shadow-sm shadow-violet-200"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Quiz: {quiz.title}</span>
+                      </button>
+                    ))}
 
-                  {/* Topic Quizzes (Optional fallback or separate section? User asked for content quizzes) 
+                    {/* Topic Quizzes (Optional fallback or separate section? User asked for content quizzes) 
                       Let's keeping topic quizzes distinct or removed if content quizzes exist? 
                       The user said "only load quiz in the qontent when the quiz is assigned to the content".
                       I will render content quizzes first. I'll keep topic quizzes but visually distinct or maybe only if no content quizzes?
                       Actually, let's keep both but maybe different styling?
                       Or just render content quizzes as requested.
                   */}
-                </div>
-              )}
+                  </div>
+                )}
 
               {/* Description Section */}
               <div className="space-y-3">
@@ -339,9 +354,8 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
 
                 {/* Description with Book Style Rendering */}
                 <div
-                  className={`relative overflow-hidden transition-all duration-500 ${
-                    isDescriptionExpanded ? "max-h-full" : "max-h-24"
-                  }`}
+                  className={`relative overflow-hidden transition-all duration-500 ${isDescriptionExpanded ? "max-h-full" : "max-h-24"
+                    }`}
                 >
                   {loadingDetails ? (
                     <div className="space-y-2 animate-pulse">
@@ -351,8 +365,8 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
                   ) : (
                     renderDescriptionBlocks(
                       contentDetails?.json_description ||
-                        selectedContent?.json_description ||
-                        selectedContent?.description
+                      selectedContent?.json_description ||
+                      selectedContent?.description
                     )
                   )}
 
@@ -387,142 +401,151 @@ const TopicContentPlayer = ({ topic, onQuizStart }) => {
         </div>
 
         {/* Up Next / Playlist (1/3 width) */}
-        <div className="lg:col-span-1 flex flex-col h-full space-y-4">
-          {/* Filters Header */}
-          <div className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-border/50 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                <LayoutGrid className="w-4 h-4" />
-                Up Next
-                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                  {filteredContent.length}
-                </span>
-              </h3>
-              {searchQuery && (
+        <div className="lg:col-span-1 flex flex-col space-y-4">
+          {/* Playlist Card (Filters + List) */}
+          <div className="flex-1 flex flex-col bg-white md:rounded-2xl overflow-hidden relative">
+            {/* Filters Header (Sticky top) */}
+            <div className="flex flex-col gap-3 p-4 bg-white z-20">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4" />
+                  Up Next
+                  <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                    {filteredContent.length}
+                  </span>
+                </h3>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="text-xs text-red-500 font-bold hover:underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Reset
+                  </button>
+                )}
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search videos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 bg-gray-50 focus:bg-white transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Scrollable List */}
+            <div
+              ref={scrollRef}
+              onScroll={checkScroll}
+              className="flex-1 overflow-y-auto max-h-[calc(100vh-300px)] min-h-[400px] space-y-3 p-4 custom-scrollbar"
+            >
+              {visibleContent.map((content) => {
+                const isSelected = selectedContent?.id === content.id;
+                const thumbId = getYoutubeId(content.youtubeurl);
+                const thumbnailUrl = thumbId
+                  ? `https://img.youtube.com/vi/${thumbId}/mqdefault.jpg`
+                  : null;
+
+                // Extract short description from JSON if available (first block)
+                let shortDesc = "";
+                if (
+                  content.json_description &&
+                  Array.isArray(content.json_description) &&
+                  content.json_description[0]?.children
+                ) {
+                  shortDesc = content.json_description[0].children
+                    .map((c) => c.text)
+                    .join("");
+                } else if (typeof content.description === "string") {
+                  shortDesc = content.description;
+                }
+
+                return (
+                  <button
+                    key={content.id}
+                    onClick={() => {
+                      setSelectedContent(content);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className={`w-full flex gap-3 p-2 rounded-xl transition-all text-left group ${isSelected
+                      ? "bg-primary/5 ring-1 ring-primary/20"
+                      : "hover:bg-gray-50"
+                      }`}
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative w-32 aspect-video bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
+                      {thumbnailUrl ? (
+                        <img
+                          src={thumbnailUrl}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <PlayCircle className="w-6 h-6 text-gray-300" />
+                        </div>
+                      )}
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                          <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 py-1">
+                      <h4
+                        className={`text-sm font-bold line-clamp-2 leading-tight mb-1 ${isSelected ? "text-primary" : "text-gray-800"
+                          }`}
+                      >
+                        {content.title}
+                      </h4>
+
+                      {shortDesc && (
+                        <p className="text-xs text-gray-500 line-clamp-1 mb-1">
+                          {shortDesc}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide bg-gray-100 px-1.5 py-0.5 rounded">
+                          Video
+                        </span>
+                        {content.createdAt && (
+                          <span className="text-[10px] text-gray-400">
+                            • {new Date(content.createdAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {filteredContent.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  No videos match your search.
+                </div>
+              )}
+
+              {hasMore && (
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="text-xs text-red-500 font-bold hover:underline flex items-center gap-1"
+                  onClick={handleLoadMore}
+                  className="w-full py-3 text-sm font-bold text-primary bg-primary/5 hover:bg-primary/10 rounded-xl transition-colors"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset
+                  Load more videos
                 </button>
               )}
             </div>
 
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search videos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 bg-gray-50 focus:bg-white transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Scrollable List */}
-          <div className="flex-1 overflow-y-auto max-h-[calc(100vh-300px)] min-h-[400px] space-y-3 pr-2 custom-scrollbar">
-            {visibleContent.map((content) => {
-              const isSelected = selectedContent?.id === content.id;
-              const thumbId = getYoutubeId(content.youtubeurl);
-              const thumbnailUrl = thumbId
-                ? `https://img.youtube.com/vi/${thumbId}/mqdefault.jpg`
-                : null;
-
-              // Extract short description from JSON if available (first block)
-              let shortDesc = "";
-              if (
-                content.json_description &&
-                Array.isArray(content.json_description) &&
-                content.json_description[0]?.children
-              ) {
-                shortDesc = content.json_description[0].children
-                  .map((c) => c.text)
-                  .join("");
-              } else if (typeof content.description === "string") {
-                shortDesc = content.description;
-              }
-
-              return (
-                <button
-                  key={content.id}
-                  onClick={() => {
-                    setSelectedContent(content);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className={`w-full flex gap-3 p-2 rounded-xl transition-all text-left group ${
-                    isSelected
-                      ? "bg-primary/5 ring-1 ring-primary/20"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  {/* Thumbnail */}
-                  <div className="relative w-32 aspect-video bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
-                    {thumbnailUrl ? (
-                      <img
-                        src={thumbnailUrl}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <PlayCircle className="w-6 h-6 text-gray-300" />
-                      </div>
-                    )}
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                        <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 py-1">
-                    <h4
-                      className={`text-sm font-bold line-clamp-2 leading-tight mb-1 ${
-                        isSelected ? "text-primary" : "text-gray-800"
-                      }`}
-                    >
-                      {content.title}
-                    </h4>
-
-                    {shortDesc && (
-                      <p className="text-xs text-gray-500 line-clamp-1 mb-1">
-                        {shortDesc}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide bg-gray-100 px-1.5 py-0.5 rounded">
-                        Video
-                      </span>
-                      {content.createdAt && (
-                        <span className="text-[10px] text-gray-400">
-                          • {new Date(content.createdAt).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-
-            {filteredContent.length === 0 && (
-              <div className="text-center py-8 text-gray-400 text-sm">
-                No videos match your search.
-              </div>
-            )}
-
-            {hasMore && (
-              <button
-                onClick={handleLoadMore}
-                className="w-full py-3 text-sm font-bold text-primary bg-primary/5 hover:bg-primary/10 rounded-xl transition-colors"
-              >
-                Load more videos
-              </button>
+            {showBottomFade && (
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10 animate-in fade-in duration-300" />
             )}
           </div>
         </div>

@@ -275,7 +275,7 @@ export const UserCreate = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <Title title="Add New User | ELS Kids" />
+      <Title title="Add New User | ELS Edu" />
 
       {/* Header */}
       <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-10 shadow-sm">
@@ -569,50 +569,50 @@ export const UserCreate = () => {
                 {/* Additional Assigned Roles - For SUPERADMIN/ADMIN only */}
                 {(currentUserRole === "SUPERADMIN" ||
                   currentUserRole === "ADMIN") && (
-                  <section className="space-y-4">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      Additional Roles (Optional)
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Assign additional roles to enable role switching. The
-                      primary role is always included.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {availableRoles.map((role) => {
-                        const isAssigned = formData.assigned_roles?.some(
-                          (r) => r.role === role.id
-                        );
-                        const isPrimary = formData.user_role === role.id;
-                        return (
-                          <button
-                            key={role.id}
-                            type="button"
-                            onClick={() =>
-                              !isPrimary && toggleAssignedRole(role.id)
-                            }
-                            disabled={isPrimary}
-                            className={cn(
-                              "flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all",
-                              isAssigned
-                                ? "bg-primary/10 border-primary text-primary"
-                                : "bg-gray-50 border-border/60 text-muted-foreground hover:border-primary/40",
-                              isPrimary && "opacity-70 cursor-not-allowed"
-                            )}
-                          >
-                            {isAssigned && <Check className="w-3 h-3" />}
-                            {role.name}
-                            {isPrimary && (
-                              <span className="text-[10px] opacity-60">
-                                (Primary)
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                )}
+                    <section className="space-y-4">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-primary" />
+                        Additional Roles (Optional)
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Assign additional roles to enable role switching. The
+                        primary role is always included.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {availableRoles.map((role) => {
+                          const isAssigned = formData.assigned_roles?.some(
+                            (r) => r.role === role.id
+                          );
+                          const isPrimary = formData.user_role === role.id;
+                          return (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick={() =>
+                                !isPrimary && toggleAssignedRole(role.id)
+                              }
+                              disabled={isPrimary}
+                              className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all",
+                                isAssigned
+                                  ? "bg-primary/10 border-primary text-primary"
+                                  : "bg-gray-50 border-border/60 text-muted-foreground hover:border-primary/40",
+                                isPrimary && "opacity-70 cursor-not-allowed"
+                              )}
+                            >
+                              {isAssigned && <Check className="w-3 h-3" />}
+                              {role.name}
+                              {isPrimary && (
+                                <span className="text-[10px] opacity-60">
+                                  (Primary)
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
               </div>
             </form>
           </div>

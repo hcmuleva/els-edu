@@ -332,7 +332,7 @@ export const initiatePayment = async (
       const cashfree = await loadCashfree();
       if (!cashfree) throw new Error("Cashfree SDK failed to load");
 
-      // Get the base URL including any app path (e.g., /els-kids)
+      // Get the base URL including any app path (e.g., /els-edu)
       const basePath = window.location.pathname
         .split("#")[0]
         .replace(/\/$/, "");
@@ -437,7 +437,7 @@ export const checkout = async (paymentSessionId, orderId) => {
   const cashfree = await loadCashfree();
   if (!cashfree) throw new Error("Cashfree SDK failed to load");
 
-  // Get the base URL including any app path (e.g., /els-kids)
+  // Get the base URL including any app path (e.g., /els-edu)
   const basePath = window.location.pathname.split("#")[0].replace(/\/$/, "");
   const baseUrl = `${window.location.origin}${basePath}`;
 

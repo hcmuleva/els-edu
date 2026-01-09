@@ -45,13 +45,12 @@ const StepIndicator = ({ currentStep, steps }) => (
             <div
               className={`
                             w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2
-                            ${
-                              isCompleted
-                                ? "bg-green-500 border-green-500 text-white"
-                                : isCurrent
-                                ? "bg-primary border-primary text-white shadow-lg shadow-primary/30 scale-110"
-                                : "bg-white border-gray-200 text-gray-400"
-                            }
+                            ${isCompleted
+                  ? "bg-green-500 border-green-500 text-white"
+                  : isCurrent
+                    ? "bg-primary border-primary text-white shadow-lg shadow-primary/30 scale-110"
+                    : "bg-white border-gray-200 text-gray-400"
+                }
                         `}
             >
               {isCompleted ? (
@@ -61,22 +60,20 @@ const StepIndicator = ({ currentStep, steps }) => (
               )}
             </div>
             <span
-              className={`text-xs font-bold uppercase tracking-wider ${
-                isCurrent
+              className={`text-xs font-bold uppercase tracking-wider ${isCurrent
                   ? "text-primary"
                   : isCompleted
-                  ? "text-green-600"
-                  : "text-gray-400"
-              }`}
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
             >
               {step.label}
             </span>
           </div>
           {index < steps.length - 1 && (
             <div
-              className={`w-24 h-0.5 mx-4 transition-all duration-500 ${
-                isCompleted ? "bg-green-500" : "bg-gray-200"
-              }`}
+              className={`w-24 h-0.5 mx-4 transition-all duration-500 ${isCompleted ? "bg-green-500" : "bg-gray-200"
+                }`}
             />
           )}
         </div>
@@ -150,7 +147,7 @@ export const QuizCreate = () => {
         // Map loaded questions to expected format
         const loadedQuestions = quizDataLoaded.questions.map((q) => ({
           ...q,
-          existingId: q.id, // Keep track of original ID
+          existingId: q.documentId || q.id, // Keep track of original ID (prefer documentId)
           isNew: false,
         }));
         setQuestions(loadedQuestions);
@@ -178,7 +175,7 @@ export const QuizCreate = () => {
       ...q,
       id: Date.now() + Math.random(),
       isNew: false,
-      existingId: q.id,
+      existingId: q.documentId || q.id,
     }));
     setQuestions([...questions, ...formattedQuestions]);
   };
@@ -267,7 +264,7 @@ export const QuizCreate = () => {
     try {
       // 1. Get all question IDs
       const allQuestionIds = questions.map(
-        (q) => q.existingId || q.id || q.documentId
+        (q) => q.existingId || q.documentId || q.id
       );
 
       // Note: Inline creation logic removed. We only link existing questions.
@@ -540,9 +537,8 @@ export const QuizCreate = () => {
                     <p className="text-xs text-gray-400 text-center">
                       {formData.maxAttempts === 0
                         ? "∞ Unlimited"
-                        : `${formData.maxAttempts} attempt${
-                            formData.maxAttempts === 1 ? "" : "s"
-                          }`}
+                        : `${formData.maxAttempts} attempt${formData.maxAttempts === 1 ? "" : "s"
+                        }`}
                     </p>
                   </div>
                 </div>
@@ -581,14 +577,12 @@ export const QuizCreate = () => {
                         </div>
                       </div>
                       <div
-                        className={`w-11 h-6 rounded-full transition-colors relative ${
-                          formData[item.key] ? "bg-primary" : "bg-gray-200"
-                        }`}
+                        className={`w-11 h-6 rounded-full transition-colors relative ${formData[item.key] ? "bg-primary" : "bg-gray-200"
+                          }`}
                       >
                         <div
-                          className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${
-                            formData[item.key] ? "left-6" : "left-1"
-                          }`}
+                          className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${formData[item.key] ? "left-6" : "left-1"
+                            }`}
                         />
                       </div>
                     </div>

@@ -166,10 +166,30 @@ const QuizPlayer = () => {
 
   const handleAnswerSelect = (optionId) => {
     const questionId = getQuestionId(currentQuestion);
-    setSelectedAnswers({
-      ...selectedAnswers,
-      [questionId]: optionId,
-    });
+    const isMultiSelect =
+      currentQuestion.questionType === "MCQ" ||
+      currentQuestion.type === "MCQ" ||
+      (currentQuestion.options &&
+        currentQuestion.options.filter((o) => o.isCorrect).length > 1);
+
+    if (isMultiSelect) {
+      const currentSelected = selectedAnswers[questionId] || [];
+      const newSelected = Array.isArray(currentSelected)
+        ? currentSelected.includes(optionId)
+          ? currentSelected.filter((id) => id !== optionId)
+          : [...currentSelected, optionId]
+        : [optionId];
+
+      setSelectedAnswers({
+        ...selectedAnswers,
+        [questionId]: newSelected,
+      });
+    } else {
+      setSelectedAnswers({
+        ...selectedAnswers,
+        [questionId]: optionId,
+      });
+    }
   };
 
   const handleNext = () => {
@@ -212,9 +232,14 @@ const QuizPlayer = () => {
         isCorrect: result.isCorrect,
         isAttempted: result.isAttempted,
         selectedAnswer: result.selectedAnswer,
-        correctAnswer:
-          result.correctOption?.documentId || result.correctOption?.id,
-        correctAnswerText: result.correctOption?.option,
+        correctAnswer: Array.isArray(result.correctOption)
+          ? result.correctOption.map(
+            (o) => o.documentId || o.id
+          )
+          : result.correctOption?.documentId || result.correctOption?.id,
+        correctAnswerText: Array.isArray(result.correctOption)
+          ? result.correctOption.map((o) => o.option).join(", ")
+          : result.correctOption?.option,
         timeSpent:
           questionTimings[result.question.documentId || result.question.id] ||
           0,
@@ -284,10 +309,38 @@ const QuizPlayer = () => {
     questions.forEach((question) => {
       const questionId = getQuestionId(question);
       const selectedAnswer = selectedAnswers[questionId];
-      const correctOption = question.options?.find((opt) => opt.isCorrect);
-      const correctOptionId = getOptionId(correctOption);
-      const isAttempted = selectedAnswer !== undefined;
-      const isCorrect = selectedAnswer === correctOptionId;
+      const correctOptions = question.options?.filter((opt) => opt.isCorrect);
+      const correctOptionIds = correctOptions?.map(getOptionId) || [];
+
+      const isMultiSelect =
+        question.questionType === "MCQ" ||
+        question.type === "MCQ" ||
+        correctOptions?.length > 1;
+
+      const isAttempted =
+        selectedAnswer !== undefined &&
+        (Array.isArray(selectedAnswer) ? selectedAnswer.length > 0 : true);
+
+      let isCorrect = false;
+
+      if (isAttempted) {
+        if (isMultiSelect) {
+          // Strict checking: All correct options must be selected, and NO wrong options
+          const selectedArray = Array.isArray(selectedAnswer)
+            ? selectedAnswer
+            : [selectedAnswer];
+
+          // Check if set of selected IDs matches set of correct IDs exactly
+          const hasAllCorrect = correctOptionIds.every(id => selectedArray.includes(id));
+          const hasNoExtra = selectedArray.every(id => correctOptionIds.includes(id));
+
+          isCorrect = hasAllCorrect && hasNoExtra;
+        } else {
+          // Single choice / True False
+          const correctOptionId = correctOptionIds[0];
+          isCorrect = selectedAnswer === correctOptionId;
+        }
+      }
 
       if (isAttempted) attempted++;
       if (isCorrect) correct++;
@@ -296,7 +349,7 @@ const QuizPlayer = () => {
       questionResults.push({
         question,
         selectedAnswer,
-        correctOption,
+        correctOption: isMultiSelect ? correctOptions : correctOptions[0], // Store single or array
         isAttempted,
         isCorrect,
       });
@@ -371,7 +424,7 @@ const QuizPlayer = () => {
   // Pre-Start Screen
   if (showPreStart && !quizStarted) {
     return (
-      <div className="min-h-screen bg-white flex flex-col px-4 py-6 pb-20">
+      <div className="min-h-screen bg-white flex flex-col px-4 py-6 pb-32">
         <Title title={quiz.title} />
 
         {/* Header */}
@@ -388,7 +441,7 @@ const QuizPlayer = () => {
         </div>
 
         {/* Quiz Info */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-2">
           {isReplayMode && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
               <div className="flex items-center gap-2">
@@ -493,7 +546,7 @@ const QuizPlayer = () => {
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-        <div className="flex gap-3 mt-auto pt-4">
+        <div className="flex gap-3">
           <button
             onClick={() => navigate(-1)}
             className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all text-sm"
@@ -507,11 +560,10 @@ const QuizPlayer = () => {
               setQuizStartTime(new Date());
             }}
             disabled={!canStartQuiz}
-            className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${
-              canStartQuiz
-                ? "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md"
-                : "bg-gray-200 text-gray-500 cursor-not-allowed"
-            }`}
+            className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${canStartQuiz
+              ? "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md"
+              : "bg-gray-200 text-gray-500 cursor-not-allowed"
+              }`}
           >
             <Trophy className="w-4 h-4" />
             Start Quiz
@@ -535,7 +587,7 @@ const QuizPlayer = () => {
     const passed = score.percentage >= (quiz.passingScore || 70);
 
     return (
-      <div className="min-h-screen bg-white px-4 py-4 pb-20">
+      <div className="min-h-screen bg-white px-4 py-4 pb-32">
         <Title title="Quiz Results" />
         <div className="max-w-4xl mx-auto space-y-4">
           {/* Header */}
@@ -556,11 +608,10 @@ const QuizPlayer = () => {
           <div className="bg-gray-50 rounded-2xl p-4">
             <div className="text-center mb-4">
               <div
-                className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center border-4 ${
-                  passed
-                    ? "bg-green-50 border-green-500"
-                    : "bg-red-50 border-red-500"
-                }`}
+                className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center border-4 ${passed
+                  ? "bg-green-50 border-green-500"
+                  : "bg-red-50 border-red-500"
+                  }`}
               >
                 {passed ? (
                   <Trophy className="w-8 h-8 text-green-600" />
@@ -572,9 +623,8 @@ const QuizPlayer = () => {
                 {score.percentage}%
               </h2>
               <p
-                className={`text-base font-semibold ${
-                  passed ? "text-green-600" : "text-red-600"
-                }`}
+                className={`text-base font-semibold ${passed ? "text-green-600" : "text-red-600"
+                  }`}
               >
                 {passed ? "🎉 You Passed!" : "Keep Practicing!"}
               </p>
@@ -643,23 +693,21 @@ const QuizPlayer = () => {
               {score.questionResults.map((result, index) => (
                 <div
                   key={result.question.id}
-                  className={`rounded-xl p-3 ${
-                    !result.isAttempted
-                      ? "bg-gray-50"
-                      : result.isCorrect
+                  className={`rounded-xl p-3 ${!result.isAttempted
+                    ? "bg-gray-50"
+                    : result.isCorrect
                       ? "bg-green-50"
                       : "bg-red-50"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-                        !result.isAttempted
-                          ? "bg-gray-300 text-gray-700"
-                          : result.isCorrect
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${!result.isAttempted
+                        ? "bg-gray-300 text-gray-700"
+                        : result.isCorrect
                           ? "bg-green-500 text-white"
                           : "bg-red-500 text-white"
-                      }`}
+                        }`}
                     >
                       {index + 1}
                     </div>
@@ -675,7 +723,10 @@ const QuizPlayer = () => {
                         </p>
                       ) : (
                         <p className="text-xs text-red-600">
-                          ✗ Answer: {result.correctOption?.option}
+                          ✗ Answer:{" "}
+                          {Array.isArray(result.correctOption)
+                            ? result.correctOption.map((o) => o.option).join(", ")
+                            : result.correctOption?.option}
                         </p>
                       )}
                     </div>
@@ -725,7 +776,7 @@ const QuizPlayer = () => {
         </div>
       )}
 
-      <div className="min-h-screen flex flex-col px-4 py-4 pb-20 max-w-7xl mx-auto">
+      <div className="min-h-screen flex flex-col px-4 py-4 pb-32 max-w-7xl mx-auto">
         {/* Top Navigation Bar */}
         <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-4 mb-4">
           <div className="flex items-center justify-between">
@@ -803,13 +854,12 @@ const QuizPlayer = () => {
                   </span>
                   {currentQuestion?.difficulty && (
                     <span
-                      className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${
-                        currentQuestion.difficulty === "easy"
-                          ? "bg-green-100 text-green-700"
-                          : currentQuestion.difficulty === "hard"
+                      className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${currentQuestion.difficulty === "easy"
+                        ? "bg-green-100 text-green-700"
+                        : currentQuestion.difficulty === "hard"
                           ? "bg-red-100 text-red-700"
                           : "bg-orange-100 text-orange-700"
-                      }`}
+                        }`}
                     >
                       {currentQuestion.difficulty}
                     </span>
@@ -828,25 +878,26 @@ const QuizPlayer = () => {
                 {currentQuestion?.options?.map((option, index) => {
                   const questionId = getQuestionId(currentQuestion);
                   const optionId = getOptionId(option);
-                  const isSelected = selectedAnswers[questionId] === optionId;
+                  const selectedVal = selectedAnswers[questionId];
+                  const isSelected = Array.isArray(selectedVal)
+                    ? selectedVal.includes(optionId)
+                    : selectedVal === optionId;
                   const letters = ["A", "B", "C", "D", "E", "F"];
 
                   return (
                     <button
                       key={optionId || index}
                       onClick={() => handleAnswerSelect(optionId)}
-                      className={`w-full p-3 md:p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${
-                        isSelected
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-gray-200 hover:border-primary/30 bg-white"
-                      }`}
+                      className={`w-full p-3 md:p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${isSelected
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-gray-200 hover:border-primary/30 bg-white"
+                        }`}
                     >
                       <div
-                        className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 ${
-                          isSelected
-                            ? "bg-primary text-white"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
+                        className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 ${isSelected
+                          ? "bg-primary text-white"
+                          : "bg-gray-100 text-gray-600"
+                          }`}
                       >
                         {letters[index]}
                       </div>
@@ -915,15 +966,14 @@ const QuizPlayer = () => {
                     <button
                       key={questionId}
                       onClick={() => setCurrentQuestionIndex(index)}
-                      className={`aspect-square rounded-lg font-bold text-xs transition-all border ${
-                        isCurrent && isAnswered
-                          ? "bg-green-500 text-white border-green-600"
-                          : isCurrent
+                      className={`aspect-square rounded-lg font-bold text-xs transition-all border ${isCurrent && isAnswered
+                        ? "bg-green-500 text-white border-green-600"
+                        : isCurrent
                           ? "bg-orange-100 text-orange-700 border-orange-300"
                           : isAnswered
-                          ? "bg-green-100 text-green-700 border-green-300"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                      }`}
+                            ? "bg-green-100 text-green-700 border-green-300"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                        }`}
                     >
                       {index + 1}
                     </button>
@@ -943,11 +993,10 @@ const QuizPlayer = () => {
                   <div
                     className="h-full bg-green-500 transition-all"
                     style={{
-                      width: `${
-                        (Object.keys(selectedAnswers).length /
-                          questions.length) *
+                      width: `${(Object.keys(selectedAnswers).length /
+                        questions.length) *
                         100
-                      }%`,
+                        }%`,
                     }}
                   />
                 </div>

@@ -190,8 +190,8 @@ const ManagePage = () => {
         console.error(e);
         setError(
           e.response?.data?.error?.message ||
-            e.message ||
-            "Failed to load manage data"
+          e.message ||
+          "Failed to load manage data"
         );
       } finally {
         setLoading(false);
@@ -357,8 +357,8 @@ const ManagePage = () => {
       console.error(e);
       setError(
         e.response?.data?.error?.message ||
-          e.message ||
-          "Failed to load table data"
+        e.message ||
+        "Failed to load table data"
       );
     } finally {
       setLoading(false);
@@ -465,8 +465,8 @@ const ManagePage = () => {
                 row.status === "APPROVED" || row.status === "ACTIVE"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : row.status === "REJECTED" || row.status === "BLOCKED"
-                  ? "bg-red-50 text-red-700 border-red-200"
-                  : "bg-amber-50 text-amber-700 border-amber-200"
+                    ? "bg-red-50 text-red-700 border-red-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200"
               )}
             >
               {row.status}
@@ -518,8 +518,8 @@ const ManagePage = () => {
                 row.status === "APPROVED"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : row.status === "DRAFT" || row.status === "REVIEW"
-                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                  : "bg-red-50 text-red-700 border-red-200"
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-red-50 text-red-700 border-red-200"
               )}
             >
               {row.status}
@@ -551,7 +551,7 @@ const ManagePage = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <Title title="Manage | ELS Kids" />
+      <Title title="Manage | ELS Edu" />
 
       <div className="flex items-center justify-between gap-4">
         <div>
@@ -778,8 +778,8 @@ const ManagePage = () => {
                       activeTab === "users"
                         ? 9
                         : activeTab === "courses"
-                        ? 6
-                        : 5
+                          ? 6
+                          : 5
                     }
                     className="px-4 py-20 text-center"
                   >
@@ -993,8 +993,8 @@ const ManagePage = () => {
                       (selectedUser.blocked
                         ? "BLOCKED"
                         : selectedUser.confirmed
-                        ? "APPROVED"
-                        : "PENDING")
+                          ? "APPROVED"
+                          : "PENDING")
                     }
                     onChange={(e) =>
                       setSelectedUser((prev) => ({
@@ -1040,8 +1040,8 @@ const ManagePage = () => {
                       console.error(e);
                       setError(
                         e.response?.data?.error?.message ||
-                          e.message ||
-                          "Failed to update user"
+                        e.message ||
+                        "Failed to update user"
                       );
                     } finally {
                       setUpdatingUser(false);

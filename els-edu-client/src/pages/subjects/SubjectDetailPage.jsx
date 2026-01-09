@@ -306,7 +306,7 @@ const SubjectDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-12 bg-gray-200 rounded-xl w-1/3" />
             <div className="h-48 bg-gray-200 rounded-2xl" />
@@ -320,7 +320,7 @@ const SubjectDetailPage = () => {
   if (error || !subject) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto py-8">
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mb-6">
               <BookOpen className="w-10 h-10 text-gray-300" />
@@ -345,14 +345,12 @@ const SubjectDetailPage = () => {
   const quizCount = quizzes.length; // Shows total available, filters affect grid only
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-32">
       <Title title={subject.name} />
 
-      {/* Header Section */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          {/* Compact Header Row */}
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto py-3">
+          <div className="flex items-center gap-3 md:px-0">
             {/* Back Button */}
             <button
               onClick={handleBack}
@@ -381,10 +379,10 @@ const SubjectDetailPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto py-4">
         <div>
           {/* Tab Headers */}
-          <div className="flex items-center gap-2 pb-4 border-b border-gray-200">
+          <div className="flex items-center gap-2 md:px-0 pb-4 border-b border-gray-200">
             {[
               { id: "topics", label: "Topic & Contents", icon: Layers },
               { id: "quizzes", label: "Quizzes", icon: BookOpen },
@@ -394,11 +392,10 @@ const SubjectDetailPage = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 font-semibold rounded-xl text-sm transition-all ${
-                    activeTab === tab.id
-                      ? "bg-primary-500 text-white shadow-md shadow-primary-200"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 font-semibold rounded-xl text-sm transition-all ${activeTab === tab.id
+                    ? "bg-primary-500 text-white shadow-md shadow-primary-200"
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
@@ -414,7 +411,7 @@ const SubjectDetailPage = () => {
                 {topicCount > 0 ? (
                   <>
                     {/* Topic Header & Search & Controls */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:px-0">
                       {/* Search */}
                       <div className="relative w-full md:max-w-xs">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -522,7 +519,7 @@ const SubjectDetailPage = () => {
                     </div>
 
                     {/* Topic Selector List */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:px-0">
                       <div className="relative group">
                         {/* Left Fade Overlay */}
                         {showLeftArrow && (
@@ -538,11 +535,10 @@ const SubjectDetailPage = () => {
                             <button
                               key={topic.id}
                               onClick={() => setSelectedTopic(topic)}
-                              className={`flex-none px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
-                                selectedTopic?.id === topic.id
-                                  ? "bg-gradient-to-r from-primary-500 to-violet-500 text-white shadow-md shadow-primary-200"
-                                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
-                              }`}
+                              className={`flex-none px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${selectedTopic?.id === topic.id
+                                ? "bg-gradient-to-r from-primary-500 to-violet-500 text-white shadow-md shadow-primary-200"
+                                : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                                }`}
                             >
                               {topic.name}
                             </button>
@@ -600,7 +596,7 @@ const SubjectDetailPage = () => {
               <div className="space-y-6">
                 {/* Quiz Filters */}
                 {quizzes.length > 0 && (
-                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="bg-white p-4 rounded-xl md:rounded-2xl border md:border border-gray-100 shadow-sm">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-wrap items-center gap-3">
                         {/* Search */}
@@ -666,20 +662,20 @@ const SubjectDetailPage = () => {
                           quizType ||
                           quizDifficulty ||
                           quizTopic) && (
-                          <button
-                            onClick={handleResetQuizFilters}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Reset Filters"
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                          </button>
-                        )}
+                            <button
+                              onClick={handleResetQuizFilters}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Reset Filters"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:px-0">
                   {quizzesLoading ? (
                     [...Array(3)].map((_, i) => (
                       <div

@@ -19,7 +19,9 @@ import PurchaseHistoryPage from "../pages/payment/PurchaseHistoryPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 
 import UnauthorizedPage from "../pages/auth/UnauthorizedPage";
+import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
+import { ProtectedParentRoute } from "../components/common/ProtectedParentRoute";
 
 const AppRoutes = () => (
   <>
@@ -29,6 +31,15 @@ const AppRoutes = () => (
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/payment/status" element={<PaymentStatusPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      {/* Role Selection */}
+      <Route
+        path="/role-selection"
+        element={
+          <ProtectedRoute>
+            <RoleSelectionPage />
+          </ProtectedRoute>
+        }
+      />
     </CustomRoutes>
     <CustomRoutes>
       {/* My Studio - protected for TEACHER, ADMIN, SUPERADMIN */}
@@ -79,7 +90,9 @@ const AppRoutes = () => (
         path="/browse-courses"
         element={
           <ProtectedRoute>
-            <BrowseCoursesPage />
+            <ProtectedParentRoute>
+              <BrowseCoursesPage />
+            </ProtectedParentRoute>
           </ProtectedRoute>
         }
       />
@@ -112,7 +125,9 @@ const AppRoutes = () => (
         path="/profile"
         element={
           <ProtectedRoute>
-            <ProfilePage />
+            <ProtectedParentRoute>
+              <ProfilePage />
+            </ProtectedParentRoute>
           </ProtectedRoute>
         }
       />

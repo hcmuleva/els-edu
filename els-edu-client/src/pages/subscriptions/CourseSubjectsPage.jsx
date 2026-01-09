@@ -255,12 +255,12 @@ const CourseSubjectsPage = () => {
   const course = subscription.course;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-24">
       <Title title={course?.name || "Course Subjects"} />
 
       {/* Header Section */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Back Button */}
           <button
             onClick={handleBack}
@@ -379,7 +379,7 @@ const CourseSubjectsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Results Count */}
         {filteredSubjects.length > 0 && (
           <div className="flex items-center gap-2 mb-6">

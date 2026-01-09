@@ -117,8 +117,8 @@ const SuperAdminOrgsPage = () => {
         console.error(e);
         setError(
           e.response?.data?.error?.message ||
-            e.message ||
-            "Failed to load organizations"
+          e.message ||
+          "Failed to load organizations"
         );
       } finally {
         setLoading(false);
@@ -138,7 +138,7 @@ const SuperAdminOrgsPage = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <Title title="All Organizations | ELS Kids" />
+      <Title title="All Organizations | ELS Edu" />
 
       <div className="flex items-center justify-between gap-4">
         <div>

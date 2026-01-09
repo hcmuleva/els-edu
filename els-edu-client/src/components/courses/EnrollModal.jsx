@@ -18,13 +18,14 @@ const EnrollModal = ({
   onConfirm,
   course,
   subject = null,
+  totalSubjectCount = 0,
   loading = false,
 }) => {
   if (!isOpen) return null;
 
   const isSubjectEnroll = !!subject;
   const title = isSubjectEnroll ? subject.name : course?.name;
-  const subjectCount = course?.subjects?.length || 0;
+  const subjectCount = totalSubjectCount || course?.subjects?.length || 0;
 
   return (
     <>
