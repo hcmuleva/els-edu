@@ -6,7 +6,7 @@ import MobileBottomNav from "./MobileBottomNav";
 import ScrollToTopButton from "../components/common/ScrollToTopButton";
 
 const AppLayout = ({ children }) => (
-  <div className="flex min-h-screen w-full bg-background overflow-hidden relative">
+  <div className="flex min-h-screen w-full bg-background overflow-hidden relative lg:h-screen">
     {/* Mobile Header Bar - Fixed top, only visible on mobile/tablet */}
     <header className="fixed top-0 left-0 right-0 z-40 lg:hidden bg-primary pt-safe shadow-md">
       <div className="h-12 flex items-center px-4">
@@ -24,14 +24,14 @@ const AppLayout = ({ children }) => (
     </header>
 
     {/* Sidebar Area - Hidden on mobile/tablet, visible on large screens */}
-    <aside className="hidden lg:flex flex-shrink-0 h-full z-30 border-r border-border bg-card">
+    <aside className="hidden lg:flex flex-shrink-0 h-screen z-30 border-r border-border bg-card">
       <Menu />
     </aside>
 
     {/* Main Content Area */}
     <main
       id="main-content"
-      className="flex-1 h-full overflow-y-auto overflow-x-hidden relative flex flex-col z-10 bg-background pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-0 mt-[calc(3rem+env(safe-area-inset-top,0px))] lg:mt-0"
+      className="flex-1 overflow-y-auto overflow-x-hidden relative flex flex-col z-10 bg-background lg:h-screen lg:pb-0 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:mt-0 mt-[calc(3rem+env(safe-area-inset-top,0px))]"
     >
       <div className="flex-1 px-4 py-2 md:px-8 md:py-6 fade-in animate-in duration-300">
         {children}
