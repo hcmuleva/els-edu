@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -44,7 +44,6 @@ const getLevelLabel = (level) => {
 
 const SubjectViewModal = ({ subject, onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false);
-
 
   if (!subject) return null;
 
@@ -245,13 +244,26 @@ export const SubjectsTab = () => {
   const [activeCountItems, setActiveCountItems] = useState([]);
 
   // Filters
-  const filters = {
-    ...(userId && { creator: userId }),
-    ...(searchQuery && { q: searchQuery }), // Data provider maps 'q' to 'filters[name][$containsi]'
-    ...(gradeFilter && { grade: gradeFilter }),
-    ...(levelFilter && { level: parseInt(levelFilter) }),
-    ...(courseFilter && { "filters[courses][id][$eq]": courseFilter }), // Direct filter injection
-  };
+  // Filters
+  const filters = useMemo(
+    () => ({
+      ...(userId &&
+        (!isSuperAdmin || viewMode === "mine") && { creator: userId }),
+      ...(searchQuery && { q: searchQuery }), // Data provider maps 'q' to 'filters[name][$containsi]'
+      ...(gradeFilter && { grade: gradeFilter }),
+      ...(levelFilter && { level: parseInt(levelFilter) }),
+      ...(courseFilter && { "filters[courses][id][$eq]": courseFilter }), // Direct filter injection
+    }),
+    [
+      userId,
+      isSuperAdmin,
+      viewMode,
+      searchQuery,
+      gradeFilter,
+      levelFilter,
+      courseFilter,
+    ]
+  );
 
   const {
     data: subjects,
@@ -261,10 +273,7 @@ export const SubjectsTab = () => {
   } = useGetList("subjects", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: {
         coverpage: { fields: ["url"] },
@@ -279,9 +288,8 @@ export const SubjectsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-    // Reset page to 1 when filters change
-    setPage(1);
-  }, [sortField, sortOrder, userId, searchQuery, gradeFilter, levelFilter, courseFilter, viewMode]);
+    // Reset page to 1 when filters change is handled by setting page to 1 on filter change calls
+  }, [sortField, sortOrder, userId, page, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -320,8 +328,6 @@ export const SubjectsTab = () => {
     setLevelFilter("");
     setCourseFilter(null);
   };
-
-
 
   const gradeOptions = [
     { id: "", name: "All Grades" },
@@ -382,19 +388,21 @@ export const SubjectsTab = () => {
             <div className="flex p-1 bg-gray-100 rounded-lg w-fit">
               <button
                 onClick={() => setViewMode("mine")}
-                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${viewMode === "mine"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-                  }`}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "mine"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 My Creations
               </button>
               <button
                 onClick={() => setViewMode("all")}
-                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${viewMode === "all"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-                  }`}
+                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                  viewMode === "all"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 All Creations
               </button>
@@ -704,10 +712,11 @@ export const SubjectsTab = () => {
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${page === p
-                            ? "bg-primary text-white border-primary shadow-sm"
-                            : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
-                            }`}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
+                            page === p
+                              ? "bg-primary text-white border-primary shadow-sm"
+                              : "bg-white text-gray-600 border-border/50 hover:border-primary/30"
+                          }`}
                         >
                           {p}
                         </button>

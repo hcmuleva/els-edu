@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -218,6 +218,30 @@ export const QuizzesTab = () => {
   const [activeCountItems, setActiveCountItems] = useState(null);
   const [activeCountTitle, setActiveCountTitle] = useState("");
 
+  // Construct filters for server-side
+  const filters = useMemo(() => {
+    const f = {};
+    if (userId && (!isSuperAdmin || viewMode === "mine")) {
+      f.creator = userId;
+    }
+    if (searchQuery) f.q = searchQuery; // queryBuilder maps 'q' to title for quizzes
+    if (difficultyFilter) f.difficulty = difficultyFilter;
+    if (typeFilter) f.quizType = typeFilter;
+    if (subjectFilter) f.subjects = subjectFilter; // Relation ID
+    if (topicFilter) f.topics = topicFilter; // Relation ID
+
+    return f;
+  }, [
+    userId,
+    isSuperAdmin,
+    viewMode,
+    searchQuery,
+    difficultyFilter,
+    typeFilter,
+    subjectFilter,
+    topicFilter,
+  ]);
+
   const {
     data: quizzes,
     total,
@@ -226,10 +250,7 @@ export const QuizzesTab = () => {
   } = useGetList("quizzes", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: {
         topics: { fields: ["name"] },
@@ -241,7 +262,7 @@ export const QuizzesTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page, viewMode]);
+  }, [sortField, sortOrder, userId, page, viewMode, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -279,49 +300,11 @@ export const QuizzesTab = () => {
     setSubjectFilter(null);
     setTypeFilter("");
     setDifficultyFilter("");
+    setPage(1);
   };
 
-  const getFilteredContent = () => {
-    let content = quizzes || [];
-
-    if (searchQuery) {
-      content = content.filter((item) =>
-        item.title?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (difficultyFilter) {
-      content = content.filter((item) => item.difficulty === difficultyFilter);
-    }
-
-    if (typeFilter) {
-      content = content.filter((item) => item.quizType === typeFilter);
-    }
-
-    if (topicFilter) {
-      content = content.filter((item) => {
-        const tId = item.topics?.id || item.topics;
-        return (
-          tId === topicFilter ||
-          (typeof tId === "object" && tId?.id === topicFilter)
-        );
-      });
-    }
-
-    if (subjectFilter) {
-      content = content.filter((item) => {
-        const sId = item.subjects?.id || item.subjects;
-        return (
-          sId === subjectFilter ||
-          (typeof sId === "object" && sId?.id === subjectFilter)
-        );
-      });
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
+  // No client-side filtering
+  const filteredContent = quizzes || [];
 
   const getDifficultyColor = (difficulty) => {
     if (difficulty === "beginner")

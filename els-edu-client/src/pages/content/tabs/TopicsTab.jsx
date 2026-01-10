@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -186,6 +186,18 @@ export const TopicsTab = () => {
   const [activeCountTitle, setActiveCountTitle] = useState("");
   const [activeCountItems, setActiveCountItems] = useState([]);
 
+  // Construct filters for server-side
+  const filters = useMemo(() => {
+    const f = {};
+    if (userId && (!isSuperAdmin || viewMode === "mine")) {
+      f.creator = userId;
+    }
+    if (searchQuery) f.q = searchQuery; // queryBuilder maps 'q' to title/name
+    if (subjectFilter) f["subjects[id]"] = subjectFilter; // Relation ID
+
+    return f;
+  }, [userId, isSuperAdmin, viewMode, searchQuery, subjectFilter]);
+
   const {
     data: topics,
     total,
@@ -194,10 +206,7 @@ export const TopicsTab = () => {
   } = useGetList("topics", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: {
         subjects: { fields: ["name"] },
@@ -210,7 +219,7 @@ export const TopicsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page, viewMode]);
+  }, [sortField, sortOrder, userId, page, viewMode, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -246,33 +255,11 @@ export const TopicsTab = () => {
     setSearchQuery("");
     setCourseFilter(null);
     setSubjectFilter(null);
+    setPage(1);
   };
 
-  const getFilteredContent = () => {
-    let content = topics || [];
-
-    if (searchQuery) {
-      content = content.filter(
-        (item) =>
-          item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (subjectFilter) {
-      content = content.filter((item) => {
-        const sId = item.subject?.id || item.subject;
-        return (
-          sId === subjectFilter ||
-          (typeof sId === "object" && sId?.id === subjectFilter)
-        );
-      });
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
+  // No client-side filtering
+  const filteredContent = topics || [];
 
   return (
     <div className="space-y-6 flex flex-col h-full min-h-0">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -263,6 +263,30 @@ export const QuestionsTab = () => {
   // View State
   const [viewingQuestion, setViewingQuestion] = useState(null);
 
+  // Construct filters for server-side
+  const filters = useMemo(() => {
+    const f = {};
+    if (userId && (!isSuperAdmin || viewMode === "mine")) {
+      f.creator = userId;
+    }
+    if (searchQuery) f.q = searchQuery; // queryBuilder maps 'q' to questionText for questions
+    if (difficultyFilter) f.difficulty = difficultyFilter;
+    if (typeFilter) f.questionType = typeFilter;
+    if (subjectFilter) f["subjects[id]"] = subjectFilter; // Relation ID
+    if (topicFilter) f["topics[id]"] = topicFilter; // Relation ID
+
+    return f;
+  }, [
+    userId,
+    isSuperAdmin,
+    viewMode,
+    searchQuery,
+    difficultyFilter,
+    typeFilter,
+    subjectFilter,
+    topicFilter,
+  ]);
+
   const {
     data: questions,
     total,
@@ -271,21 +295,20 @@ export const QuestionsTab = () => {
   } = useGetList("questions", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: {
-        subject: { fields: ["name"] },
+        subject: { fields: ["name"] }, // Kept for backward compatibility if code uses single 'subject' although schema is 'subjects'?
+        subjects: { fields: ["name"] }, // Plural schema
         topic: { fields: ["name"] },
+        topics: { fields: ["name"] }, // Plural schema
       },
     },
   });
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page, viewMode]);
+  }, [sortField, sortOrder, userId, page, viewMode, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -324,49 +347,11 @@ export const QuestionsTab = () => {
     setSubjectFilter(null);
     setTypeFilter("");
     setDifficultyFilter("");
+    setPage(1);
   };
 
-  const getFilteredContent = () => {
-    let content = questions || [];
-
-    if (searchQuery) {
-      content = content.filter((item) =>
-        item.questionText?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (difficultyFilter) {
-      content = content.filter((item) => item.difficulty === difficultyFilter);
-    }
-
-    if (typeFilter) {
-      content = content.filter((item) => item.questionType === typeFilter);
-    }
-
-    if (topicFilter) {
-      content = content.filter((item) => {
-        const tId = item.topic?.id || item.topic;
-        return (
-          tId === topicFilter ||
-          (typeof tId === "object" && tId?.id === topicFilter)
-        );
-      });
-    }
-
-    if (subjectFilter) {
-      content = content.filter((item) => {
-        const sId = item.subject?.id || item.subject;
-        return (
-          sId === subjectFilter ||
-          (typeof sId === "object" && sId?.id === subjectFilter)
-        );
-      });
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
+  // No client-side filtering needed
+  const filteredContent = questions || [];
 
   const getDifficultyColor = (difficulty) => {
     if (difficulty === "easy")
@@ -480,7 +465,7 @@ export const QuestionsTab = () => {
                 allowEmpty
                 searchable
                 disabled={!subjectFilter}
-                filter={subjectFilter ? { subject: subjectFilter } : {}}
+                filter={subjectFilter ? { "subjects[id]": subjectFilter } : {}}
               />
             </div>
             <div className="w-[180px]">
