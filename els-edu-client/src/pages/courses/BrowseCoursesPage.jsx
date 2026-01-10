@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Title, useDataProvider, useGetIdentity } from "react-admin";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,6 +22,23 @@ import {
 } from "../../services/subscriptionService";
 import Pagination from "../../components/common/Pagination";
 import { subscribeToGlobalCourseUpdates } from "../../services/ably";
+
+// Debounce hook
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 const CATEGORY_OPTIONS = [
   { id: null, name: "All Categories" },
@@ -62,6 +79,9 @@ const BrowseCoursesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  
+  // Debounced search query for performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Pagination State
   const [page, setPage] = useState(1);
@@ -90,15 +110,15 @@ const BrowseCoursesPage = () => {
   // Refetch trigger for Ably updates
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
-  // Fetch courses and course-pricings
+  // Fetch courses and course-pricings (optimized)
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
 
         const filter = {};
-        if (searchQuery) {
-          filter.name = { $containsi: searchQuery };
+        if (debouncedSearchQuery) {
+          filter.name = { $containsi: debouncedSearchQuery };
         }
         if (selectedCategory) {
           filter.category = selectedCategory;
@@ -107,22 +127,19 @@ const BrowseCoursesPage = () => {
           filter.subcategory = selectedSubcategory;
         }
 
+        // Optimized: Only fetch essential fields, reduce deep nesting
         const { data: coursesData, total: totalCount } =
           await dataProvider.getList("courses", {
             pagination: { page, perPage: PER_PAGE },
             sort: { field: "name", order: "ASC" },
-            filter: filter, // Using server-side filtering
+            filter: filter,
             meta: {
               populate: {
                 cover: { fields: ["url", "name"] },
                 subjects: {
+                  fields: ["documentId", "name"], // Only get essential fields
                   populate: {
-                    topics: {
-                      populate: {
-                        contents: { fields: ["documentId"] },
-                      },
-                    },
-                    coverpage: { fields: ["url"] },
+                    topics: { fields: ["documentId"] }, // Only count, not full data
                   },
                 },
               },
@@ -131,24 +148,38 @@ const BrowseCoursesPage = () => {
 
         setTotal(totalCount);
 
+        // Optimized: Fetch all pricings and filter client-side using documentId only
+        // This avoids complex relation filtering issues in Strapi v5
+        // We use documentId (not relation filters) to match courses
         const { data: pricingsData } = await dataProvider.getList(
           "course-pricings",
           {
-            pagination: { page: 1, perPage: 100 }, // Fetch enough pricings
-            filter: {},
+            pagination: { page: 1, perPage: 100 },
+            filter: {}, // No filters - fetch all, filter by documentId client-side
             meta: {
               populate: {
-                course: { fields: ["documentId", "id"] },
-                subject_pricings: { populate: ["subject"] },
+                course: { fields: ["documentId"] }, // Only need documentId, not id
               },
             },
           }
         );
 
+        // Filter pricings client-side using only documentId (no relation filters)
+        const courseDocumentIds = new Set(
+          coursesData.map((c) => c.documentId).filter(Boolean)
+        );
+        const relevantPricings = pricingsData.filter(
+          (pricing) =>
+            pricing.course?.documentId &&
+            courseDocumentIds.has(pricing.course.documentId)
+        );
+
+        // Build pricing map using only documentId
         const pricingMap = {};
-        pricingsData.forEach((pricing) => {
-          if (pricing.course?.documentId) {
-            pricingMap[pricing.course.documentId] = pricing;
+        relevantPricings.forEach((pricing) => {
+          const courseDocId = pricing.course?.documentId;
+          if (courseDocId) {
+            pricingMap[courseDocId] = pricing;
           }
         });
 
@@ -169,22 +200,26 @@ const BrowseCoursesPage = () => {
   }, [
     dataProvider,
     page,
-    searchQuery,
+    debouncedSearchQuery,
     selectedCategory,
     selectedSubcategory,
     refetchTrigger,
   ]);
 
-  // Fetch user subscriptions
+  // Fetch user subscriptions (optimized - only active subscriptions)
   useEffect(() => {
     const fetchUserSubscriptions = async () => {
-      if (!identity?.documentId) return;
+      if (!identity?.documentId || identityLoading) return;
 
       try {
+        // Optimized: Reduced perPage (function already filters for ACTIVE subscriptions)
         const { data: subs } = await subscriptionService.getUserSubscriptions(
           dataProvider,
           identity.documentId,
-          { page: 1, perPage: 1000 } // Fetch all potentially active subs
+          { 
+            page: 1, 
+            perPage: 500, // Reduced from 1000
+          }
         );
         setUserSubscriptions(subs);
 
@@ -213,9 +248,7 @@ const BrowseCoursesPage = () => {
       }
     };
 
-    if (!identityLoading) {
-      fetchUserSubscriptions();
-    }
+    fetchUserSubscriptions();
   }, [dataProvider, identity?.documentId, identityLoading]);
 
   // Subscribe to global course updates via Ably
@@ -232,8 +265,8 @@ const BrowseCoursesPage = () => {
     };
   }, []);
 
-  // Fetch Pending Payments
-  const fetchPending = async () => {
+  // Fetch Pending Payments (memoized)
+  const fetchPending = useCallback(async () => {
     if (!identity?.documentId) return;
     try {
       const token = localStorage.getItem("token");
@@ -264,16 +297,16 @@ const BrowseCoursesPage = () => {
     } catch (error) {
       console.error("Error fetching pending payments:", error);
     }
-  };
-
-  useEffect(() => {
-    if (identity?.documentId) {
-      fetchPending();
-    }
   }, [identity?.documentId]);
 
-  // Payment Handlers
-  const handleResumePayment = async (paymentInvoice) => {
+  useEffect(() => {
+    if (identity?.documentId && !identityLoading) {
+      fetchPending();
+    }
+  }, [identity?.documentId, identityLoading, fetchPending]);
+
+  // Payment Handlers (memoized)
+  const handleResumePayment = useCallback(async (paymentInvoice) => {
     try {
       const payments = paymentInvoice.payments || [];
       const pendingPay =
@@ -314,9 +347,9 @@ const BrowseCoursesPage = () => {
       console.error("Failed to resume payment:", error);
       alert(`Failed to resume payment: ${error.message}`);
     }
-  };
+  }, [fetchPending]);
 
-  const handleCancelPaymentAction = async (payment) => {
+  const handleCancelPaymentAction = useCallback(async (payment) => {
     if (!window.confirm("Are you sure you want to cancel this payment?"))
       return;
 
@@ -330,21 +363,21 @@ const BrowseCoursesPage = () => {
       console.error("Failed to cancel payment:", error);
       alert("Failed to cancel payment. Please try again.");
     }
-  };
+  }, [fetchPending]);
 
-  // Handlers
-  const handleCourseClick = (course) => {
+  // Handlers (memoized)
+  const handleCourseClick = useCallback((course) => {
     // Navigate directly to detail page
     navigate(`/browse-courses/${course.documentId}`);
-  };
+  }, [navigate]);
 
-  const handleEnrollCourse = (course) => {
+  const handleEnrollCourse = useCallback((course) => {
     setEnrollingCourse(course);
     setEnrollingSubject(null);
     setEnrollModalOpen(true);
-  };
+  }, []);
 
-  const handleConfirmEnroll = async () => {
+  const handleConfirmEnroll = useCallback(async () => {
     if (!identity?.documentId) return;
 
     try {
@@ -386,7 +419,7 @@ const BrowseCoursesPage = () => {
       const { data: subs } = await subscriptionService.getUserSubscriptions(
         dataProvider,
         identity.documentId,
-        { page: 1, perPage: 1000 }
+        { page: 1, perPage: 500 }
       );
       setUserSubscriptions(subs);
 
@@ -418,23 +451,61 @@ const BrowseCoursesPage = () => {
     } finally {
       setEnrolling(false);
     }
-  };
+  }, [identity, dataProvider, enrollingCourse, enrollingSubject]);
 
-  // Filter change handlers
-  const handleSearchChange = (value) => {
+  // Filter change handlers (memoized)
+  const handleSearchChange = useCallback((value) => {
     setSearchQuery(value);
     setPage(1); // Reset to page 1
-  };
+  }, []);
 
-  const handleCategoryChange = (val) => {
+  const handleCategoryChange = useCallback((val) => {
     setSelectedCategory(val);
     setPage(1);
-  };
+  }, []);
 
-  const handleSubcategoryChange = (val) => {
+  const handleSubcategoryChange = useCallback((val) => {
     setSelectedSubcategory(val);
     setPage(1);
-  };
+  }, []);
+
+  // Memoized course cards computation
+  const courseCards = useMemo(() => {
+    return courses.map((course) => {
+      const courseSubjectIds = (course.subjects || []).map(
+        (s) => s.documentId
+      );
+      const enrolledSet =
+        enrolledCourseIds.get(course.documentId) || new Set();
+      const isFullyEnrolled =
+        courseSubjectIds.length > 0 &&
+        courseSubjectIds.every((id) => enrolledSet.has(id));
+
+      return (
+        <BrowseCourseCard
+          key={course.documentId || course.id}
+          course={course}
+          coursePricing={course.coursePricing}
+          isEnrolled={isFullyEnrolled}
+          enrolledSubjectCount={enrolledSet.size}
+          totalSubjectCount={courseSubjectIds.length}
+          pendingPayment={pendingPayments[course.documentId]}
+          onEnroll={handleEnrollCourse}
+          onResumePayment={handleResumePayment}
+          onCancelPayment={handleCancelPaymentAction}
+          onClick={handleCourseClick}
+        />
+      );
+    });
+  }, [
+    courses,
+    enrolledCourseIds,
+    pendingPayments,
+    handleEnrollCourse,
+    handleResumePayment,
+    handleCancelPaymentAction,
+    handleCourseClick,
+  ]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-32">
@@ -567,32 +638,7 @@ const BrowseCoursesPage = () => {
         ) : courses.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {courses.map((course) => {
-                const courseSubjectIds = (course.subjects || []).map(
-                  (s) => s.documentId
-                );
-                const enrolledSet =
-                  enrolledCourseIds.get(course.documentId) || new Set();
-                const isFullyEnrolled =
-                  courseSubjectIds.length > 0 &&
-                  courseSubjectIds.every((id) => enrolledSet.has(id));
-
-                return (
-                  <BrowseCourseCard
-                    key={course.documentId || course.id}
-                    course={course}
-                    coursePricing={course.coursePricing}
-                    isEnrolled={isFullyEnrolled}
-                    enrolledSubjectCount={enrolledSet.size}
-                    totalSubjectCount={courseSubjectIds.length}
-                    pendingPayment={pendingPayments[course.documentId]}
-                    onEnroll={handleEnrollCourse}
-                    onResumePayment={handleResumePayment}
-                    onCancelPayment={handleCancelPaymentAction}
-                    onClick={handleCourseClick}
-                  />
-                );
-              })}
+              {courseCards}
             </div>
 
             {/* Pagination Component */}
