@@ -1770,6 +1770,15 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
     >;
     quizzes: Schema.Attribute.Relation<'manyToMany', 'api::quiz.quiz'>;
     subjects: Schema.Attribute.Relation<'manyToMany', 'api::subject.subject'>;
+    topic_level: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

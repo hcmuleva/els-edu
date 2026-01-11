@@ -42,7 +42,10 @@ const Dashboard = () => {
     if (identity) {
       if (!identity.control_type) {
         navigate("/role-selection");
-      } else if (identity.control_type === "PARENT" && !localStorage.getItem("current_role")) {
+      } else if (
+        identity.control_type === "PARENT" &&
+        !localStorage.getItem("current_role")
+      ) {
         navigate("/role-selection");
       }
     }
@@ -71,9 +74,9 @@ const Dashboard = () => {
         const averageScore =
           results.length > 0
             ? Math.round(
-              results.reduce((sum, r) => sum + r.percentage, 0) /
-              results.length
-            )
+                results.reduce((sum, r) => sum + r.percentage, 0) /
+                  results.length
+              )
             : 0;
 
         const passed = results.filter((r) => r.isPassed).length;
@@ -301,6 +304,31 @@ const Dashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Self-Assessment CTA Card */}
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-indigo-200/50">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+              <Target className="w-8 h-8 md:w-10 md:h-10 text-white" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl md:text-2xl font-bold mb-2">
+                Skill Assessment
+              </h3>
+              <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
+                Discover your skill gaps and get personalized learning
+                recommendations based on your dream job!
+              </p>
+              <button
+                onClick={() => navigate("/analytics")}
+                className="w-full md:w-auto px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                Start Assessment
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Stats Grid - 2x2 on mobile with cleaner styling */}
         <div>

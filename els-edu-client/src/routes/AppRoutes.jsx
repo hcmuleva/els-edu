@@ -22,6 +22,9 @@ import UnauthorizedPage from "../pages/auth/UnauthorizedPage";
 import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import { ProtectedParentRoute } from "../components/common/ProtectedParentRoute";
+import SelfAssessmentPage from "../pages/analytics/SelfAssessmentPage";
+import AnalyticsResultsPage from "../pages/analytics/AnalyticsResultsPage";
+import SkillQuizPage from "../pages/analytics/SkillQuizPage";
 
 const AppRoutes = () => (
   <>
@@ -156,6 +159,34 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
             <OrgManagePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Analytics - Results (main view, redirects to survey if no data) */}
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <AnalyticsResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Analytics - Survey wizard */}
+      <Route
+        path="/analytics/survey"
+        element={
+          <ProtectedRoute>
+            <SelfAssessmentPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Analytics - Skill Quiz */}
+      <Route
+        path="/analytics/quiz"
+        element={
+          <ProtectedRoute>
+            <SkillQuizPage />
           </ProtectedRoute>
         }
       />

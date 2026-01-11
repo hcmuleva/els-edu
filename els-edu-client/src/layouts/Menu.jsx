@@ -21,6 +21,7 @@ import {
   ChevronUp,
   FileText,
   Building2,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useLocation, Link } from "react-router-dom";
@@ -536,6 +537,16 @@ const AppMenu = (props) => {
               to="/my-contents"
               primaryText="My Studio"
               leftIcon={<BookOpen size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* Analytics - visible to: STUDENT, ADMIN, SUPERADMIN */}
+          {canAccess("analytics") && (
+            <CustomMenuItem
+              to="/analytics"
+              primaryText="Analytics"
+              leftIcon={<BarChart3 size={20} />}
               isOpen={open}
             />
           )}
