@@ -18,7 +18,15 @@ export const buildFilters = (resource, filters) => {
 
     // Handle pre-formatted filter keys (e.g., 'filters[user][documentId][$eq]')
     if (key.startsWith("filters[")) {
-      query[key] = value;
+      // Special handling for $in operator with arrays
+      // Strapi expects: filters[documentId][$in][0]=id1&filters[documentId][$in][1]=id2
+      if (key.includes("[$in]") && Array.isArray(value) && value.length > 0) {
+        value.forEach((item, index) => {
+          query[`${key}[${index}]`] = item;
+        });
+      } else {
+        query[key] = value;
+      }
       return;
     }
 

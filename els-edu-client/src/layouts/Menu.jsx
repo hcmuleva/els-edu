@@ -22,6 +22,7 @@ import {
   FileText,
   Building2,
   BarChart3,
+  Database,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useLocation, Link } from "react-router-dom";
@@ -537,6 +538,16 @@ const AppMenu = (props) => {
               to="/my-contents"
               primaryText="My Studio"
               leftIcon={<BookOpen size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* MongoDB Studio - visible to: ADMIN, SUPERADMIN */}
+          {(permissions === "ADMIN" || permissions === "SUPERADMIN") && (
+            <CustomMenuItem
+              to="/mongo-studio"
+              primaryText="MongoDB Studio"
+              leftIcon={<Database size={20} />}
               isOpen={open}
             />
           )}

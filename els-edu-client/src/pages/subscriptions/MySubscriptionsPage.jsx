@@ -16,6 +16,7 @@ import { subscriptionService } from "../../services/subscriptionService";
 import {
   subscribeToSubscriptionUpdates,
   subscribeToGlobalCourseUpdates,
+  subscribeToCustomCourseUpdates,
 } from "../../services/ably";
 import Pagination from "../../components/common/Pagination"; // Import Pagination
 
@@ -60,20 +61,53 @@ const MySubscriptionsPage = () => {
     try {
       setLoading(true);
 
-      // Fetch subscriptions (fetch all for client-side filtering/pagination)
-      const { data } = await subscriptionService.getUserSubscriptions(
+      // Fetch Strapi subscriptions (fetch all for client-side filtering/pagination)
+      const { data: strapiSubscriptions } = await subscriptionService.getUserSubscriptions(
         dataProvider,
         identity.documentId,
         { page: 1, perPage: 1000 }
       );
-      setSubscriptions(data);
-      setFilteredSubscriptions(data);
+
+      
+      // Fetch MongoDB custom courses
+      const customCourses = await subscriptionService.getCustomCourses();
+
+      // Combine both sources
+      const allSubscriptions = [...strapiSubscriptions, ...customCourses];
+
+      setSubscriptions(allSubscriptions);
+      setFilteredSubscriptions(allSubscriptions);
 
       // Fetch counts separately (efficient SQL queries)
+      // 1. Strapi subscription counts
       const countsResponse = await subscriptionService.getSubscriptionCounts(
         identity.documentId
       );
-      setSubscriptionCounts(countsResponse?.data || {});
+      const strapiCounts = countsResponse?.data || {};
+
+      // 2. MongoDB custom course counts (batch fetch)
+      const customCourseIds = customCourses
+        .map((c) => c.documentId)
+        .filter(Boolean);
+      console.log("[MySubscriptionsPage] Custom courses:", customCourses.length);
+      console.log("[MySubscriptionsPage] Custom course IDs to fetch counts for:", customCourseIds);
+      let customCourseCounts = {};
+      if (customCourseIds.length > 0) {
+        try {
+          customCourseCounts = await subscriptionService.getBatchCustomCourseCounts(customCourseIds);
+          console.log("[MySubscriptionsPage] Fetched custom course counts:", customCourseCounts);
+        } catch (error) {
+          console.error("[MySubscriptionsPage] Error fetching custom course counts:", error);
+        }
+      } else {
+        console.log("[MySubscriptionsPage] No custom course IDs to fetch counts for");
+      }
+
+      // Merge both counts
+      setSubscriptionCounts({
+        ...strapiCounts,
+        ...customCourseCounts,
+      });
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
     } finally {
@@ -117,6 +151,31 @@ const MySubscriptionsPage = () => {
       if (eventName === "course:subjects-updated") {
         fetchSubscriptions();
         setUpdateNotification("Course content updated!");
+        setTimeout(() => setUpdateNotification(null), 4000);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchSubscriptions]);
+
+  // Subscribe to custom course updates (MongoDB courses)
+  useEffect(() => {
+    const unsubscribe = subscribeToCustomCourseUpdates((eventName, data) => {
+      console.log("[MySubscriptionsPage] Custom course update received:", eventName, data);
+      
+      if (eventName === "custom-course:created") {
+        fetchSubscriptions();
+        setUpdateNotification("New custom course added!");
+        setTimeout(() => setUpdateNotification(null), 4000);
+      } else if (eventName === "custom-course:updated") {
+        fetchSubscriptions();
+        setUpdateNotification("Custom course updated!");
+        setTimeout(() => setUpdateNotification(null), 4000);
+      } else if (eventName === "custom-course:deleted") {
+        fetchSubscriptions();
+        setUpdateNotification("Custom course removed!");
         setTimeout(() => setUpdateNotification(null), 4000);
       }
     });

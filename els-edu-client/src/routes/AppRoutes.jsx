@@ -25,6 +25,7 @@ import { ProtectedParentRoute } from "../components/common/ProtectedParentRoute"
 import SelfAssessmentPage from "../pages/analytics/SelfAssessmentPage";
 import AnalyticsResultsPage from "../pages/analytics/AnalyticsResultsPage";
 import SkillQuizPage from "../pages/analytics/SkillQuizPage";
+import MongoStudioPage from "../pages/mongo-studio/MongoStudioPage";
 
 const AppRoutes = () => (
   <>
@@ -187,6 +188,16 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute>
             <SkillQuizPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* MongoDB Studio - only ADMIN and SUPERADMIN */}
+      <Route
+        path="/mongo-studio"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
+            <MongoStudioPage />
           </ProtectedRoute>
         }
       />

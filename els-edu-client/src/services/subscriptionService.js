@@ -526,6 +526,75 @@ export const getSubjectCounts = async (subjectDocumentId) => {
   return response.data?.data || response.data;
 };
 
+/**
+ * Get batch counts for multiple MongoDB custom courses
+ * @param {Array<string>} courseIds - Array of MongoDB course _id strings
+ * @returns {Promise<Object>} Map of courseId -> { subjectCount, topicCount, quizCount, breakdown }
+ */
+export const getBatchCustomCourseCounts = async (courseIds) => {
+  if (!Array.isArray(courseIds) || courseIds.length === 0) {
+    console.log("[getBatchCustomCourseCounts] No course IDs provided");
+    return {};
+  }
+  
+  try {
+    console.log("[getBatchCustomCourseCounts] Fetching counts for course IDs:", courseIds);
+    const response = await api.post("/custom-counts/batch-custom-course-counts", {
+      courseIds,
+    });
+    console.log("[getBatchCustomCourseCounts] Response received:", response.data);
+    return response.data?.data || response.data || {};
+  } catch (error) {
+    console.error("[getBatchCustomCourseCounts] Error fetching batch counts:", error);
+    console.error("[getBatchCustomCourseCounts] Error details:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return {};
+  }
+};
+
+/**
+ * Get custom courses from MongoDB using custom API
+ * These courses have subjectDocumentIds that reference Strapi subjects,
+ * so they work similarly to Strapi subscriptions
+ * @returns {Promise<Array>} Array of custom courses formatted as subscriptions
+ */
+export const getCustomCourses = async () => {
+  try {
+    const response = await api.get("/user-courses/custom-courses");
+    const courses = response.data?.data || [];
+    
+    // Transform MongoDB courses to match subscription format for CourseCard
+    // The backend already populates subject details from Strapi, so subjects array
+    // contains full subject objects (same as Strapi subscriptions)
+    // Backend already transforms cover to { url: ... } format, so use it as-is
+    return courses.map((course) => ({
+      documentId: course.documentId || course.id,
+      subscription_type: "CUSTOM", // Mark as custom course
+      paymentstatus: course.status === "ACTIVE" ? "ACTIVE" : "INACTIVE",
+      course: {
+        documentId: course.documentId || course.id,
+        name: course.name,
+        description: course.description,
+        category: course.category,
+        subcategory: course.subcategory,
+        cover: course.cover, // Backend already formats as { url: ... } or null
+        subjects: course.subjects || [], // Full subject objects (populated from Strapi)
+      },
+      subjects: course.subjects || [], // Full subject objects (same format as Strapi)
+      source: "mongodb",
+      progress: course.progress,
+      startedAt: course.startedAt,
+      completedAt: course.completedAt,
+    }));
+  } catch (error) {
+    console.error("Error fetching custom courses:", error);
+    return [];
+  }
+};
+
 // Export as service object for convenience
 export const subscriptionService = {
   createSubscription,
@@ -538,6 +607,7 @@ export const subscriptionService = {
   syncUserSubscriptions,
   initiatePayment,
   checkout,
+  getBatchCustomCourseCounts,
   getOrderStatus,
   getPurchaseHistory,
   cancelPayment,
@@ -549,6 +619,7 @@ export const subscriptionService = {
   getSubscriptionCounts,
   getCourseCounts,
   getSubjectCounts,
+  getCustomCourses,
 };
 
 export default subscriptionService;

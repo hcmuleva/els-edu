@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import { cn } from "../../lib/utils";
+import CustomCourseAssignmentModal from "../../components/admin/CustomCourseAssignmentModal";
 
 const StatCard = ({ title, value, subtitle, icon: Icon, gradient }) => (
   <div
@@ -357,7 +358,7 @@ const TransferListModal = ({
 };
 
 // Actions Dropdown Component - positioned to avoid overlap
-const ActionsDropdown = ({ onEdit, onAssignCourses }) => {
+const ActionsDropdown = ({ onEdit, onAssignCourses, onAssignCustomCourse }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -417,6 +418,19 @@ const ActionsDropdown = ({ onEdit, onAssignCourses }) => {
             <GraduationCap className="w-4 h-4" />
             Assign Courses
           </button>
+          {onAssignCustomCourse && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAssignCustomCourse();
+                setIsOpen(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-muted transition-colors"
+            >
+              <BookOpen className="w-4 h-4" />
+              Assign Custom Course
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -454,6 +468,9 @@ const OrgManagePage = () => {
   const [userCoursesModalOpen, setUserCoursesModalOpen] = useState(false);
   const [userCourses, setUserCourses] = useState([]);
   const [savingUserCourses, setSavingUserCourses] = useState(false);
+
+  // Custom course assignment modal
+  const [customCourseModalOpen, setCustomCourseModalOpen] = useState(false);
 
   // Success notification
   const [successMessage, setSuccessMessage] = useState("");
@@ -947,6 +964,10 @@ const OrgManagePage = () => {
                   setDrawerOpen(true);
                 }}
                 onAssignCourses={() => openUserCoursesModal(row.raw)}
+                onAssignCustomCourse={() => {
+                  setSelectedUser(row.raw);
+                  setCustomCourseModalOpen(true);
+                }}
               />
             ) : (
               <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">
@@ -1611,9 +1632,9 @@ const OrgManagePage = () => {
         subtitle={
           selectedUser
             ? `${selectedUser.username} (${selectedUser.documentId?.slice(
-              0,
-              8
-            )}...)`
+                0,
+                8
+              )}...)`
             : ""
         }
         availableItems={allCourses}
@@ -1621,6 +1642,22 @@ const OrgManagePage = () => {
         onSave={saveUserCourses}
         loading={savingUserCourses}
         itemLabel="name"
+      />
+
+      {/* Custom Course Assignment Modal */}
+      <CustomCourseAssignmentModal
+        isOpen={customCourseModalOpen}
+        onClose={() => {
+          setCustomCourseModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onSuccess={() => {
+          // Refresh data if needed
+          if (activeTab === "users") {
+            loadTabData("users", page);
+          }
+        }}
       />
     </div>
   );

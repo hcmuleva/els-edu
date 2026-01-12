@@ -27,5 +27,14 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: "POST",
+      path: "/custom-counts/batch-custom-course-counts",
+      handler: "custom-count.getBatchCustomCourseCounts",
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

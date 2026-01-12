@@ -15,6 +15,7 @@ const skillSchema = new mongoose.Schema(
     name: { type: String, required: true, unique: true },
     category: { type: String, default: "General" },
     topicDocumentIds: [{ type: String }], // Many-to-many: skill can have multiple topics
+    subjectDocumentIds: [{ type: String }], // Many-to-many: skill can have multiple subjects
     description: { type: String, default: "" },
   },
   { timestamps: true }
@@ -107,6 +108,65 @@ const userQuizSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Custom User Course Schema - Courses stored in MongoDB
+const userCourseSchema = new mongoose.Schema(
+  {
+    userDocumentId: { type: String, required: true, index: true }, // Strapi v5 documentId
+    name: { type: String, required: true },
+    description: { type: String, default: "" },
+    cover: { type: String, default: null }, // URL to cover image
+    category: {
+      type: String,
+      enum: [
+        "KIDS",
+        "PRIMARY",
+        "MIDDLE",
+        "SCHOOL",
+        "COLLEGE",
+        "OLDAGE",
+        "SANSKAR",
+        "COMPETION",
+        "PROJECT",
+        "DIY",
+        "EDUCATION",
+      ],
+      default: "EDUCATION",
+    },
+    subcategory: {
+      type: String,
+      enum: [
+        "CREATIVITY",
+        "COMPETION",
+        "ACADEMIC",
+        "ELECTROICS",
+        "SOFTWARE",
+        "DHARM",
+        "SIKSHA",
+        "GYAN",
+        "SOCH",
+      ],
+      default: "ACADEMIC",
+    },
+    subjectDocumentIds: [{ type: String }], // Array of Strapi subject documentIds
+    status: {
+      type: String,
+      enum: ["ACTIVE", "INACTIVE", "COMPLETED", "PAUSED"],
+      default: "ACTIVE",
+    },
+    progress: { type: Number, min: 0, max: 100, default: 0 }, // Course completion percentage
+    startedAt: { type: Date, default: Date.now },
+    completedAt: { type: Date, default: null },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {} }, // Additional flexible data
+  },
+  {
+    timestamps: true,
+    collection: "userCustomCourses", // Use the existing collection name
+  }
+);
+
+// Create compound index for efficient queries
+userCourseSchema.index({ userDocumentId: 1, status: 1 });
+
 // Models (with check to prevent re-compilation)
 const Skill = mongoose.models.Skill || mongoose.model("Skill", skillSchema);
 const Company =
@@ -117,6 +177,41 @@ const UserSurvey =
   mongoose.models.UserSurvey || mongoose.model("UserSurvey", userSurveySchema);
 const UserQuiz =
   mongoose.models.UserQuiz || mongoose.model("UserQuiz", userQuizSchema);
+const UserCourse =
+  mongoose.models.UserCourse || mongoose.model("UserCourse", userCourseSchema);
+
+/**
+ * Drop old courseId index if it exists (migration helper)
+ * This fixes the E11000 duplicate key error for courseId: null
+ */
+async function dropOldCourseIdIndex() {
+  try {
+    const db = mongoose.connection.db;
+    if (!db) return; // Not connected yet
+    
+    const collection = db.collection("userCustomCourses");
+    
+    // Get all indexes
+    const indexes = await collection.indexes();
+    
+    // Check if courseId index exists
+    const courseIdIndex = indexes.find((idx) => 
+      idx.name === "courseId_1" || 
+      (idx.key && idx.key.courseId !== undefined)
+    );
+    
+    if (courseIdIndex) {
+      console.log("🔧 Dropping old courseId index from userCustomCourses...");
+      await collection.dropIndex(courseIdIndex.name);
+      console.log("✅ Dropped old courseId index");
+    }
+  } catch (error) {
+    // Index might not exist, which is fine
+    if (error.code !== 27 && error.codeName !== "IndexNotFound") {
+      console.error("Error dropping courseId index:", error.message);
+    }
+  }
+}
 
 /**
  * Connect to MongoDB
@@ -128,6 +223,9 @@ async function connect() {
     await mongoose.connect(mongoConfig.uri, mongoConfig.options);
     isConnected = true;
     console.log("🍃 MongoDB connected for Analytics");
+    
+    // Drop old courseId index if it exists (one-time migration)
+    await dropOldCourseIdIndex();
   } catch (error) {
     console.error("MongoDB connection error:", error);
     throw error;
@@ -147,7 +245,20 @@ async function getSkills() {
  */
 async function getCompanies() {
   await connect();
-  return Company.find().lean();
+  const companies = await Company.find().lean();
+  // Convert domain ObjectIds to names (for backward compatibility)
+  const mongoose = require("mongoose");
+  return Promise.all(
+    companies.map(async (company) => {
+      if (company.domain && mongoose.Types.ObjectId.isValid(company.domain)) {
+        const domainDoc = await Domain.findById(company.domain).lean();
+        if (domainDoc) {
+          company.domain = domainDoc.name;
+        }
+      }
+      return company;
+    })
+  );
 }
 
 /**
@@ -164,9 +275,58 @@ async function getDomains() {
 async function getRoles(filters = {}) {
   await connect();
   const query = {};
-  if (filters.company) query.company = filters.company;
-  if (filters.domain) query.domain = filters.domain;
-  return Role.find(query).lean();
+  const mongoose = require("mongoose");
+  
+  // Handle both ObjectId and name for company filter
+  if (filters.company) {
+    if (mongoose.Types.ObjectId.isValid(filters.company)) {
+      // If it's an ObjectId, find the company name first
+      const companyDoc = await Company.findById(filters.company).lean();
+      if (companyDoc) {
+        query.company = companyDoc.name;
+      } else {
+        query.company = filters.company; // Fallback
+      }
+    } else {
+      query.company = filters.company; // It's already a name
+    }
+  }
+  
+  // Handle both ObjectId and name for domain filter
+  if (filters.domain) {
+    if (mongoose.Types.ObjectId.isValid(filters.domain)) {
+      // If it's an ObjectId, find the domain name first
+      const domainDoc = await Domain.findById(filters.domain).lean();
+      if (domainDoc) {
+        query.domain = domainDoc.name;
+      } else {
+        query.domain = filters.domain; // Fallback
+      }
+    } else {
+      query.domain = filters.domain; // It's already a name
+    }
+  }
+  
+  const roles = await Role.find(query).lean();
+  
+  // Convert company and domain ObjectIds to names (for backward compatibility)
+  return Promise.all(
+    roles.map(async (role) => {
+      if (role.company && mongoose.Types.ObjectId.isValid(role.company)) {
+        const companyDoc = await Company.findById(role.company).lean();
+        if (companyDoc) {
+          role.company = companyDoc.name;
+        }
+      }
+      if (role.domain && mongoose.Types.ObjectId.isValid(role.domain)) {
+        const domainDoc = await Domain.findById(role.domain).lean();
+        if (domainDoc) {
+          role.domain = domainDoc.name;
+        }
+      }
+      return role;
+    })
+  );
 }
 
 /**
@@ -174,7 +334,36 @@ async function getRoles(filters = {}) {
  */
 async function getRoleByNameAndCompany(name, company) {
   await connect();
-  return Role.findOne({ name, company }).lean();
+  const mongoose = require("mongoose");
+  
+  // Handle both ObjectId and name for company
+  let companyName = company;
+  if (company && mongoose.Types.ObjectId.isValid(company)) {
+    const companyDoc = await Company.findById(company).lean();
+    if (companyDoc) {
+      companyName = companyDoc.name;
+    }
+  }
+  
+  const role = await Role.findOne({ name, company: companyName }).lean();
+  
+  // Convert company and domain ObjectIds to names (for backward compatibility)
+  if (role) {
+    if (role.company && mongoose.Types.ObjectId.isValid(role.company)) {
+      const companyDoc = await Company.findById(role.company).lean();
+      if (companyDoc) {
+        role.company = companyDoc.name;
+      }
+    }
+    if (role.domain && mongoose.Types.ObjectId.isValid(role.domain)) {
+      const domainDoc = await Domain.findById(role.domain).lean();
+      if (domainDoc) {
+        role.domain = domainDoc.name;
+      }
+    }
+  }
+  
+  return role;
 }
 
 /**
@@ -291,6 +480,64 @@ function calculateLevelFromPercentage(percentage) {
   return 1;
 }
 
+/**
+ * Get custom user courses from MongoDB
+ * @param {string} userDocumentId - User's Strapi documentId
+ * @param {Object} filters - Optional filters (status, etc.)
+ * @returns {Promise<Array>} Array of custom courses
+ */
+async function getUserCourses(userDocumentId, filters = {}) {
+  await connect();
+  const query = { userDocumentId };
+  if (filters.status) query.status = filters.status;
+  return UserCourse.find(query).sort({ createdAt: -1 }).lean();
+}
+
+/**
+ * Save or update a custom user course
+ * @param {Object} courseData - Course data
+ * @returns {Promise<Object>} Saved course
+ */
+async function saveUserCourse(courseData) {
+  await connect();
+  
+  // Remove courseId if present (old field, not used anymore)
+  // This prevents issues with old indexes
+  const cleanedData = { ...courseData };
+  delete cleanedData.courseId;
+  
+  const course = new UserCourse(cleanedData);
+  return course.save();
+}
+
+/**
+ * Update a custom user course
+ * @param {string} courseId - Course MongoDB _id (as string or ObjectId)
+ * @param {Object} updateData - Data to update
+ * @returns {Promise<Object>} Updated course
+ */
+async function updateUserCourse(courseId, updateData) {
+  await connect();
+  
+  // Remove courseId if present (old field, not used anymore)
+  const cleanedData = { ...updateData };
+  delete cleanedData.courseId;
+  
+  return UserCourse.findByIdAndUpdate(courseId, cleanedData, {
+    new: true,
+  }).lean();
+}
+
+/**
+ * Delete a custom user course
+ * @param {string} courseId - Course MongoDB _id (as string or ObjectId)
+ * @returns {Promise<Object>} Deletion result
+ */
+async function deleteUserCourse(courseId) {
+  await connect();
+  return UserCourse.findByIdAndDelete(courseId);
+}
+
 module.exports = {
   connect,
   getSkills,
@@ -306,6 +553,10 @@ module.exports = {
   getUserQuizzes,
   getLatestQuiz,
   calculateLevelFromPercentage,
+  getUserCourses,
+  saveUserCourse,
+  updateUserCourse,
+  deleteUserCourse,
   // Export models for direct access if needed
-  models: { Skill, Company, Domain, Role, UserSurvey, UserQuiz },
+  models: { Skill, Company, Domain, Role, UserSurvey, UserQuiz, UserCourse },
 };

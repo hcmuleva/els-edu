@@ -135,6 +135,82 @@ export const subscribeToGlobalCourseUpdates = (callback) => {
 };
 
 /**
+ * Subscribe to global custom course updates (for MongoDB Studio)
+ * This channel broadcasts when custom courses are created, updated, or deleted.
+ * @param {function} callback - Callback function(eventName, data)
+ * @returns {function} Cleanup function to unsubscribe
+ */
+export const subscribeToCustomCourseUpdates = (callback) => {
+  const client = getAblyClient();
+
+  if (!client) {
+    console.warn("[ABLY] Client not initialized - using manual refresh only");
+    return () => {};
+  }
+
+  const channelName = "global:custom-courses";
+  const channel = client.channels.get(channelName);
+
+  // Create message handler
+  const messageHandler = (message) => {
+    console.log("[ABLY] Custom course update received:", message.name, message.data);
+    callback(message.name, message.data);
+  };
+
+  // Subscribe - this automatically attaches the channel if not already attached
+  // Don't manually call attach() as it causes race conditions with React StrictMode
+  channel.subscribe(messageHandler);
+
+  // Optional: Log attachment (but don't manually attach)
+  channel.on("attached", () => {
+    console.log("[ABLY] Attached to custom course updates channel:", channelName);
+  });
+
+  // Return cleanup function
+  return () => {
+    try {
+      console.log("[ABLY] Unsubscribing from custom course updates");
+      // Unsubscribe the specific handler
+      channel.unsubscribe(messageHandler);
+      // Don't manually detach - Ably will handle it automatically when no subscribers remain
+    } catch (error) {
+      // Ignore errors during cleanup (channel might already be detached/unsubscribed)
+      // This is safe to ignore as it's just cleanup
+    }
+  };
+};
+
+/**
+ * Subscribe to user-specific custom course updates (for org assignment section)
+ * @param {string} userId - User document ID
+ * @param {function} callback - Callback function(eventName, data)
+ * @returns {function} Cleanup function to unsubscribe
+ */
+export const subscribeToUserCustomCourseUpdates = (userId, callback) => {
+  const client = getAblyClient();
+
+  if (!client) {
+    console.warn("[ABLY] Client not initialized - using manual refresh only");
+    return () => {};
+  }
+
+  const channelName = `user:${userId}:custom-courses`;
+  const channel = client.channels.get(channelName);
+
+  channel.on("attached", () => {
+    // Subscribed to user custom course updates
+  });
+
+  channel.subscribe((message) => {
+    callback(message.name, message.data);
+  });
+
+  return () => {
+    channel.unsubscribe();
+  };
+};
+
+/**
  * Close Ably connection
  */
 export const closeAblyConnection = () => {
@@ -149,5 +225,7 @@ export default {
   subscribeToSubscriptionUpdates,
   subscribeToProgressUpdates,
   subscribeToGlobalCourseUpdates,
+  subscribeToCustomCourseUpdates,
+  subscribeToUserCustomCourseUpdates,
   closeAblyConnection,
 };
