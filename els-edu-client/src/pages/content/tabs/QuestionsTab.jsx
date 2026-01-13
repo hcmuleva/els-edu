@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { CustomSelect } from "../../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
+import CountListModal from "../../../components/studio/CountListModal";
 
 const QuestionViewModal = ({ question, onClose }) => {
   if (!question) return null;
@@ -262,6 +263,8 @@ export const QuestionsTab = () => {
 
   // View State
   const [viewingQuestion, setViewingQuestion] = useState(null);
+  const [activeCountTitle, setActiveCountTitle] = useState("");
+  const [activeCountItems, setActiveCountItems] = useState([]);
 
   // Construct filters for server-side
   const filters = useMemo(() => {
@@ -394,6 +397,19 @@ export const QuestionsTab = () => {
         <QuestionViewModal
           question={viewingQuestion}
           onClose={() => setViewingQuestion(null)}
+        />
+      )}
+
+      {activeCountItems.length > 0 && (
+        <CountListModal
+          isOpen={activeCountItems.length > 0}
+          title={activeCountTitle}
+          items={activeCountItems}
+          nameField="name"
+          onClose={() => {
+            setActiveCountItems([]);
+            setActiveCountTitle("");
+          }}
         />
       )}
 
@@ -629,15 +645,31 @@ export const QuestionsTab = () => {
                           {getCorrectAnswers(item)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.subject?.name || "-"}
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Subjects for Question #${displayId}`);
+                            setActiveCountItems(item.subjects || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                          disabled={!item.subjects || item.subjects.length === 0}
+                        >
+                          {item.subjects?.length || 0} Subjects
+                        </button>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.topic?.name || "-"}
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Topics for Question #${displayId}`);
+                            setActiveCountItems(item.topics || []);
+                          }}
+                          className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95"
+                          disabled={!item.topics || item.topics.length === 0}
+                        >
+                          {item.topics?.length || 0} Topics
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="flex items-center gap-1 text-xs text-gray-500">

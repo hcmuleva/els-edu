@@ -590,10 +590,18 @@ export const QuizzesTab = () => {
                           {item.questions?.length || 0} Questions
                         </button>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.subjects?.name || "-"}
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(`Subjects for ${item.title}`);
+                            setActiveCountItems(item.subjects || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                          disabled={!item.subjects || item.subjects.length === 0}
+                        >
+                          {item.subjects?.length || 0} Subjects
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
                         <button

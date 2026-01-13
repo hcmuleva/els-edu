@@ -196,8 +196,8 @@ export const QuestionCreate = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-border/30">
+      <div className="max-w-6xl mx-auto px-6 py-6 pb-32">
+        <div className="bg-white rounded-lg shadow-sm border border-border/30">
           {questions.map((question, index) => (
             <QuestionBuilder
               key={question.id}

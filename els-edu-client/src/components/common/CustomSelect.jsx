@@ -100,7 +100,7 @@ export const CustomSelect = ({
             {/* Dropdown Menu */}
             {isOpen && (
                 <div 
-                    className="absolute top-full left-0 mt-1 min-w-[180px] w-full bg-white rounded-xl shadow-xl border border-border/50 py-1.5 z-[100] animate-in fade-in zoom-in-95 duration-100 overflow-y-auto"
+                    className="absolute top-full left-0 mt-1 min-w-[180px] w-full bg-white rounded-xl shadow-xl border border-border/50 py-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-100 overflow-y-auto"
                     style={{ maxHeight: '240px' }} // Limit to ~6 items
                 >
                     {options.map((option) => (

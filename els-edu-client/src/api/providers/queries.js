@@ -28,16 +28,35 @@ export const getList = async (httpClient, resource, params) => {
       id: item.id, // Primary key
     };
 
-    // Normalize topic and subject for questions - ensure ID is accessible
+    // Normalize topic/subject and topics/subjects for questions - ensure arrays are accessible
     if (resource === "questions") {
+      // Handle plural forms (topics, subjects) - many-to-many relations
+      if (item.topics) {
+        normalized.topics = Array.isArray(item.topics) ? item.topics : [item.topics];
+      }
+      if (item.subjects) {
+        normalized.subjects = Array.isArray(item.subjects) ? item.subjects : [item.subjects];
+      }
+      
+      // Handle singular forms (topic, subject) - for backward compatibility
       if (item.topic && typeof item.topic === "object") {
         normalized.topic = item.topic;
+        // Also add to topics array if not already present
+        if (!normalized.topics) normalized.topics = [];
+        if (!normalized.topics.some(t => (typeof t === 'object' ? t.id : t) === (item.topic.id || item.topic))) {
+          normalized.topics.push(item.topic);
+        }
       } else if (item.topic) {
         normalized.topic = item.topic;
       }
 
       if (item.subject && typeof item.subject === "object") {
         normalized.subject = item.subject;
+        // Also add to subjects array if not already present
+        if (!normalized.subjects) normalized.subjects = [];
+        if (!normalized.subjects.some(s => (typeof s === 'object' ? s.id : s) === (item.subject.id || item.subject))) {
+          normalized.subjects.push(item.subject);
+        }
       } else if (item.subject) {
         normalized.subject = item.subject;
       }

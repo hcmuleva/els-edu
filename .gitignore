@@ -27,6 +27,10 @@ build/
 *.sqlite3
 .tmp/
 data.db
+*.tar
+*.tar.gz
+*.yaml
+*.yml
 
 # Strapi generated files
 .cache/
@@ -115,6 +119,7 @@ package-lock.json
 *.cert
 *.crt
 
+
 ############################
 # Old/Backup Directories
 ############################
@@ -127,3 +132,4 @@ els-edu-server_backup/
 TBD/
 android/
 migration_scripts/
+ELS_Analytic_skill_recommendation-main/

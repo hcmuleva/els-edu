@@ -53,10 +53,10 @@ export const QuestionSelector = ({
     if (filters.difficulty !== "all") filter.difficulty = filters.difficulty;
     if (filters.questionType !== "all")
       filter.questionType = filters.questionType;
-    // Filter by subject documentId if selected
-    if (filters.subject) filter["subjects.documentId[$in]"] = [filters.subject];
-    // Filter by topic documentId if selected
-    if (filters.topic) filter["topics.documentId[$in]"] = [filters.topic];
+    // Filter by subject ID if selected - use bracket notation that queryBuilder understands
+    if (filters.subject) filter["subjects[id]"] = filters.subject;
+    // Filter by topic ID if selected - use bracket notation that queryBuilder understands
+    if (filters.topic) filter["topics[id]"] = filters.topic;
     if (viewMode === "my" && identity?.id) filter.creator = identity.id;
     return filter;
   }, [searchTerm, filters, viewMode, identity?.id]);

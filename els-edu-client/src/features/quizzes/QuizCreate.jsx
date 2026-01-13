@@ -368,7 +368,7 @@ export const QuizCreate = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-border/50 shadow-sm overflow-hidden min-h-[400px]">
+          <div className="bg-white rounded-2xl border border-border/50 shadow-sm min-h-[400px] pb-32">
             {/* Step 1: Details */}
             {currentStep === 0 && (
               <div className="p-10 space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
