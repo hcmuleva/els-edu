@@ -14,6 +14,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  School,
+  ClipboardList,
 } from "lucide-react";
 import SkillsTab from "./tabs/SkillsTab";
 import CompaniesTab from "./tabs/CompaniesTab";
@@ -22,21 +24,25 @@ import RolesTab from "./tabs/RolesTab";
 import UserCustomCoursesTab from "./tabs/UserCustomCoursesTab";
 import UserQuizzesTab from "./tabs/UserQuizzesTab";
 import UserSurveysTab from "./tabs/UserSurveysTab";
+import ClassroomsTab from "./tabs/ClassroomsTab";
+import AssignmentsTab from "./tabs/AssignmentsTab";
 
 const MongoStudioPage = () => {
   const { data: identity } = useGetIdentity();
   const { permissions } = usePermissions();
-  const [activeTab, setActiveTab] = useState("skills");
+  const [activeTab, setActiveTab] = useState("classrooms");
   const [tabSearchQuery, setTabSearchQuery] = useState("");
   const tabsScrollRef = useRef(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(true);
 
-  // Check if user has permission (ADMIN or SUPERADMIN)
-  const isAuthorized = ["ADMIN", "SUPERADMIN"].includes(permissions);
+  // Check if user has permission (ADMIN, SUPERADMIN, or TEACHER)
+  const isAuthorized = ["ADMIN", "SUPERADMIN", "TEACHER"].includes(permissions);
 
   // Define allTabs before hooks (must be before useMemo)
   const allTabs = [
+    { id: "classrooms", label: "Classrooms", icon: School },
+    { id: "assignments", label: "Assignments", icon: ClipboardList },
     { id: "skills", label: "Skills", icon: Code },
     { id: "companies", label: "Companies", icon: Building2 },
     { id: "domains", label: "Domains", icon: Globe },
@@ -46,16 +52,25 @@ const MongoStudioPage = () => {
     { id: "usersurveys", label: "User Surveys", icon: Users },
   ];
 
-  // Filter tabs based on search query - MUST be before early return
+  // Filter tabs based on role and search query
   const filteredTabs = useMemo(() => {
-    if (!tabSearchQuery.trim()) return allTabs;
+    let availableTabs = allTabs;
+
+    // Teachers only see Classrooms and Assignments
+    if (permissions === "TEACHER") {
+      availableTabs = allTabs.filter((tab) =>
+        ["classrooms", "assignments"].includes(tab.id)
+      );
+    }
+
+    if (!tabSearchQuery.trim()) return availableTabs;
     const query = tabSearchQuery.toLowerCase();
-    return allTabs.filter(
+    return availableTabs.filter(
       (tab) =>
         tab.label.toLowerCase().includes(query) ||
         tab.id.toLowerCase().includes(query)
     );
-  }, [tabSearchQuery]);
+  }, [tabSearchQuery, permissions]);
 
   // Check scroll position to show/hide scroll indicators
   const checkScrollPosition = React.useCallback(() => {
@@ -121,9 +136,7 @@ const MongoStudioPage = () => {
       <div className="p-6">
         <Title title="MongoDB Studio" />
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <h2 className="text-xl font-bold text-red-800 mb-2">
-            Access Denied
-          </h2>
+          <h2 className="text-xl font-bold text-red-800 mb-2">Access Denied</h2>
           <p className="text-red-600">
             You need ADMIN or SUPERADMIN permissions to access MongoDB Studio.
           </p>
@@ -183,7 +196,7 @@ const MongoStudioPage = () => {
               )}
             </div>
           </div>
-          
+
           {/* Scrollable Tabs Container */}
           <div className="relative">
             {/* Left Scroll Indicator */}
@@ -252,6 +265,8 @@ const MongoStudioPage = () => {
 
         {/* Tab Content */}
         <div className="min-h-[400px]">
+          {activeTab === "classrooms" && <ClassroomsTab />}
+          {activeTab === "assignments" && <AssignmentsTab />}
           {activeTab === "skills" && <SkillsTab />}
           {activeTab === "companies" && <CompaniesTab />}
           {activeTab === "domains" && <DomainsTab />}
@@ -266,4 +281,3 @@ const MongoStudioPage = () => {
 };
 
 export default MongoStudioPage;
-

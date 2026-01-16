@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "assignments",
+  "info": {
+    "singularName": "assignment",
+    "pluralName": "assignments",
+    "displayName": "Assignment"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "instructions": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "assignments"
+    },
+    "type": {
+      "type": "enumeration",
+      "default": "HOMEWORK",
+      "enum": ["PROJECT", "HOMEWORK"]
+    },
+    "youtube_url": {
+      "type": "string"
+    },
+    "guide_media": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    },
+    "org": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org.org",
+      "inversedBy": "assignments"
+    },
+    "instructions_text": {
+      "type": "richtext"
+    },
+    "classStandards": {
+      "type": "json",
+      "default": []
+    },
+    "dueDate": {
+      "type": "datetime"
+    },
+    "maxScore": {
+      "type": "integer",
+      "default": 100
+    }
+  }
+}

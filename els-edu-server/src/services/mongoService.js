@@ -167,6 +167,174 @@ const userCourseSchema = new mongoose.Schema(
 // Create compound index for efficient queries
 userCourseSchema.index({ userDocumentId: 1, status: 1 });
 
+// ============================================
+// CLASSROOM SYSTEM SCHEMAS
+// ============================================
+
+/**
+ * Classroom Schema - Scheduled classes with content
+ * Org-isolated: Each classroom belongs to one organization
+ */
+const classroomSchema = new mongoose.Schema(
+  {
+    orgDocumentId: { type: String, required: true, index: true }, // Strapi org documentId - REQUIRED for isolation
+    title: { type: String, required: true },
+    description: { type: String, default: "" },
+    contentDocumentIds: [{ type: String }], // Ordered array of Strapi content documentIds
+    assignmentDocumentIds: [{ type: String }], // Strapi assignment documentIds
+    quizIds: [{ type: String }], // Strapi quiz documentIds
+    startDate: { type: Date, default: null }, // null for instant classes
+    endDate: { type: Date, required: true },
+    isInstant: { type: Boolean, default: false }, // true = instant class, false = scheduled
+    classTypes: [{ type: String }], // e.g., ["4th", "6th"] - which class standards can see this
+    status: {
+      type: String,
+      enum: ["draft", "scheduled", "live", "completed", "cancelled"],
+      default: "draft",
+    },
+    creatorDocumentId: { type: String, required: true }, // Teacher's user documentId
+    thumbnail: { type: String, default: null },
+  },
+  {
+    timestamps: true,
+    collection: "classrooms",
+  }
+);
+
+// Indexes for org isolation and performance
+classroomSchema.index({ orgDocumentId: 1, status: 1, classTypes: 1 });
+classroomSchema.index({ orgDocumentId: 1, startDate: 1 });
+classroomSchema.index({ orgDocumentId: 1, creatorDocumentId: 1 });
+
+/**
+ * ClassProgress Schema - Tracks student progress in a class
+ * Auto-created when student first accesses a class (NO ENROLLMENT)
+ */
+const classProgressSchema = new mongoose.Schema(
+  {
+    orgDocumentId: { type: String, required: true, index: true },
+    userDocumentId: { type: String, required: true },
+    classroomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Classroom",
+      required: true,
+    },
+    progress: {
+      completedContentIds: [{ type: String }], // Content documentIds completed
+      lastAccessedContentId: { type: String, default: null },
+      progressPercentage: { type: Number, default: 0, min: 0, max: 100 },
+      lastAccessedAt: { type: Date, default: Date.now },
+    },
+  },
+  {
+    timestamps: true,
+    collection: "classProgress",
+  }
+);
+
+// Indexes for progress tracking
+classProgressSchema.index({ orgDocumentId: 1, userDocumentId: 1 });
+classProgressSchema.index(
+  { userDocumentId: 1, classroomId: 1 },
+  { unique: true }
+);
+classProgressSchema.index({ orgDocumentId: 1, classroomId: 1 });
+
+/**
+ * UserAssignment Schema - Tracks assignments assigned to students
+ * Auto-created when teacher creates assignment for a class standard
+ */
+const userAssignmentSchema = new mongoose.Schema(
+  {
+    orgDocumentId: { type: String, required: true, index: true },
+    userDocumentId: { type: String, required: true },
+    assignmentDocumentId: { type: String, required: true }, // Strapi assignment documentId
+    classroomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Classroom",
+      default: null,
+    }, // Optional - if linked to specific classroom
+    classStandard: { type: String, required: true }, // e.g., "6th" - the class standard this was assigned for
+    assignedAt: { type: Date, default: Date.now },
+    dueDate: { type: Date, default: null },
+    submission: {
+      mediaUrls: [{ type: String }], // Uploaded files
+      youtubeUrl: { type: String, default: null },
+      textResponse: { type: String, default: null },
+      submittedAt: { type: Date, default: null },
+    },
+    grade: {
+      score: { type: Number, default: null },
+      maxScore: { type: Number, default: 100 },
+      feedback: { type: String, default: null },
+      gradedBy: { type: String, default: null }, // Teacher documentId
+      gradedAt: { type: Date, default: null },
+    },
+    status: {
+      type: String,
+      enum: ["assigned", "submitted", "graded", "returned"],
+      default: "assigned",
+    },
+  },
+  {
+    timestamps: true,
+    collection: "userAssignments",
+  }
+);
+
+// Indexes for user assignments
+userAssignmentSchema.index({ orgDocumentId: 1, userDocumentId: 1 });
+userAssignmentSchema.index({ orgDocumentId: 1, assignmentDocumentId: 1 });
+userAssignmentSchema.index({ orgDocumentId: 1, classStandard: 1 });
+userAssignmentSchema.index({ orgDocumentId: 1, status: 1 });
+
+/**
+ * Notification Schema - Org and user scoped notifications
+ * Used for class alerts, assignment notifications, grades
+ */
+const notificationSchema = new mongoose.Schema(
+  {
+    orgDocumentId: { type: String, required: true, index: true },
+    userDocumentId: { type: String, default: null }, // Recipient (null for org-wide broadcast)
+    classStandards: [{ type: String }], // Target class standards (empty = all)
+    type: {
+      type: String,
+      enum: [
+        "class_starting",
+        "class_live",
+        "new_assignment",
+        "new_class",
+        "grade_available",
+        "class_reminder",
+      ],
+      required: true,
+    },
+    title: { type: String, required: true },
+    message: { type: String, default: "" },
+    relatedClassroomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Classroom",
+      default: null,
+    },
+    relatedAssignmentId: { type: String, default: null },
+    isRead: { type: Boolean, default: false },
+    readAt: { type: Date, default: null },
+  },
+  {
+    timestamps: true,
+    collection: "notifications",
+  }
+);
+
+// Indexes for notifications
+notificationSchema.index({ orgDocumentId: 1, userDocumentId: 1, isRead: 1 });
+notificationSchema.index({
+  orgDocumentId: 1,
+  classStandards: 1,
+  createdAt: -1,
+});
+notificationSchema.index({ orgDocumentId: 1, createdAt: -1 });
+
 // Models (with check to prevent re-compilation)
 const Skill = mongoose.models.Skill || mongoose.model("Skill", skillSchema);
 const Company =
@@ -180,6 +348,19 @@ const UserQuiz =
 const UserCourse =
   mongoose.models.UserCourse || mongoose.model("UserCourse", userCourseSchema);
 
+// Classroom System Models
+const Classroom =
+  mongoose.models.Classroom || mongoose.model("Classroom", classroomSchema);
+const ClassProgress =
+  mongoose.models.ClassProgress ||
+  mongoose.model("ClassProgress", classProgressSchema);
+const UserAssignment =
+  mongoose.models.UserAssignment ||
+  mongoose.model("UserAssignment", userAssignmentSchema);
+const Notification =
+  mongoose.models.Notification ||
+  mongoose.model("Notification", notificationSchema);
+
 /**
  * Drop old courseId index if it exists (migration helper)
  * This fixes the E11000 duplicate key error for courseId: null
@@ -188,18 +369,18 @@ async function dropOldCourseIdIndex() {
   try {
     const db = mongoose.connection.db;
     if (!db) return; // Not connected yet
-    
+
     const collection = db.collection("userCustomCourses");
-    
+
     // Get all indexes
     const indexes = await collection.indexes();
-    
+
     // Check if courseId index exists
-    const courseIdIndex = indexes.find((idx) => 
-      idx.name === "courseId_1" || 
-      (idx.key && idx.key.courseId !== undefined)
+    const courseIdIndex = indexes.find(
+      (idx) =>
+        idx.name === "courseId_1" || (idx.key && idx.key.courseId !== undefined)
     );
-    
+
     if (courseIdIndex) {
       console.log("🔧 Dropping old courseId index from userCustomCourses...");
       await collection.dropIndex(courseIdIndex.name);
@@ -223,12 +404,47 @@ async function connect() {
     await mongoose.connect(mongoConfig.uri, mongoConfig.options);
     isConnected = true;
     console.log("🍃 MongoDB connected for Analytics");
-    
+
     // Drop old courseId index if it exists (one-time migration)
     await dropOldCourseIdIndex();
+    await dropIncorrectClassProgressIndex();
   } catch (error) {
     console.error("MongoDB connection error:", error);
     throw error;
+  }
+}
+
+/**
+ * Drop incorrect unique index on classroomId if it exists
+ * This fixes the issue where only one user can join a class
+ */
+async function dropIncorrectClassProgressIndex() {
+  try {
+    const db = mongoose.connection.db;
+    if (!db) return;
+
+    // Check both potential collection names
+    const collectionNames = ["classProgress", "classProgresses"];
+
+    for (const name of collectionNames) {
+      const collection = db.collection(name);
+      try {
+        const indexes = await collection.indexes();
+        const badIndex = indexes.find((idx) => idx.name === "classroomId_1");
+
+        if (badIndex) {
+          console.log(
+            `🔧 Dropping incorrect index classroomId_1 from ${name}...`
+          );
+          await collection.dropIndex("classroomId_1");
+          console.log(`✅ Dropped incorrect index from ${name}`);
+        }
+      } catch (err) {
+        // Collection might not exist, ignore
+      }
+    }
+  } catch (error) {
+    console.error("Error dropping classroomId index:", error.message);
   }
 }
 
@@ -276,7 +492,7 @@ async function getRoles(filters = {}) {
   await connect();
   const query = {};
   const mongoose = require("mongoose");
-  
+
   // Handle both ObjectId and name for company filter
   if (filters.company) {
     if (mongoose.Types.ObjectId.isValid(filters.company)) {
@@ -291,7 +507,7 @@ async function getRoles(filters = {}) {
       query.company = filters.company; // It's already a name
     }
   }
-  
+
   // Handle both ObjectId and name for domain filter
   if (filters.domain) {
     if (mongoose.Types.ObjectId.isValid(filters.domain)) {
@@ -306,9 +522,9 @@ async function getRoles(filters = {}) {
       query.domain = filters.domain; // It's already a name
     }
   }
-  
+
   const roles = await Role.find(query).lean();
-  
+
   // Convert company and domain ObjectIds to names (for backward compatibility)
   return Promise.all(
     roles.map(async (role) => {
@@ -335,7 +551,7 @@ async function getRoles(filters = {}) {
 async function getRoleByNameAndCompany(name, company) {
   await connect();
   const mongoose = require("mongoose");
-  
+
   // Handle both ObjectId and name for company
   let companyName = company;
   if (company && mongoose.Types.ObjectId.isValid(company)) {
@@ -344,9 +560,9 @@ async function getRoleByNameAndCompany(name, company) {
       companyName = companyDoc.name;
     }
   }
-  
+
   const role = await Role.findOne({ name, company: companyName }).lean();
-  
+
   // Convert company and domain ObjectIds to names (for backward compatibility)
   if (role) {
     if (role.company && mongoose.Types.ObjectId.isValid(role.company)) {
@@ -362,7 +578,7 @@ async function getRoleByNameAndCompany(name, company) {
       }
     }
   }
-  
+
   return role;
 }
 
@@ -500,12 +716,12 @@ async function getUserCourses(userDocumentId, filters = {}) {
  */
 async function saveUserCourse(courseData) {
   await connect();
-  
+
   // Remove courseId if present (old field, not used anymore)
   // This prevents issues with old indexes
   const cleanedData = { ...courseData };
   delete cleanedData.courseId;
-  
+
   const course = new UserCourse(cleanedData);
   return course.save();
 }
@@ -518,11 +734,11 @@ async function saveUserCourse(courseData) {
  */
 async function updateUserCourse(courseId, updateData) {
   await connect();
-  
+
   // Remove courseId if present (old field, not used anymore)
   const cleanedData = { ...updateData };
   delete cleanedData.courseId;
-  
+
   return UserCourse.findByIdAndUpdate(courseId, cleanedData, {
     new: true,
   }).lean();
@@ -558,5 +774,17 @@ module.exports = {
   updateUserCourse,
   deleteUserCourse,
   // Export models for direct access if needed
-  models: { Skill, Company, Domain, Role, UserSurvey, UserQuiz, UserCourse },
+  models: {
+    Skill,
+    Company,
+    Domain,
+    Role,
+    UserSurvey,
+    UserQuiz,
+    UserCourse,
+    Classroom,
+    ClassProgress,
+    UserAssignment,
+    Notification,
+  },
 };

@@ -471,6 +471,55 @@ export interface ApiAddressAddress extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiAssignmentAssignment extends Struct.CollectionTypeSchema {
+  collectionName: 'assignments';
+  info: {
+    displayName: 'Assignment';
+    pluralName: 'assignments';
+    singularName: 'assignment';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    classStandards: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<[]>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    creator: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    description: Schema.Attribute.Text;
+    dueDate: Schema.Attribute.DateTime;
+    guide_media: Schema.Attribute.Media<
+      'images' | 'files' | 'videos' | 'audios',
+      true
+    >;
+    instructions: Schema.Attribute.Media<
+      'images' | 'files' | 'videos' | 'audios',
+      true
+    >;
+    instructions_text: Schema.Attribute.RichText;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::assignment.assignment'
+    > &
+      Schema.Attribute.Private;
+    maxScore: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<100>;
+    org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
+    publishedAt: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String;
+    type: Schema.Attribute.Enumeration<['PROJECT', 'HOMEWORK']> &
+      Schema.Attribute.DefaultTo<'HOMEWORK'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    youtube_url: Schema.Attribute.String;
+  };
+}
+
 export interface ApiCalanderActivityCalanderActivity
   extends Struct.CollectionTypeSchema {
   collectionName: 'calander_activities';
@@ -989,6 +1038,10 @@ export interface ApiOrgOrg extends Struct.CollectionTypeSchema {
   };
   attributes: {
     address: Schema.Attribute.Relation<'oneToOne', 'api::address.address'>;
+    assignments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::assignment.assignment'
+    >;
     calander_activities: Schema.Attribute.Relation<
       'manyToMany',
       'api::calander-activity.calander-activity'
@@ -2459,6 +2512,10 @@ export interface PluginUsersPermissionsUser
       'api::subject.subject'
     >;
     assigned_roles: Schema.Attribute.JSON;
+    assignments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::assignment.assignment'
+    >;
     authored_subjects: Schema.Attribute.Relation<
       'manyToMany',
       'api::subject.subject'
@@ -2467,6 +2524,22 @@ export interface PluginUsersPermissionsUser
     calander_activities: Schema.Attribute.Relation<
       'oneToMany',
       'api::calander-activity.calander-activity'
+    >;
+    class_standard: Schema.Attribute.Enumeration<
+      [
+        'Standard_1st',
+        'Standard_2nd',
+        'Standard_3rd',
+        'Standard_4th',
+        'Standard_5th',
+        'Standard_6th',
+        'Standard_7th',
+        'Standard_8th',
+        'Standard_9th',
+        'Standard_10th',
+        'Standard_11th',
+        'Standard_12th',
+      ]
     >;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
@@ -2607,6 +2680,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::address.address': ApiAddressAddress;
+      'api::assignment.assignment': ApiAssignmentAssignment;
       'api::calander-activity.calander-activity': ApiCalanderActivityCalanderActivity;
       'api::content.content': ApiContentContent;
       'api::course-pricing.course-pricing': ApiCoursePricingCoursePricing;

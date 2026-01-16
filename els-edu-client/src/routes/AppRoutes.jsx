@@ -26,6 +26,8 @@ import SelfAssessmentPage from "../pages/analytics/SelfAssessmentPage";
 import AnalyticsResultsPage from "../pages/analytics/AnalyticsResultsPage";
 import SkillQuizPage from "../pages/analytics/SkillQuizPage";
 import MongoStudioPage from "../pages/mongo-studio/MongoStudioPage";
+import AssignmentDetailsPage from "../pages/mongo-studio/AssignmentDetailsPage";
+import { ClassroomPage, ClassDetailPage } from "../pages/classroom";
 
 const AppRoutes = () => (
   <>
@@ -192,12 +194,46 @@ const AppRoutes = () => (
         }
       />
 
-      {/* MongoDB Studio - only ADMIN and SUPERADMIN */}
+      {/* MongoDB Studio - only ADMIN, SUPERADMIN, and TEACHER */}
       <Route
         path="/mongo-studio"
         element={
-          <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
+          <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN", "TEACHER"]}>
             <MongoStudioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mongo-studio/assignments/:id"
+        element={
+          <ProtectedRoute>
+            <AssignmentDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Classroom - accessible to all logged in users */}
+      <Route
+        path="/classroom"
+        element={
+          <ProtectedRoute>
+            <ClassroomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/classroom/:id"
+        element={
+          <ProtectedRoute>
+            <ClassDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/assignments/:id"
+        element={
+          <ProtectedRoute>
+            <AssignmentDetailsPage />
           </ProtectedRoute>
         }
       />

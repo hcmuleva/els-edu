@@ -14,6 +14,7 @@ import {
   User,
   Edit3,
 } from "lucide-react";
+import ClassroomDashboardSection from "../../components/dashboard/ClassroomDashboardSection";
 
 const Dashboard = () => {
   const { identity, isLoading: identityLoading } = useGetIdentity();
@@ -329,6 +330,9 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Classroom Section - Live Classes, Upcoming, Assignments */}
+        <ClassroomDashboardSection />
 
         {/* Stats Grid - 2x2 on mobile with cleaner styling */}
         <div>

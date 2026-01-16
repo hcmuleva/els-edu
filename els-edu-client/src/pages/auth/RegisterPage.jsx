@@ -2,11 +2,9 @@ import React, { useState } from "react";
 import { useLogin, useNotify } from "react-admin";
 import { Link } from "react-router-dom";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
-import {
-  addUserToDefaultOrg,
-  updateUserData,
-  DEFAULT_ORG_NAME,
-} from "../../services/org";
+import { updateUserData, DEFAULT_ORG_NAME } from "../../services/org";
+import { CLASS_STANDARDS, mapClassToBackend } from "../../config/constants";
+import { CustomSelect } from "../../components/common/CustomSelect";
 import { refreshUser } from "../../api/authProvider";
 
 const RegisterPage = () => {
@@ -16,6 +14,7 @@ const RegisterPage = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    class_standard: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -47,6 +46,7 @@ const RegisterPage = () => {
           username: formData.username,
           email: formData.email,
           password: formData.password,
+          class_standard: mapClassToBackend(formData.class_standard),
         }),
       });
 
@@ -199,11 +199,32 @@ const RegisterPage = () => {
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-foreground mb-2">
+              Class Standard *
+            </label>
+            <CustomSelect
+              value={formData.class_standard}
+              onChange={(val) =>
+                setFormData({ ...formData, class_standard: val })
+              }
+              options={CLASS_STANDARDS.map((std) => ({
+                id: std,
+                name: std, // CustomSelect expects name to display
+              }))}
+              placeholder="Select Class"
+              className="w-full"
+              required
+            />
           </div>
 
           <div className="flex items-center gap-3 mt-4 mb-2">
@@ -239,7 +260,7 @@ const RegisterPage = () => {
 
           <button
             type="submit"
-            disabled={loading || !acceptTerms}
+            disabled={loading || !acceptTerms || !formData.class_standard}
             className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {loading ? "Creating Account..." : "Sign Up"}

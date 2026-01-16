@@ -217,7 +217,7 @@ export const TransferListModal = ({
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px]">
+              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {paginatedAvailable.map((item) => (
                   <div
                     key={item.documentId || item.id}
@@ -326,7 +326,7 @@ export const TransferListModal = ({
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px]">
+              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {paginatedAssigned.map((item) => (
                   <div
                     key={item.documentId || item.id}

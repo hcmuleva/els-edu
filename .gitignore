@@ -133,3 +133,10 @@ TBD/
 android/
 migration_scripts/
 ELS_Analytic_skill_recommendation-main/
+els-utils/
+
+############################
+# Scripts & Docs
+############################
+scripts/
+*.md

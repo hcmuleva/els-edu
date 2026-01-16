@@ -220,7 +220,10 @@ export const CustomAsyncSelect = ({
           )}
 
           {/* Options List - Max height ~6 items (6 * 40px = 240px) */}
-          <div className="overflow-y-auto p-1" style={{ maxHeight: "240px" }}>
+          <div
+            className="overflow-y-auto p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ maxHeight: "240px" }}
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button

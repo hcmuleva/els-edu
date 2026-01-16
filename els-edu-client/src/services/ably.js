@@ -153,7 +153,11 @@ export const subscribeToCustomCourseUpdates = (callback) => {
 
   // Create message handler
   const messageHandler = (message) => {
-    console.log("[ABLY] Custom course update received:", message.name, message.data);
+    console.log(
+      "[ABLY] Custom course update received:",
+      message.name,
+      message.data
+    );
     callback(message.name, message.data);
   };
 
@@ -163,7 +167,10 @@ export const subscribeToCustomCourseUpdates = (callback) => {
 
   // Optional: Log attachment (but don't manually attach)
   channel.on("attached", () => {
-    console.log("[ABLY] Attached to custom course updates channel:", channelName);
+    console.log(
+      "[ABLY] Attached to custom course updates channel:",
+      channelName
+    );
   });
 
   // Return cleanup function
@@ -211,6 +218,68 @@ export const subscribeToUserCustomCourseUpdates = (userId, callback) => {
 };
 
 /**
+ * Subscribe to classroom updates (assignments, live status, etc.)
+ * @param {string} orgId - Organization Document ID
+ * @param {function} callback - Callback function(eventName, data)
+ * @returns {function} Cleanup function to unsubscribe
+ */
+export const subscribeToClassroomUpdates = (orgId, callback) => {
+  const client = getAblyClient();
+
+  if (!client || !orgId) {
+    return () => {};
+  }
+
+  // Subscribe to assignment updates for this org
+  const assignmentChannelName = `classroom:${orgId}:assignments`;
+  const assignmentChannel = client.channels.get(assignmentChannelName);
+
+  // Subscribe to live class updates for this org
+  const updatesChannelName = `classroom:${orgId}:updates`;
+  const updatesChannel = client.channels.get(updatesChannelName);
+
+  const handler = (message) => {
+    callback(message.name, message.data);
+  };
+
+  assignmentChannel.subscribe(handler);
+  updatesChannel.subscribe(handler);
+
+  return () => {
+    assignmentChannel.unsubscribe(handler);
+    updatesChannel.unsubscribe(handler);
+  };
+};
+
+/**
+ * Subscribe to user notifications
+ * @param {string} orgId - Organization Document ID
+ * @param {string} userId - User Document ID
+ * @param {function} callback - Callback function(eventName, data)
+ * @returns {function} Cleanup function to unsubscribe
+ */
+export const subscribeToUserNotifications = (orgId, userId, callback) => {
+  const client = getAblyClient();
+
+  if (!client || !orgId || !userId) {
+    return () => {};
+  }
+
+  const channelName = `notification:${orgId}:${userId}`;
+  const channel = client.channels.get(channelName);
+
+  const handler = (message) => {
+    callback(message.name, message.data);
+  };
+
+  channel.subscribe(handler);
+
+  return () => {
+    channel.unsubscribe(handler);
+  };
+};
+
+/**
  * Close Ably connection
  */
 export const closeAblyConnection = () => {
@@ -227,5 +296,7 @@ export default {
   subscribeToGlobalCourseUpdates,
   subscribeToCustomCourseUpdates,
   subscribeToUserCustomCourseUpdates,
+  subscribeToClassroomUpdates,
+  subscribeToUserNotifications,
   closeAblyConnection,
 };

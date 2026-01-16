@@ -80,7 +80,7 @@ const CourseDetailsDrawer = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Cover */}
           <div className="relative h-48 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl overflow-hidden">
             {course?.cover?.url ? (
