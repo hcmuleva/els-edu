@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import { useDataProvider, Title, useGetIdentity } from "react-admin";
 import {
   ArrowLeft,
@@ -15,6 +20,7 @@ import {
   Target,
   RotateCcw,
 } from "lucide-react";
+import mongoService from "../../services/mongoService";
 
 const QuizPlayer = () => {
   const { id } = useParams();
@@ -22,6 +28,8 @@ const QuizPlayer = () => {
   const dataProvider = useDataProvider();
   const { identity } = useGetIdentity();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const { classroomId, type } = location.state || {};
 
   const [quiz, setQuiz] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -81,23 +89,21 @@ const QuizPlayer = () => {
           setTimeRemaining(data.timeLimit * 60);
         }
 
-        // Fetch existing quiz results for this user and quiz
-        if (identity?.id) {
+        // Fetch existing quiz results for this user and quiz (from Mongo)
+        if (identity?.documentId) {
           try {
-            const { data: results } = await dataProvider.getList(
-              "quiz-results",
-              {
-                filter: {
-                  user: identity.id,
-                  // Use numeric ID for relation filter - Strapi v5 requires numeric IDs
-                  quiz: data.id,
-                },
-                pagination: { page: 1, perPage: 100 },
-                sort: { field: "createdAt", order: "DESC" },
-              }
-            );
-            setExistingResults(results || []);
-            setAttemptsUsed(results?.length || 0);
+            const results = await mongoService.getUserQuizzes({
+              filters: {
+                // Check specifically for this quiz ID
+                // Depending on how we save it, likely in 'quizId' field
+                quizId: id,
+                type: { $in: ["QUIZ", "CLASSROOM"] },
+              },
+              sort: { createdAt: "desc" },
+            });
+
+            setExistingResults(results.data || []);
+            setAttemptsUsed(results.data?.length || 0);
           } catch (error) {
             console.error("Error fetching quiz results:", error);
           }
@@ -233,9 +239,7 @@ const QuizPlayer = () => {
         isAttempted: result.isAttempted,
         selectedAnswer: result.selectedAnswer,
         correctAnswer: Array.isArray(result.correctOption)
-          ? result.correctOption.map(
-            (o) => o.documentId || o.id
-          )
+          ? result.correctOption.map((o) => o.documentId || o.id)
           : result.correctOption?.documentId || result.correctOption?.id,
         correctAnswerText: Array.isArray(result.correctOption)
           ? result.correctOption.map((o) => o.option).join(", ")
@@ -247,44 +251,46 @@ const QuizPlayer = () => {
       }));
 
       const quizResultData = {
-        // Use numeric ID for relations - Strapi v5 requires numeric IDs, not documentId strings
-        quiz: quiz.id,
-        user: identity.id,
-        // For subject/topic relations, use numeric ID
-        subject:
-          quiz.subject?.id ||
-          (typeof quiz.subject === "number" ? quiz.subject : null),
-        topic:
-          quiz.topic?.id ||
-          (typeof quiz.topic === "number" ? quiz.topic : null),
-        // For questions relation, use numeric IDs
-        questions: questions.map((q) => q.id),
-        score: score.correct,
-        totalQuestions: score.total,
-        percentage: score.percentage,
-        correctAnswers: score.correct,
-        incorrectAnswers: score.wrong,
-        unansweredQuestions: score.notAttempted,
-        isPassed: score.percentage >= (quiz.passingScore || 70),
-        timeTaken: totalTimeTaken,
-        attemptNumber: attemptsUsed + 1,
-        startedAt: quizStartTime,
-        completedAt: now,
-        questionTimings,
-        questionAnalysis,
+        type: type || "QUIZ", // "CLASSROOM", "COURSE", or generic "QUIZ"
+        userDocumentId: identity.documentId || identity.id, // Ensure user ID is passed
+        quizId: quiz.documentId,
+        quizTitle: quiz.title,
+        classroomId: classroomId, // From location state
+
+        // Mongo specific fields
+        score: {
+          correct: score.correct,
+          total: score.total,
+          percentage: score.percentage,
+          marks: score.marks,
+          totalMarks: score.totalMarks,
+        },
+
+        // Detailed analysis
         answers: questionAnalysis.map((q) => ({
           questionId: q.questionId,
+          questionText: q.questionText,
           selectedOption: q.selectedAnswer,
           isCorrect: q.isCorrect,
           timeSpent: q.timeSpent,
         })),
+
+        summary: {
+          correct: score.correct,
+          wrong: score.wrong,
+          skipped: score.notAttempted,
+          timeTaken: totalTimeTaken,
+          passed: score.percentage >= (quiz.passingScore || 70),
+        },
+
+        metadata: {
+          subject: quiz.subject?.name,
+        },
       };
 
-      await dataProvider.create("quiz-results", {
-        data: quizResultData,
-      });
+      await mongoService.createUserQuiz(quizResultData);
 
-      console.log("Quiz result created successfully");
+      console.log("Quiz result created successfully in Mongo");
     } catch (error) {
       console.error("Error creating quiz result:", error);
     }
@@ -331,8 +337,12 @@ const QuizPlayer = () => {
             : [selectedAnswer];
 
           // Check if set of selected IDs matches set of correct IDs exactly
-          const hasAllCorrect = correctOptionIds.every(id => selectedArray.includes(id));
-          const hasNoExtra = selectedArray.every(id => correctOptionIds.includes(id));
+          const hasAllCorrect = correctOptionIds.every((id) =>
+            selectedArray.includes(id)
+          );
+          const hasNoExtra = selectedArray.every((id) =>
+            correctOptionIds.includes(id)
+          );
 
           isCorrect = hasAllCorrect && hasNoExtra;
         } else {
@@ -560,10 +570,11 @@ const QuizPlayer = () => {
               setQuizStartTime(new Date());
             }}
             disabled={!canStartQuiz}
-            className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${canStartQuiz
-              ? "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md"
-              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-              }`}
+            className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${
+              canStartQuiz
+                ? "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md"
+                : "bg-gray-200 text-gray-500 cursor-not-allowed"
+            }`}
           >
             <Trophy className="w-4 h-4" />
             Start Quiz
@@ -608,10 +619,11 @@ const QuizPlayer = () => {
           <div className="bg-gray-50 rounded-2xl p-4">
             <div className="text-center mb-4">
               <div
-                className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center border-4 ${passed
-                  ? "bg-green-50 border-green-500"
-                  : "bg-red-50 border-red-500"
-                  }`}
+                className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center border-4 ${
+                  passed
+                    ? "bg-green-50 border-green-500"
+                    : "bg-red-50 border-red-500"
+                }`}
               >
                 {passed ? (
                   <Trophy className="w-8 h-8 text-green-600" />
@@ -623,8 +635,9 @@ const QuizPlayer = () => {
                 {score.percentage}%
               </h2>
               <p
-                className={`text-base font-semibold ${passed ? "text-green-600" : "text-red-600"
-                  }`}
+                className={`text-base font-semibold ${
+                  passed ? "text-green-600" : "text-red-600"
+                }`}
               >
                 {passed ? "🎉 You Passed!" : "Keep Practicing!"}
               </p>
@@ -693,21 +706,23 @@ const QuizPlayer = () => {
               {score.questionResults.map((result, index) => (
                 <div
                   key={result.question.id}
-                  className={`rounded-xl p-3 ${!result.isAttempted
-                    ? "bg-gray-50"
-                    : result.isCorrect
+                  className={`rounded-xl p-3 ${
+                    !result.isAttempted
+                      ? "bg-gray-50"
+                      : result.isCorrect
                       ? "bg-green-50"
                       : "bg-red-50"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${!result.isAttempted
-                        ? "bg-gray-300 text-gray-700"
-                        : result.isCorrect
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                        !result.isAttempted
+                          ? "bg-gray-300 text-gray-700"
+                          : result.isCorrect
                           ? "bg-green-500 text-white"
                           : "bg-red-500 text-white"
-                        }`}
+                      }`}
                     >
                       {index + 1}
                     </div>
@@ -725,7 +740,9 @@ const QuizPlayer = () => {
                         <p className="text-xs text-red-600">
                           ✗ Answer:{" "}
                           {Array.isArray(result.correctOption)
-                            ? result.correctOption.map((o) => o.option).join(", ")
+                            ? result.correctOption
+                                .map((o) => o.option)
+                                .join(", ")
                             : result.correctOption?.option}
                         </p>
                       )}
@@ -854,12 +871,13 @@ const QuizPlayer = () => {
                   </span>
                   {currentQuestion?.difficulty && (
                     <span
-                      className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${currentQuestion.difficulty === "easy"
-                        ? "bg-green-100 text-green-700"
-                        : currentQuestion.difficulty === "hard"
+                      className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${
+                        currentQuestion.difficulty === "easy"
+                          ? "bg-green-100 text-green-700"
+                          : currentQuestion.difficulty === "hard"
                           ? "bg-red-100 text-red-700"
                           : "bg-orange-100 text-orange-700"
-                        }`}
+                      }`}
                     >
                       {currentQuestion.difficulty}
                     </span>
@@ -888,16 +906,18 @@ const QuizPlayer = () => {
                     <button
                       key={optionId || index}
                       onClick={() => handleAnswerSelect(optionId)}
-                      className={`w-full p-3 md:p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${isSelected
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-gray-200 hover:border-primary/30 bg-white"
-                        }`}
+                      className={`w-full p-3 md:p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-gray-200 hover:border-primary/30 bg-white"
+                      }`}
                     >
                       <div
-                        className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 ${isSelected
-                          ? "bg-primary text-white"
-                          : "bg-gray-100 text-gray-600"
-                          }`}
+                        className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 ${
+                          isSelected
+                            ? "bg-primary text-white"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
                       >
                         {letters[index]}
                       </div>
@@ -966,14 +986,15 @@ const QuizPlayer = () => {
                     <button
                       key={questionId}
                       onClick={() => setCurrentQuestionIndex(index)}
-                      className={`aspect-square rounded-lg font-bold text-xs transition-all border ${isCurrent && isAnswered
-                        ? "bg-green-500 text-white border-green-600"
-                        : isCurrent
+                      className={`aspect-square rounded-lg font-bold text-xs transition-all border ${
+                        isCurrent && isAnswered
+                          ? "bg-green-500 text-white border-green-600"
+                          : isCurrent
                           ? "bg-orange-100 text-orange-700 border-orange-300"
                           : isAnswered
-                            ? "bg-green-100 text-green-700 border-green-300"
-                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                        }`}
+                          ? "bg-green-100 text-green-700 border-green-300"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                      }`}
                     >
                       {index + 1}
                     </button>
@@ -993,10 +1014,11 @@ const QuizPlayer = () => {
                   <div
                     className="h-full bg-green-500 transition-all"
                     style={{
-                      width: `${(Object.keys(selectedAnswers).length /
-                        questions.length) *
+                      width: `${
+                        (Object.keys(selectedAnswers).length /
+                          questions.length) *
                         100
-                        }%`,
+                      }%`,
                     }}
                   />
                 </div>

@@ -33,6 +33,22 @@ const fetchFullUserData = async (token, userId) => {
       "populate[role][fields][2]": "type",
       "populate[profile_picture][fields][0]": "url",
       "populate[profile_picture][fields][1]": "formats",
+      "fields[0]": "grade", // Explicitly fetch grade
+      "fields[1]": "dob",
+      "fields[2]": "age",
+      "fields[3]": "privacy_accepted",
+      "fields[4]": "user_role",
+      "fields[5]": "assigned_roles",
+      "fields[6]": "username",
+      "fields[7]": "email",
+      "fields[8]": "first_name",
+      "fields[9]": "last_name",
+      "fields[10]": "mobile_number",
+      "fields[11]": "gender",
+      "fields[12]": "documentId",
+      "fields[13]": "control_type",
+      "fields[14]": "parental_lock_code",
+      "fields[15]": "getstarted_completed",
     });
 
     const response = await fetch(
@@ -296,7 +312,10 @@ export const authProvider = {
       control_type: user.control_type,
       parental_lock_code: user.parental_lock_code,
       org: user.org,
-      classStandard: user.class_standard || user.classStandard,
+      classStandard: user.grade, // Map grade to classStandard for backward compatibility
+      grade: user.grade, // New field
+      getstarted_completed: user.getstarted_completed,
+      privacy_accepted: user.privacy_accepted,
     });
   },
   // Custom method to switch role

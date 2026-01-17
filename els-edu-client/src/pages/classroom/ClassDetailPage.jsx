@@ -32,6 +32,7 @@ const ClassDetailPage = () => {
   const [contents, setContents] = useState([]);
   const [progress, setProgress] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("lectures");
@@ -122,6 +123,25 @@ const ClassDetailPage = () => {
           setAssignments(assignmentsResponse.data?.data || []);
         } else {
           setAssignments([]);
+        }
+
+        // Fetch quizzes from Strapi based on quizIds in classroom
+        if (classroomObj?.quizIds?.length > 0) {
+          const quizIds = classroomObj.quizIds;
+          console.log("Fetching quizzes for IDs:", quizIds);
+
+          // Fetch quizzes by documentId
+          const quizzesResponse = await api.get("/quizzes", {
+            params: {
+              "filters[documentId][$in]": quizIds,
+              populate: "*",
+            },
+          });
+
+          console.log("Classroom quizzes:", quizzesResponse.data?.data);
+          setQuizzes(quizzesResponse.data?.data || []);
+        } else {
+          setQuizzes([]);
         }
       } catch (err) {
         console.error("Error fetching class details:", err);
@@ -287,7 +307,7 @@ const ClassDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col w-full">
       <Title title={classroom?.title || "Class Detail"} />
 
       {/* Header */}
@@ -303,7 +323,7 @@ const ClassDetailPage = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
         {classroom?.status === "scheduled" ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm text-center p-6">
             <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 text-blue-500 animate-pulse">
@@ -312,18 +332,18 @@ const ClassDetailPage = () => {
             <h2 className="text-3xl font-black text-gray-800 mb-2 font-heading">
               Class Scheduled
             </h2>
-            <p className="text-gray-500 max-w-md mx-auto mb-8 text-lg">
+            <p className="text-gray-500 max-w-md mx-auto mb-8 text-base px-4 break-words">
               This class hasn't started yet. Content will be available when the
               class goes live.
             </p>
 
-            <div className="inline-flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-2xl border border-gray-100">
-              <Calendar className="text-primary w-6 h-6" />
-              <div className="text-left">
+            <div className="flex flex-wrap justify-center items-center gap-3 bg-gray-50 px-4 sm:px-6 py-4 rounded-2xl border border-gray-100 max-w-full">
+              <Calendar className="text-primary w-6 h-6 shrink-0" />
+              <div className="text-left min-w-0">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-wide">
                   Starts On
                 </p>
-                <p className="text-gray-900 font-bold text-lg">
+                <p className="text-gray-900 font-bold text-base sm:text-lg break-words">
                   {classroom.startDate
                     ? new Date(classroom.startDate).toLocaleString()
                     : "Coming Soon"}
@@ -333,7 +353,9 @@ const ClassDetailPage = () => {
 
             {classroom.description && (
               <div className="mt-12 max-w-2xl mx-auto bg-gray-50 p-6 rounded-2xl border border-gray-100/50">
-                <h3 className="font-bold text-gray-800 mb-2">About this Class</h3>
+                <h3 className="font-bold text-gray-800 mb-2">
+                  About this Class
+                </h3>
                 <p className="text-gray-600 leading-relaxed">
                   {classroom.description}
                 </p>
@@ -343,7 +365,7 @@ const ClassDetailPage = () => {
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Main Content Area */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 min-w-0">
               {/* Video Player */}
               {renderMediaPlayer()}
 
@@ -355,7 +377,7 @@ const ClassDetailPage = () => {
                       <h2 className="text-xl font-bold text-gray-800">
                         {activeContent.title}
                       </h2>
-                      <p className="text-gray-500 text-sm mt-1">
+                      <p className="text-gray-500 text-sm mt-1 break-words">
                         Lecture {activeContentIndex + 1} of {contents.length}
                       </p>
                     </div>
@@ -410,25 +432,27 @@ const ClassDetailPage = () => {
                   <h3 className="font-bold text-gray-800 mb-2">
                     About this Class
                   </h3>
-                  <p className="text-gray-600">{classroom.description}</p>
+                  <p className="text-gray-600 break-words text-sm sm:text-base">
+                    {classroom.description}
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Sidebar - Lecture List */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl border sticky top-20">
+            <div className="lg:col-span-1 min-w-0">
+              <div className="bg-white rounded-xl border sticky top-20 max-w-full overflow-hidden">
                 {/* Progress Bar */}
                 <div className="p-4 border-b">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-gray-800">
+                  <div className="flex items-center justify-between mb-2 gap-2">
+                    <span className="font-bold text-gray-800 truncate">
                       {classroom?.title}
                     </span>
                     <span className="text-sm font-bold text-primary">
                       {progressPercentage}%
                     </span>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden w-full">
                     <div
                       className="h-full bg-primary transition-all duration-300"
                       style={{ width: `${progressPercentage}%` }}
@@ -534,10 +558,42 @@ const ClassDetailPage = () => {
 
                   {activeTab === "quizzes" && (
                     <div className="p-4 max-h-[400px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                      {classroom?.quizIds?.length > 0 ? (
-                        <p className="text-gray-500">
-                          {classroom.quizIds.length} quiz(es) available
-                        </p>
+                      {quizzes.length > 0 ? (
+                        <div className="space-y-3">
+                          <p className="text-gray-500 text-sm mb-2">
+                            {quizzes.length} quiz(es) available
+                          </p>
+                          {quizzes.map((quiz) => (
+                            <div
+                              key={quiz.documentId}
+                              onClick={() => {
+                                // Navigate to quiz player (to be implemented)
+                                // For now, passing just id and logic
+                                navigate(`/quiz/${quiz.documentId}/play`, {
+                                  state: {
+                                    quizId: quiz.documentId,
+                                    classroomId,
+                                    type: "CLASSROOM",
+                                  },
+                                });
+                              }}
+                              className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 bg-white hover:bg-gray-50 border-gray-100 hover:border-gray-200`}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                <BookOpen className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate text-gray-900">
+                                  {quiz.title || quiz.name || "Untitled Quiz"}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {quiz.description || "No description"}
+                                </p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <p className="text-center py-8 text-gray-500">
                           No quizzes for this class
@@ -586,7 +642,9 @@ const ClassDetailPage = () => {
                             </div>
                             {assignment.maxScore && (
                               <div className="text-right">
-                                <p className="text-xs text-gray-500">Max Score</p>
+                                <p className="text-xs text-gray-500">
+                                  Max Score
+                                </p>
                                 <p className="text-sm font-bold text-primary">
                                   {assignment.maxScore}
                                 </p>
@@ -608,4 +666,3 @@ const ClassDetailPage = () => {
 };
 
 export default ClassDetailPage;
-```

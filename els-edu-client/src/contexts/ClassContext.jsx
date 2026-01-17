@@ -18,12 +18,10 @@ export const ClassProvider = ({ children }) => {
   // We can check 'user_role' or 'permissions'.
   const isStudent =
     permissions === "STUDENT" || identity?.user_role === "STUDENT";
-  // Check both class_standard (from API/identity) and classStandard (from getIdentity mapping)
-  const rawClassStandard = identity?.class_standard || identity?.classStandard;
+  // Use grade from identity (classStandard is mapped from grade in authProvider)
+  const rawGrade = identity?.grade || identity?.classStandard;
 
-  const userClass = rawClassStandard
-    ? mapClassFromBackend(rawClassStandard)
-    : null;
+  const userClass = rawGrade;
 
   // We filter if the user is a Student AND has a class assigned
   // If no class assigned, maybe show nothing or show all?

@@ -7,6 +7,32 @@
 
 const mongoService = require("../../../services/mongoService");
 const { publishToAbly } = require("../../../../config/ably");
+const mongoose = require("mongoose");
+
+/**
+ * Compute classroom status based on dates (Industry Standard)
+ * MongoDB stores raw data, Strapi computes derived status
+ * @param {Object} classroom - Classroom document from MongoDB
+ * @returns {string} Computed status: draft, scheduled, live, completed, cancelled
+ */
+const computeClassroomStatus = (classroom) => {
+  const now = new Date();
+  const startDate = classroom.startDate ? new Date(classroom.startDate) : null;
+  const endDate = classroom.endDate ? new Date(classroom.endDate) : null;
+
+  // Respect manual statuses (draft, cancelled)
+  if (classroom.status === "draft" || classroom.status === "cancelled") {
+    return classroom.status;
+  }
+
+  // Auto-compute based on time
+  if (endDate && now > endDate) return "completed";
+  if (startDate && now >= startDate && endDate && now <= endDate) return "live";
+  if (startDate && now < startDate) return "scheduled";
+
+  // Fallback to stored status
+  return classroom.status || "draft";
+};
 
 module.exports = {
   /**
@@ -150,9 +176,28 @@ module.exports = {
           if (ctx.query.orgDocumentId) {
             query.orgDocumentId = ctx.query.orgDocumentId;
           }
-          // Apply classStandard filter for non-teacher views
-          if (ctx.query.classStandard) {
-            query.classTypes = { $in: [ctx.query.classStandard] };
+          // Apply grade filter for non-teacher views
+          if (ctx.query.grade) {
+            // Convert backend grade format to display format for MongoDB classTypes
+            const gradeMap = {
+              PLAYSCHOOL: "Playschool",
+              LKG: "LKG",
+              UKG: "UKG",
+              FIRST: "1st",
+              SECOND: "2nd",
+              THIRD: "3rd",
+              FOURTH: "4th",
+              FIFTH: "5th",
+              SIXTH: "6th",
+              SEVENTH: "7th",
+              EIGHTH: "8th",
+              NINTH: "9th",
+              TENTH: "10th",
+              ELEVENTH: "11th",
+              TWELFTH: "12th",
+            };
+            const displayGrade = gradeMap[ctx.query.grade] || ctx.query.grade;
+            query.classTypes = { $in: [displayGrade] };
           }
           // Apply status filter
           if (ctx.query.status) {
@@ -185,8 +230,27 @@ module.exports = {
           if (ctx.query.userDocumentId) {
             query.userDocumentId = ctx.query.userDocumentId;
           }
-          if (ctx.query.classStandard) {
-            query.classStandard = ctx.query.classStandard;
+          if (ctx.query.grade) {
+            // Convert backend grade format to display format for MongoDB
+            const gradeMap = {
+              PLAYSCHOOL: "Playschool",
+              LKG: "LKG",
+              UKG: "UKG",
+              FIRST: "1st",
+              SECOND: "2nd",
+              THIRD: "3rd",
+              FOURTH: "4th",
+              FIFTH: "5th",
+              SIXTH: "6th",
+              SEVENTH: "7th",
+              EIGHTH: "8th",
+              NINTH: "9th",
+              TENTH: "10th",
+              ELEVENTH: "11th",
+              TWELFTH: "12th",
+            };
+            const displayGrade = gradeMap[ctx.query.grade] || ctx.query.grade;
+            query.classStandard = displayGrade;
           }
           if (ctx.query.status) {
             query.status = ctx.query.status;
@@ -236,15 +300,23 @@ module.exports = {
         Model.countDocuments(query),
       ]);
 
-      // Convert ObjectIds to names for relations (for backward compatibility)
+      // Process documents for readability (role ObjectId → name, domain ObjectId → name, etc)
       const processedData = await Promise.all(
-        data.map(async (item) => {
-          const processed = { ...item };
-          if (collection === "companies" && item.domain) {
+        data.map(async (doc) => {
+          const processed = doc.toObject ? doc.toObject() : { ...doc };
+
+          // INDUSTRY STANDARD: Compute classroom status (Strapi derives truth)
+          if (collection === "classrooms") {
+            const computedStatus = computeClassroomStatus(processed);
+            processed.status = computedStatus;
+            processed._storedStatus = doc.status; // Keep original for debugging
+          }
+
+          if (collection === "companies" && processed.domain) {
             const mongoose = require("mongoose");
-            if (mongoose.Types.ObjectId.isValid(item.domain)) {
+            if (mongoose.Types.ObjectId.isValid(processed.domain)) {
               const domainDoc = await mongoService.models.Domain.findById(
-                item.domain
+                processed.domain
               ).lean();
               if (domainDoc) {
                 processed.domain = domainDoc.name;
@@ -252,27 +324,33 @@ module.exports = {
             }
           } else if (collection === "roles") {
             const mongoose = require("mongoose");
-            if (item.company && mongoose.Types.ObjectId.isValid(item.company)) {
+            if (
+              processed.company &&
+              mongoose.Types.ObjectId.isValid(processed.company)
+            ) {
               const companyDoc = await mongoService.models.Company.findById(
-                item.company
+                processed.company
               ).lean();
               if (companyDoc) {
                 processed.company = companyDoc.name;
               }
             }
-            if (item.domain && mongoose.Types.ObjectId.isValid(item.domain)) {
+            if (
+              processed.domain &&
+              mongoose.Types.ObjectId.isValid(processed.domain)
+            ) {
               const domainDoc = await mongoService.models.Domain.findById(
-                item.domain
+                processed.domain
               ).lean();
               if (domainDoc) {
                 processed.domain = domainDoc.name;
               }
             }
-          } else if (collection === "skills" && item.category) {
+          } else if (collection === "skills" && processed.category) {
             const mongoose = require("mongoose");
-            if (mongoose.Types.ObjectId.isValid(item.category)) {
+            if (mongoose.Types.ObjectId.isValid(processed.category)) {
               const domainDoc = await mongoService.models.Domain.findById(
-                item.category
+                processed.category
               ).lean();
               if (domainDoc) {
                 processed.category = domainDoc.name;
@@ -434,6 +512,13 @@ module.exports = {
         }
       }
 
+      // INDUSTRY STANDARD: Compute classroom status (Strapi derives truth)
+      if (collection === "classrooms") {
+        const computedStatus = computeClassroomStatus(processed);
+        processed.status = computedStatus;
+        processed._storedStatus = item.status; // Keep original for debugging
+      }
+
       ctx.body = { data: processed };
     } catch (error) {
       console.error(`[MONGO-STUDIO] Error fetching item:`, error);
@@ -475,7 +560,7 @@ module.exports = {
         role: userRole,
         collection,
         isPublic: isPublicCollection,
-        hasPermission,q 
+        hasPermission,
       });
 
       if (!hasPermission) {
@@ -539,6 +624,16 @@ module.exports = {
           // Auto-fill org
           if (!itemData.orgDocumentId && user.org?.documentId) {
             itemData.orgDocumentId = user.org.documentId;
+          }
+          // Convert classroomId string to ObjectId if needed
+          if (
+            itemData.classroomId &&
+            typeof itemData.classroomId === "string"
+          ) {
+            const mongoose = require("mongoose");
+            itemData.classroomId = new mongoose.Types.ObjectId(
+              itemData.classroomId
+            );
           }
           break;
         case "userAssignments":
@@ -723,7 +818,8 @@ module.exports = {
       ];
       const isPublicCollection = publicCollections.includes(collection);
       const hasPermission =
-        isPublicCollection || ["ADMIN", "SUPERADMIN", "TEACHER"].includes(userRole);
+        isPublicCollection ||
+        ["ADMIN", "SUPERADMIN", "TEACHER"].includes(userRole);
 
       if (!hasPermission) {
         ctx.status = 403;
@@ -908,7 +1004,8 @@ module.exports = {
       ];
       const isPublicCollection = publicCollections.includes(collection);
       const hasPermission =
-        isPublicCollection || ["ADMIN", "SUPERADMIN", "TEACHER"].includes(userRole);
+        isPublicCollection ||
+        ["ADMIN", "SUPERADMIN", "TEACHER"].includes(userRole);
 
       if (!hasPermission) {
         ctx.status = 403;

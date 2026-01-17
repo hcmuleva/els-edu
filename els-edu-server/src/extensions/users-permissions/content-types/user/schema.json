@@ -249,23 +249,6 @@
       "relation": "oneToMany",
       "target": "api::assignment.assignment",
       "mappedBy": "creator"
-    },
-    "class_standard": {
-      "type": "enumeration",
-      "enum": [
-        "Standard_1st",
-        "Standard_2nd",
-        "Standard_3rd",
-        "Standard_4th",
-        "Standard_5th",
-        "Standard_6th",
-        "Standard_7th",
-        "Standard_8th",
-        "Standard_9th",
-        "Standard_10th",
-        "Standard_11th",
-        "Standard_12th"
-      ]
     }
   }
 }

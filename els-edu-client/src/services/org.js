@@ -4,7 +4,7 @@ import { strapiDataProvider } from "../api/dataProvider";
 
 // Default org configuration
 // This should be the documentId of the "Edu Org"
-export const DEFAULT_ORG_DOCUMENT_ID = "qvn5sg2bvvhh74sf2m4qd7to";
+export const DEFAULT_ORG_DOCUMENT_ID = "o77q7t80lb3jys4gqrsoue64";
 export const DEFAULT_ORG_NAME = "Edu Org";
 
 /**

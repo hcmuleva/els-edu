@@ -17,7 +17,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useClass } from "../../../contexts/ClassContext";
 import {
   CLASS_STANDARDS,
@@ -31,6 +31,7 @@ const AssignmentsTab = () => {
   const notify = useNotify();
   const navigate = useNavigate();
   const { isContentVisible } = useClass();
+  const location = useLocation();
 
   const [assignments, setAssignments] = useState([]);
   const [orgs, setOrgs] = useState([]);
@@ -146,10 +147,20 @@ const AssignmentsTab = () => {
     setEditingItem(null);
   };
 
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     resetForm();
     setShowForm(true);
-  };
+  }, [isSuperAdmin, userOrgDocumentId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("action") === "create") {
+      handleCreate();
+      // Clear the action param so it doesn't trigger again on tab switch
+      params.delete("action");
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location.search, handleCreate, navigate]);
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -376,8 +387,8 @@ const AssignmentsTab = () => {
       {showForm &&
         createPortal(
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 flex flex-col">
-              <div className="p-6 border-b flex items-center justify-between">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden m-4 flex flex-col">
+              <div className="p-6 border-b flex-none flex items-center justify-between">
                 <h3 className="text-xl font-bold">
                   {editingItem ? "Edit Assignment" : "Create Assignment"}
                 </h3>
@@ -389,7 +400,7 @@ const AssignmentsTab = () => {
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 flex-1 overflow-y-auto">
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -533,7 +544,7 @@ const AssignmentsTab = () => {
               </div>
 
               {/* Actions */}
-              <div className="p-6 border-t flex justify-end gap-3">
+              <div className="p-6 border-t flex-none flex justify-end gap-3">
                 <button
                   onClick={() => setShowForm(false)}
                   className="px-4 py-2 border rounded-lg font-medium hover:bg-gray-50"

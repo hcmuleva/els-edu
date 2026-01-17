@@ -31,7 +31,7 @@ import {
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { refreshUser } from "../../api/authProvider";
 import { uploadFile } from "../../services/user";
-import { mapClassFromBackend } from "../../config/constants";
+import { mapGradeToDisplay } from "../../utils/constants";
 import ParentalLockModal from "../../components/auth/ParentalLockModal";
 
 const ProfilePage = () => {
@@ -575,18 +575,18 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Class Standard (Read-Only) */}
+            {/* Grade (Read-Only) */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Class Standard{" "}
+                Grade{" "}
                 <span className="text-xs font-normal text-gray-400">
                   (Locked)
                 </span>
               </label>
               <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg flex items-center justify-between">
                 <span>
-                  {identity.class_standard
-                    ? mapClassFromBackend(identity.class_standard)
+                  {identity.grade
+                    ? mapGradeToDisplay(identity.grade)
                     : "Not set"}
                 </span>
                 <span className="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">

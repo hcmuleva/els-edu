@@ -12,7 +12,7 @@ const mongoService = {
 
   createClassroom: async (data) => {
     const response = await api.post("/mongo-studio/classrooms", data);
-    return response.data;
+    return response.data;`  `
   },
 
   updateClassroom: async (id, data) => {
@@ -22,6 +22,13 @@ const mongoService = {
 
   deleteClassroom: async (documentId) => {
     const response = await api.delete(`/mongo-studio/classrooms/${documentId}`);
+    return response.data;
+  },
+
+  // --- Quizzes ---
+  getQuizzes: async (params = {}) => {
+    const queryString = qs.stringify(params, { encode: false });
+    const response = await api.get(`/quizzes?${queryString}`);
     return response.data;
   },
 

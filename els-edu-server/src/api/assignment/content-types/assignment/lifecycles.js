@@ -37,7 +37,7 @@ module.exports = {
         .findMany({
           filters: {
             org: { documentId: { $eq: orgDocumentId } },
-            class_standard: { $in: result.classStandards },
+            grade: { $in: result.classStandards },
             user_role: { $eq: "STUDENT" },
           },
           populate: ["org"],
@@ -67,7 +67,7 @@ module.exports = {
               orgDocumentId: orgDocumentId,
               userDocumentId: user.documentId,
               assignmentDocumentId: result.documentId,
-              classStandard: user.class_standard,
+              classStandard: user.grade,
               assignedAt: new Date(),
               dueDate: result.dueDate ? new Date(result.dueDate) : null,
               status: "assigned",

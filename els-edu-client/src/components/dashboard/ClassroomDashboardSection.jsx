@@ -32,7 +32,7 @@ const ClassroomDashboardSection = () => {
   const [loading, setLoading] = useState(true);
 
   const userOrgDocumentId = identity?.org?.documentId;
-  const userClassStandard = identity?.class_standard;
+  const userGrade = identity?.grade;
 
   useEffect(() => {
     if (!userOrgDocumentId) {
@@ -46,7 +46,7 @@ const ClassroomDashboardSection = () => {
         // Fetch classrooms
         const allClassrooms = await classroomService.getClassrooms(
           userOrgDocumentId,
-          userClassStandard
+          userGrade
         );
 
         // Filter by status
@@ -73,7 +73,7 @@ const ClassroomDashboardSection = () => {
     };
 
     fetchData();
-  }, [userOrgDocumentId, userClassStandard, identity?.documentId]);
+  }, [userOrgDocumentId, userGrade, identity?.documentId]);
 
   // Don't show section if no org
   if (!userOrgDocumentId) return null;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Title, useGetIdentity, usePermissions } from "react-admin";
+import { useLocation } from "react-router-dom";
 import {
   Database,
   PlusCircle,
@@ -90,11 +91,21 @@ const MongoStudioPage = () => {
     });
   }, []);
 
+  const location = useLocation();
+
   useEffect(() => {
-    // Load active tab from localStorage
-    const savedTab = localStorage.getItem("mongoStudio.activeTab");
-    if (savedTab) setActiveTab(savedTab);
-  }, []);
+    // Check URL params first
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+
+    if (tabParam) {
+      setActiveTab(tabParam);
+    } else {
+      // Load active tab from localStorage if no URL param
+      const savedTab = localStorage.getItem("mongoStudio.activeTab");
+      if (savedTab) setActiveTab(savedTab);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     // Save active tab to localStorage

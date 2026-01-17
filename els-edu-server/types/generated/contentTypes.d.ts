@@ -2525,22 +2525,6 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::calander-activity.calander-activity'
     >;
-    class_standard: Schema.Attribute.Enumeration<
-      [
-        'Standard_1st',
-        'Standard_2nd',
-        'Standard_3rd',
-        'Standard_4th',
-        'Standard_5th',
-        'Standard_6th',
-        'Standard_7th',
-        'Standard_8th',
-        'Standard_9th',
-        'Standard_10th',
-        'Standard_11th',
-        'Standard_12th',
-      ]
-    >;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     control_type: Schema.Attribute.Enumeration<['PARENT', 'STUDENT']>;

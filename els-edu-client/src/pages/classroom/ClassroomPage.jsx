@@ -5,7 +5,7 @@ import {
   usePermissions,
   useRedirect,
 } from "react-admin";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   BookOpen,
   Calendar,
@@ -21,30 +21,18 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { subscribeToClassroomUpdates } from "../../services/ably";
+import { GRADES_DISPLAY } from "../../utils/constants";
 
 import classroomService from "../../services/classroomService";
 import api from "../../services/api";
-
-const CLASS_STANDARDS = [
-  "1st",
-  "2nd",
-  "3rd",
-  "4th",
-  "5th",
-  "6th",
-  "7th",
-  "8th",
-  "9th",
-  "10th",
-  "11th",
-  "12th",
-];
+const TABS = ["ongoing", "upcoming"];
 
 const ClassroomPage = () => {
   const { data: identity, isLoading: identityLoading } = useGetIdentity();
   const { permissions } = usePermissions();
   const redirect = useRedirect();
   const navigate = useNavigate();
+  const location = useLocation(); // Track route changes
 
   const [activeTab, setActiveTab] = useState("classes");
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,12 +43,12 @@ const ClassroomPage = () => {
 
   const isTeacher = ["ADMIN", "SUPERADMIN", "TEACHER"].includes(permissions);
   const userOrgDocumentId = identity?.org?.documentId;
-  const userClassStandard = identity?.classStandard;
+  const userGrade = identity?.grade;
 
   console.log("ClassroomPage Render:", {
     identityLoading,
     userOrgDocumentId,
-    userClassStandard,
+    userGrade,
     identity,
   });
 
@@ -92,8 +80,8 @@ const ClassroomPage = () => {
       setError(null);
 
       // Check if student has no class assigned
-      if (!isTeacher && !userClassStandard) {
-        console.warn("Student has no classStandard assigned");
+      if (!isTeacher && !userGrade) {
+        console.warn("Student has no userGrade assigned");
         setLoading(false);
         setClassrooms([]);
         setUserAssignments([]);
@@ -108,7 +96,7 @@ const ClassroomPage = () => {
         console.log("Calling classroomService.getClassrooms...");
         const classroomData = await classroomService.getClassrooms(
           userOrgDocumentId,
-          !isTeacher ? userClassStandard : null
+          !isTeacher ? userGrade : null
         );
         console.log("Classroom data received:", classroomData);
 
@@ -165,11 +153,29 @@ const ClassroomPage = () => {
     fetchData();
   }, [
     userOrgDocumentId,
-    userClassStandard,
+    userGrade,
     isTeacher,
     identity?.documentId,
     identityLoading,
+    location.pathname, // Refetch when navigating to this page
   ]);
+
+  // Refetch classrooms when switching tabs to get fresh status
+  useEffect(() => {
+    // Only refetch if we already have data (not initial load)
+    if (classrooms.length > 0 && userOrgDocumentId) {
+      classroomService
+        .getClassrooms(userOrgDocumentId, !isTeacher ? userGrade : null)
+        .then((data) => {
+          const enriched = data.map((classroom) => ({
+            ...classroom,
+            assignmentCount: classroom.assignmentDocumentIds?.length || 0,
+          }));
+          setClassrooms(enriched);
+        })
+        .catch((err) => console.error("Error refreshing classrooms:", err));
+    }
+  }, [activeTab]);
 
   // Real-time updates via Ably
   useEffect(() => {
@@ -194,10 +200,7 @@ const ClassroomPage = () => {
       // If classroom update, refresh classrooms
       else if (eventName === "classroom-update") {
         classroomService
-          .getClassrooms(
-            userOrgDocumentId,
-            !isTeacher ? userClassStandard : null
-          )
+          .getClassrooms(userOrgDocumentId, !isTeacher ? userGrade : null)
           .then((data) => setClassrooms(data))
           .catch((err) => console.error("Error refreshing classrooms:", err));
       }
@@ -211,7 +214,7 @@ const ClassroomPage = () => {
     return () => {
       unsubscribe();
     };
-  }, [userOrgDocumentId, identity?.documentId, isTeacher, userClassStandard]);
+  }, [userOrgDocumentId, identity?.documentId, isTeacher, userGrade]);
 
   // Filter classrooms based on search
   const filteredClassrooms = useMemo(() => {
@@ -227,12 +230,9 @@ const ClassroomPage = () => {
   // Categorize classrooms
   const { liveClasses, upcomingClasses, allClasses } = useMemo(() => {
     const now = new Date();
+    // "Ongoing" shows live + completed classes (accessible classes)
     const live = filteredClassrooms.filter((c) => c.status === "live");
-    const upcoming = filteredClassrooms.filter((c) => {
-      if (c.status !== "scheduled") return false;
-      const startDate = new Date(c.startDate);
-      return startDate > now;
-    });
+    const upcoming = filteredClassrooms.filter((c) => c.status === "scheduled");
     return {
       liveClasses: live,
       upcomingClasses: upcoming.slice(0, 5),
@@ -264,7 +264,7 @@ const ClassroomPage = () => {
       id: "assignments",
       label: "Assignments",
       icon: ClipboardList,
-      count: pendingAssignments,
+      count: userAssignments.length,
     },
     {
       id: "upcoming",
@@ -298,20 +298,20 @@ const ClassroomPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-0 sm:p-4 md:p-6 space-y-4 md:space-y-6 max-w-7xl mx-auto w-full">
       <Title title="Classroom" />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="px-4 sm:px-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 pt-4 sm:pt-0">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+          <div className="p-3 bg-primary/10 rounded-2xl text-primary shrink-0">
             <GraduationCap className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-gray-800 font-heading">
+            <h1 className="text-2xl md:text-3xl font-black text-gray-800 font-heading">
               My Classroom
             </h1>
-            <p className="text-gray-500 font-medium">
+            <p className="text-gray-500 font-medium text-sm md:text-base">
               {isTeacher
                 ? "Manage your classes and assignments"
                 : "View classes and complete assignments"}
@@ -320,54 +320,69 @@ const ClassroomPage = () => {
         </div>
 
         {isTeacher && (
-          <button
-            onClick={handleCreateClass}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors"
-          >
-            <PlusCircle className="w-5 h-5" />
-            Create Class
-          </button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
+              onClick={() =>
+                redirect("/mongo-studio?tab=assignments&action=create")
+              }
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors w-full md:w-auto"
+            >
+              <ClipboardList className="w-5 h-5" />
+              Create Assignment
+            </button>
+            <button
+              onClick={handleCreateClass}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors w-full md:w-auto"
+            >
+              <PlusCircle className="w-5 h-5" />
+              Create Class
+            </button>
+          </div>
         )}
       </div>
 
       {/* Live Classes Banner */}
       {liveClasses.length > 0 && (
-        <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl p-4 text-white">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-            <span className="font-bold text-lg">LIVE NOW</span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {liveClasses.slice(0, 2).map((classroom) => (
-              <div
-                key={classroom._id}
-                onClick={() => handleClassClick(classroom._id)}
-                className="bg-white/20 rounded-xl p-4 cursor-pointer hover:bg-white/30 transition-colors"
-              >
-                <h3 className="font-bold text-lg">{classroom.title}</h3>
-                <p className="text-white/80 text-sm truncate">
-                  {classroom.description}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Play className="w-4 h-4" />
-                  <span className="text-sm">Join Now</span>
+        <div className="px-4 sm:px-0">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl p-4 text-white mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+              <span className="font-bold text-lg">LIVE NOW</span>
+            </div>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {liveClasses.slice(0, 3).map((classroom) => (
+                <div
+                  key={classroom._id}
+                  onClick={() => handleClassClick(classroom._id)}
+                  className="bg-white/20 rounded-xl p-3 sm:p-4 cursor-pointer hover:bg-white/30 transition-colors"
+                >
+                  <h3 className="font-bold text-base sm:text-lg truncate">
+                    {classroom.title}
+                  </h3>
+                  <p className="text-white/80 text-sm truncate">
+                    {classroom.description}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Play className="w-4 h-4" />
+                    <span className="text-sm">Join Now</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex border-b border-gray-100 overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex border-b border-gray-100 overflow-x-auto no-scrollbar scroll-smooth">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-colors whitespace-nowrap min-w-fit ${
                   activeTab === tab.id
                     ? "text-primary border-b-2 border-primary bg-primary/5"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -393,7 +408,7 @@ const ClassroomPage = () => {
 
         {/* Search Bar */}
         <div className="p-4 border-b border-gray-100">
-          <div className="relative max-w-md">
+          <div className="relative max-w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
@@ -414,7 +429,7 @@ const ClassroomPage = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
+        <div className="p-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -427,7 +442,7 @@ const ClassroomPage = () => {
             <>
               {/* Classes Tab */}
               {activeTab === "classes" && (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {allClasses.length === 0 ? (
                     <div className="col-span-full text-center py-12 text-gray-500">
                       <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -438,10 +453,10 @@ const ClassroomPage = () => {
                       <div
                         key={classroom._id}
                         onClick={() => handleClassClick(classroom._id)}
-                        className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group"
+                        className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer group shadow-sm min-w-0"
                       >
                         {/* Thumbnail */}
-                        <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
+                        <div className="aspect-video bg-gray-50 rounded-lg mb-3 overflow-hidden border border-gray-100">
                           {classroom.thumbnail ? (
                             <img
                               src={classroom.thumbnail}
@@ -471,14 +486,14 @@ const ClassroomPage = () => {
                           )}
                         </div>
 
-                        <h3 className="font-bold text-gray-800 group-hover:text-primary transition-colors">
+                        <h3 className="font-bold text-gray-800 group-hover:text-primary transition-colors text-base sm:text-lg">
                           {classroom.title}
                         </h3>
                         <p className="text-sm text-gray-500 truncate mt-1">
                           {classroom.description}
                         </p>
 
-                        <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-gray-400">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(
@@ -507,71 +522,89 @@ const ClassroomPage = () => {
               {/* Assignments Tab */}
               {activeTab === "assignments" && (
                 <div className="space-y-4">
-                  {userAssignments.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                      <ClipboardList className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p>No assignments yet</p>
-                    </div>
-                  ) : (
-                    userAssignments.map((assignment) => (
-                      <div
-                        key={assignment.documentId}
-                        onClick={() =>
-                          navigate(`/assignments/${assignment.documentId}`)
-                        }
-                        className="bg-white border border-gray-100 rounded-xl p-4 pb-6 hover:shadow-md transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-gray-800">
-                              {assignment.title}
-                            </h3>
-                            {assignment.description && (
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                                {assignment.description}
-                              </p>
-                            )}
-                            {assignment.classStandards?.length > 0 && (
-                              <p className="text-xs text-gray-400 mt-1">
-                                Classes: {assignment.classStandards.join(", ")}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            {assignment.dueDate && (
-                              <div className="text-right">
-                                <p className="text-xs text-gray-400">Due</p>
-                                <p className="text-sm font-bold text-gray-600">
-                                  {new Date(
-                                    assignment.dueDate
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                            )}
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary bg-primary/5 rounded-lg text-xs font-bold hover:bg-primary/10 transition-colors mt-2">
-                              View
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        {assignment.maxScore && (
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <span className="text-sm font-bold text-primary">
-                              Max Score: {assignment.maxScore}
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {userAssignments.length === 0 ? (
+                      <div className="col-span-full text-center py-12 text-gray-500">
+                        <ClipboardList className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <p>No assignments found</p>
+                      </div>
+                    ) : (
+                      userAssignments.map((assignment) => (
+                        <div
+                          key={assignment.documentId}
+                          onClick={() => {
+                            // Find classroom for this assignment
+                            const classroom = classrooms.find((c) =>
+                              c.assignmentDocumentIds?.includes(
+                                assignment.documentId
+                              )
+                            );
+                            if (classroom) {
+                              navigate(
+                                `/assignments/${assignment.documentId}?classroom=${classroom._id}`
+                              );
+                            } else {
+                              navigate(`/assignments/${assignment.documentId}`);
+                            }
+                          }}
+                          className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer group h-full flex flex-col min-w-0"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                              <ClipboardList className="w-5 h-5" />
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
+                                assignment.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                              }`}
+                            >
+                              {assignment.status || "Assigned"}
                             </span>
                           </div>
-                        )}
-                      </div>
-                    ))
-                  )}
+
+                          <h3 className="font-bold text-gray-800 mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                            {assignment.title}
+                          </h3>
+                          {assignment.description && (
+                            <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-1">
+                              {assignment.description}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-400 mt-auto pt-4 border-t border-gray-50">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>
+                                Due:{" "}
+                                {assignment.dueDate
+                                  ? new Date(
+                                      assignment.dueDate
+                                    ).toLocaleDateString()
+                                  : "No due date"}
+                              </span>
+                            </div>
+                            {assignment.maxScore && (
+                              <div className="flex items-center gap-1">
+                                <GraduationCap className="w-3 h-3" />
+                                <span>{assignment.maxScore} pts</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Upcoming Tab */}
+              {/* Upcoming Tab */}
               {activeTab === "upcoming" && (
-                <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {upcomingClasses.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="col-span-full text-center py-12 text-gray-500">
                       <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                       <p>No upcoming classes</p>
                     </div>
@@ -579,25 +612,40 @@ const ClassroomPage = () => {
                     upcomingClasses.map((classroom) => (
                       <div
                         key={classroom._id}
-                        className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all flex items-center gap-4"
+                        onClick={() => handleClassClick(classroom._id)}
+                        className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer group min-w-0"
                       >
-                        <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Calendar className="w-8 h-8 text-primary" />
+                        {/* Thumbnail */}
+                        <div className="aspect-video bg-gray-50 rounded-lg mb-3 overflow-hidden border border-gray-100 relative">
+                          <img
+                            src={
+                              classroom.thumbnail ||
+                              "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400"
+                            }
+                            alt={classroom.title}
+                            className="w-full h-full object-cover grayscale opacity-75"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="px-3 py-1 bg-black/50 text-white text-xs font-bold rounded-full backdrop-blur-sm">
+                              UPCOMING
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-800">
+
+                        {/* Content */}
+                        <div>
+                          <h3 className="font-bold text-base sm:text-lg text-gray-800 mb-1 group-hover:text-primary transition-colors truncate">
                             {classroom.title}
                           </h3>
-                          <p className="text-sm text-gray-500">
-                            {classroom.description}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Clock className="w-3 h-3 text-gray-400" />
-                            <span className="text-xs text-gray-400">
-                              Starts:{" "}
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                            <Calendar className="w-4 h-4 text-blue-500" />
+                            <span>
                               {new Date(classroom.startDate).toLocaleString()}
                             </span>
                           </div>
+                          <p className="text-gray-500 text-sm line-clamp-2">
+                            {classroom.description}
+                          </p>
                         </div>
                       </div>
                     ))

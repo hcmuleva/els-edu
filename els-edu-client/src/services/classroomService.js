@@ -10,15 +10,15 @@ const classroomService = {
   /**
    * Fetch classrooms for an organization
    * @param {string} orgDocumentId
-   * @param {string} classStandard
+   * @param {string} grade
    * @returns {Promise<Array>} List of classrooms
    */
-  getClassrooms: async (orgDocumentId, classStandard = null) => {
+  getClassrooms: async (orgDocumentId, grade = null) => {
     if (!orgDocumentId) return [];
 
     let params = { orgDocumentId };
-    if (classStandard) {
-      params.classStandard = classStandard;
+    if (grade) {
+      params.grade = grade;
     }
 
     try {
@@ -163,6 +163,33 @@ const classroomService = {
       const response = await api.post("/mongo-studio/classProgress", data);
       return response.data;
     } catch (error) {
+      // If duplicate key error (progress already exists), fetch and return it
+      if (
+        error.response?.status === 500 &&
+        error.response?.data?.error?.includes("duplicate key")
+      ) {
+        console.log(
+          "[ClassroomService] ClassProgress already exists, fetching it..."
+        );
+        try {
+          const existingProgress = await api.get(
+            "/mongo-studio/classProgress",
+            {
+              params: {
+                classroomId: data.classroomId,
+                userDocumentId: data.userDocumentId,
+              },
+            }
+          );
+          return existingProgress.data?.data?.[0] || existingProgress.data;
+        } catch (fetchError) {
+          console.error(
+            "[ClassroomService] Failed to fetch existing progress:",
+            fetchError
+          );
+          throw fetchError;
+        }
+      }
       console.error("[ClassroomService] createClassProgress error:", error);
       throw error.response?.data || error;
     }
@@ -206,17 +233,17 @@ const classroomService = {
   /**
    * Get assignments for a specific classroom
    * @param {string} orgDocumentId
-   * @param {string} classStandard - The class standard of the classroom
+   * @param {string} grade - The grade of the classroom
    * @returns {Promise<Array>} List of assignments for this class
    */
-  getClassroomAssignments: async (orgDocumentId, classStandard) => {
-    if (!orgDocumentId || !classStandard) return [];
+  getClassroomAssignments: async (orgDocumentId, grade) => {
+    if (!orgDocumentId || !grade) return [];
 
     try {
       const response = await api.get("/mongo-studio/userAssignments", {
         params: {
           orgDocumentId,
-          classStandard,
+          grade,
         },
       });
       return response.data?.data || [];

@@ -18,8 +18,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import * as analyticsService from "../../services/analyticsService";
+import mongoService from "../../services/mongoService";
 
 const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
+const QUESTIONS_PER_SKILL = 5; // Number of questions per skill
 
 const SkillQuizPage = () => {
   const { identity } = useGetIdentity();
@@ -56,9 +58,16 @@ const SkillQuizPage = () => {
   useEffect(() => {
     const checkExistingQuiz = async () => {
       try {
-        const results = await analyticsService.getQuizResults();
-        if (results?.quizzes?.length > 0 && !isAdmin) {
-          setExistingQuiz(results.quizzes[0]);
+        const results = await mongoService.getUserQuizzes({
+          filters: {
+            type: "SKILL",
+            // Sort by most recent
+          },
+          sort: { createdAt: "desc" },
+        });
+
+        if (results?.data?.length > 0 && !isAdmin) {
+          setExistingQuiz(results.data[0]);
         }
       } catch (error) {
         console.error("Error checking existing quiz:", error);
@@ -129,7 +138,8 @@ const SkillQuizPage = () => {
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
-          handleSubmit();
+          // Auto-submit when timer reaches 0
+          setTimeout(() => handleSubmit(), 100);
           return 0;
         }
         return prev - 1;
@@ -137,7 +147,7 @@ const SkillQuizPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [quizStarted, showResults, timeRemaining]);
+  }, [quizStarted, showResults]);
 
   // Track question start times
   useEffect(() => {
@@ -221,15 +231,63 @@ const SkillQuizPage = () => {
         };
       });
 
-      const result = await analyticsService.submitQuizResult({
+      // Calculate score
+      const total = questions.length;
+      let correct = 0;
+      questions.forEach((q, idx) => {
+        if (answerData[idx].isCorrect) correct++;
+      });
+      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+      const scoreData = { correct, total, percentage };
+
+      // Calculate skill breakdown
+      const skillStats = {};
+      answerData.forEach((ans) => {
+        const skill = ans.skillName;
+        if (!skillStats[skill]) {
+          skillStats[skill] = {
+            skillName: skill,
+            correctAnswers: 0,
+            questionsAttempted: 0,
+          };
+        }
+        skillStats[skill].questionsAttempted++;
+        if (ans.isCorrect) skillStats[skill].correctAnswers++;
+      });
+
+      const skillResults = Object.values(skillStats).map((s) => {
+        const p =
+          s.questionsAttempted > 0
+            ? Math.round((s.correctAnswers / s.questionsAttempted) * 100)
+            : 0;
+        // Determine level based on percentage (Simple logic)
+        let level = 1;
+        if (p >= 80) level = 5;
+        else if (p >= 60) level = 4;
+        else if (p >= 40) level = 3;
+        else if (p >= 20) level = 2;
+
+        return {
+          ...s,
+          percentage: p,
+          actualLevel: level,
+        };
+      });
+
+      const resultPayload = {
+        type: "SKILL",
         surveyId,
         company: surveyData?.company,
         role: surveyData?.role,
         domain: surveyData?.domain,
         answers: answerData,
-      });
+        score: scoreData,
+        summary: { skillResults },
+      };
 
-      setQuizResult(result);
+      const result = await mongoService.createUserQuiz(resultPayload);
+
+      setQuizResult(result.data || result); // Handle wrapper if any
       setShowResults(true);
       notify("Quiz completed!", { type: "success" });
     } catch (error) {
@@ -326,93 +384,86 @@ const SkillQuizPage = () => {
   // Instructions screen
   if (showInstructions && !quizStarted) {
     return (
-      <div className="fixed inset-0 bg-black/50 overflow-y-auto px-4 py-8 z-[100] flex items-center justify-center">
-        <Title title="Skill Assessment" />
-        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative animate-fadeIn">
-          <div className="text-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-3">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Skill Assessment
-            </h1>
-            <p className="text-xs text-gray-500 mt-1">
-              {questions.length} questions • 30 mins
-            </p>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 md:p-8">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <h3 className="font-bold text-amber-800 mb-1">
+                <h2 className="text-2xl font-black text-gray-900">
                   Important Instructions
-                </h3>
-                <ul className="text-sm text-amber-700 space-y-2">
-                  <li>
-                    • This quiz will be a <strong>mix of all the skills</strong>{" "}
-                    you selected.
-                  </li>
-                  <li>
-                    • The difficulty of the questions may vary based on your
-                    provided skill ratings.
-                  </li>
-                  <li>
-                    • Your final skill level will be determined based on your
-                    performance.
-                  </li>
-                  <li>
-                    • <strong>Please do not cheat.</strong> This assessment is
-                    for your own benefit to identify your actual skill levels.
-                  </li>
-                  <li>
-                    • Your recommendations will be based on these results, so
-                    please answer truthfully.
-                  </li>
-                  <li>
-                    • You have <strong>30 minutes</strong> to complete the quiz.
-                  </li>
-                  {!isAdmin && (
-                    <li>
-                      • <strong>You can only take this quiz once.</strong>
-                    </li>
-                  )}
-                </ul>
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Please read carefully before starting
+                </p>
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <BookOpen className="w-6 h-6 text-indigo-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">
-                {questions.length}
-              </p>
-              <p className="text-xs text-gray-500">Questions</p>
+            {/* Instructions List */}
+            <div className="space-y-4 mb-6">
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-blue-600">1</span>
+                </div>
+                <p className="text-sm text-gray-700">
+                  This quiz will assess your knowledge across different skills
+                  based on your selected role and company.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-blue-600">2</span>
+                </div>
+                <p className="text-sm text-gray-700">
+                  Each skill will have{" "}
+                  <span className="font-bold text-gray-900">
+                    {QUESTIONS_PER_SKILL} questions
+                  </span>
+                  . Answer them to the best of your ability.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-blue-600">3</span>
+                </div>
+                <p className="text-sm text-gray-700">
+                  There is{" "}
+                  <span className="font-bold text-gray-900">no time limit</span>
+                  . Take your time to think through each question.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-blue-600">4</span>
+                </div>
+                <p className="text-sm text-gray-700">
+                  Your results will be saved and you'll receive personalized
+                  learning recommendations.
+                </p>
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <Clock className="w-6 h-6 text-indigo-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">30</p>
-              <p className="text-xs text-gray-500">Minutes</p>
-            </div>
-          </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                setShowInstructions(false);
-                setQuizStarted(true);
-              }}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold"
-            >
-              Start Quiz
-            </button>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate("/analytics/self-assessment")}
+                className="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => {
+                  setShowInstructions(false);
+                  startQuiz();
+                }}
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
+              >
+                Start Quiz
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -423,7 +474,7 @@ const SkillQuizPage = () => {
   if (showResults) {
     const passed = score.percentage >= 60;
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 overflow-y-auto z-50 p-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 overflow-y-auto z-[9999] p-4">
         <Title title="Quiz Results" />
         <div className="max-w-2xl mx-auto py-8">
           <div className="bg-white rounded-3xl p-8 text-center mb-6">

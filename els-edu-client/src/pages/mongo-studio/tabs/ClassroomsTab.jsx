@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Filter,
   ClipboardList,
+  HelpCircle,
 } from "lucide-react";
 import {
   DndContext,
@@ -41,7 +42,28 @@ import qs from "qs";
 import mongoService from "../../../services/mongoService";
 import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
 import { useClass } from "../../../contexts/ClassContext";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+// Helper functions for datetime-local conversion
+// datetime-local input expects: YYYY-MM-DDTHH:mm in LOCAL timezone
+const toDatetimeLocal = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+const fromDatetimeLocal = (datetimeLocal) => {
+  if (!datetimeLocal) return null;
+  // datetime-local value is in format "YYYY-MM-DDTHH:mm"
+  // We need to convert it to ISO string
+  const date = new Date(datetimeLocal);
+  return date.toISOString();
+};
 
 const CLASS_STANDARDS = [
   "1st",
@@ -71,6 +93,8 @@ const ClassroomsTab = () => {
   const { permissions } = usePermissions();
   const notify = useNotify();
   const { isContentVisible } = useClass();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [classrooms, setClassrooms] = useState([]);
   const [orgs, setOrgs] = useState([]);
@@ -111,7 +135,7 @@ const ClassroomsTab = () => {
     thumbnail: "",
   });
 
-  const [activeTab, setActiveTab] = useState("content"); // content | assignment
+  const [activeTab, setActiveTab] = useState("content"); // content | assignment | quiz
   const [modalAssignments, setModalAssignments] = useState([]);
   const [modalAssignmentSearch, setModalAssignmentSearch] = useState("");
   const [assignmentPage, setAssignmentPage] = useState(1);
@@ -120,6 +144,13 @@ const ClassroomsTab = () => {
   const [selectedAssignmentDetails, setSelectedAssignmentDetails] = useState(
     []
   );
+
+  const [modalQuizzes, setModalQuizzes] = useState([]);
+  const [modalQuizSearch, setModalQuizSearch] = useState("");
+  const [quizPage, setQuizPage] = useState(1);
+  const [quizTotal, setQuizTotal] = useState(0);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [selectedQuizDetails, setSelectedQuizDetails] = useState([]);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -265,13 +296,49 @@ const ClassroomsTab = () => {
     }
   }, [assignmentPage, modalAssignmentSearch]);
 
+  // Fetch quizzes for selection
+  const fetchModalQuizzes = useCallback(async () => {
+    try {
+      setQuizLoading(true);
+      const params = {
+        pagination: { page: quizPage, pageSize: 20 },
+        filters: {},
+      };
+
+      if (modalQuizSearch) {
+        params.filters.title = { $containsi: modalQuizSearch };
+      }
+      if (filterSubject) {
+        params.filters.subjects = { documentId: { $eq: filterSubject } };
+      }
+      if (filterTopic) {
+        params.filters.topics = { documentId: { $eq: filterTopic } };
+      }
+
+      const data = await mongoService.getQuizzes(params);
+      setModalQuizzes(data.data || []);
+      setQuizTotal(data.meta?.pagination?.total || 0);
+    } catch (err) {
+      console.error("Error fetching quizzes:", err);
+    } finally {
+      setQuizLoading(false);
+    }
+  }, [quizPage, modalQuizSearch, filterSubject, filterTopic]);
+
   // Fetch Contents when modal is open
   useEffect(() => {
     if (showForm) {
       if (activeTab === "content") fetchContents();
       if (activeTab === "assignment") fetchModalAssignments();
+      if (activeTab === "quiz") fetchModalQuizzes();
     }
-  }, [showForm, activeTab, fetchContents, fetchModalAssignments]);
+  }, [
+    showForm,
+    activeTab,
+    fetchContents,
+    fetchModalAssignments,
+    fetchModalQuizzes,
+  ]);
 
   // Fetch selected contents separately to ensure they are always available even if not in current paginated list
   const fetchSelectedContents = useCallback(async (ids) => {
@@ -371,6 +438,16 @@ const ClassroomsTab = () => {
     modalAssignments,
   ]);
 
+  const selectedQuizzes = useMemo(() => {
+    return (formData.quizIds || [])
+      .map(
+        (id) =>
+          selectedQuizDetails?.find((q) => q.documentId === id) ||
+          modalQuizzes?.find((q) => q.documentId === id)
+      )
+      .filter(Boolean);
+  }, [formData.quizIds, selectedQuizDetails, modalQuizzes]);
+
   // Reset form
   const resetForm = () => {
     setFormData({
@@ -397,14 +474,28 @@ const ClassroomsTab = () => {
     setModalAssignmentSearch("");
     setAssignmentPage(1);
     setSelectedAssignmentDetails([]);
+    setModalQuizzes([]);
+    setModalQuizSearch("");
+    setQuizPage(1);
+    setSelectedQuizDetails([]);
     setActiveTab("content");
   };
 
   // Open form for create
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     resetForm();
     setShowForm(true);
-  };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("action") === "create") {
+      handleCreate();
+      // Clear the action param
+      params.delete("action");
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location.search, handleCreate, navigate]);
 
   // Open form for edit
   const handleEdit = (item) => {
@@ -414,9 +505,9 @@ const ClassroomsTab = () => {
       description: item.description || "",
       orgDocumentId: item.orgDocumentId || "",
       classTypes: item.classTypes || [],
-      status: item.status || "draft",
-      startDate: item.startDate ? item.startDate.substring(0, 16) : "",
-      endDate: item.endDate ? item.endDate.substring(0, 16) : "",
+      status: item.status || "",
+      startDate: toDatetimeLocal(item.startDate),
+      endDate: toDatetimeLocal(item.endDate),
       isInstant: item.isInstant || false,
       contentDocumentIds: item.contentDocumentIds || [],
       assignmentDocumentIds: item.assignmentDocumentIds || [],
@@ -460,7 +551,10 @@ const ClassroomsTab = () => {
       const payload = {
         ...formData,
         orgDocumentId: formData.orgDocumentId || userOrgDocumentId,
-        startDate: formData.isInstant ? null : formData.startDate || null,
+        startDate: formData.isInstant
+          ? null
+          : fromDatetimeLocal(formData.startDate),
+        endDate: fromDatetimeLocal(formData.endDate),
         // Ensure contentDocumentIds and assignmentDocumentIds are sent
         contentDocumentIds: formData.contentDocumentIds,
         assignmentDocumentIds: formData.assignmentDocumentIds,
@@ -593,6 +687,30 @@ const ClassroomsTab = () => {
     });
   };
 
+  const toggleQuiz = (quiz) => {
+    setFormData((prev) => {
+      const docId = quiz.documentId;
+      const isSelected = prev.quizIds?.includes(docId);
+      const currentIds = prev.quizIds || [];
+
+      if (!isSelected) {
+        setSelectedQuizDetails((curr) => [...curr, quiz]);
+        return {
+          ...prev,
+          quizIds: [...currentIds, docId],
+        };
+      } else {
+        setSelectedQuizDetails((curr) =>
+          curr.filter((q) => q.documentId !== docId)
+        );
+        return {
+          ...prev,
+          quizIds: currentIds.filter((id) => id !== docId),
+        };
+      }
+    });
+  };
+
   // Pagination handlers
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= Math.ceil(contentTotal / 20)) {
@@ -705,6 +823,10 @@ const ClassroomsTab = () => {
                   <span>
                     {classroom.assignmentDocumentIds?.length || 0} Assignments
                   </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <HelpCircle className="w-3 h-3" />
+                  <span>{classroom.quizIds?.length || 0} Quizzes</span>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1 mb-2">
@@ -980,6 +1102,16 @@ const ClassroomsTab = () => {
                         >
                           Assignments
                         </button>
+                        <button
+                          onClick={() => setActiveTab("quiz")}
+                          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                            activeTab === "quiz"
+                              ? "bg-white shadow text-primary"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          Quizzes
+                        </button>
                       </div>
                     </div>
 
@@ -990,7 +1122,9 @@ const ClassroomsTab = () => {
                           <label className="block text-sm font-bold text-gray-700">
                             {activeTab === "content"
                               ? "Available Content"
-                              : "Available Assignments"}
+                              : activeTab === "assignment"
+                              ? "Available Assignments"
+                              : "Available Quizzes"}
                           </label>
 
                           {/* Search & Filter Bar */}
@@ -1002,34 +1136,46 @@ const ClassroomsTab = () => {
                                 placeholder={
                                   activeTab === "content"
                                     ? "Search content..."
-                                    : "Search assignments..."
+                                    : activeTab === "assignment"
+                                    ? "Search assignments..."
+                                    : "Search quizzes..."
                                 }
                                 value={
                                   activeTab === "content"
                                     ? contentSearch
-                                    : modalAssignmentSearch
+                                    : activeTab === "assignment"
+                                    ? modalAssignmentSearch
+                                    : modalQuizSearch
                                 }
                                 onChange={(e) => {
                                   if (activeTab === "content") {
                                     setContentSearch(e.target.value);
                                     setContentPage(1);
-                                  } else {
+                                  } else if (activeTab === "assignment") {
                                     setModalAssignmentSearch(e.target.value);
                                     setAssignmentPage(1);
+                                  } else {
+                                    setModalQuizSearch(e.target.value);
+                                    setQuizPage(1);
                                   }
                                 }}
                                 className="w-full pl-9 pr-3 py-1.5 text-sm border rounded-lg"
                               />
                             </div>
 
-                            {/* Filters only for Content currently */}
-                            {activeTab === "content" && (
+                            {/* Filters for Content and Quizzes */}
+                            {(activeTab === "content" ||
+                              activeTab === "quiz") && (
                               <div className="flex gap-2">
                                 <CustomSelect
                                   value={filterSubject}
                                   onChange={(val) => {
                                     setFilterSubject(val);
-                                    setContentPage(1);
+                                    if (activeTab === "content") {
+                                      setContentPage(1);
+                                    } else {
+                                      setQuizPage(1);
+                                    }
                                   }}
                                   options={subjects.map((s) => ({
                                     id: s.documentId,
@@ -1042,7 +1188,11 @@ const ClassroomsTab = () => {
                                   value={filterTopic}
                                   onChange={(val) => {
                                     setFilterTopic(val);
-                                    setContentPage(1);
+                                    if (activeTab === "content") {
+                                      setContentPage(1);
+                                    } else {
+                                      setQuizPage(1);
+                                    }
                                   }}
                                   options={topics.map((t) => ({
                                     id: t.documentId,
@@ -1061,14 +1211,18 @@ const ClassroomsTab = () => {
                           {(
                             activeTab === "content"
                               ? contentLoading
-                              : assignmentLoading
+                              : activeTab === "assignment"
+                              ? assignmentLoading
+                              : quizLoading
                           ) ? (
                             <div className="flex justify-center py-4">
                               <Loader2 className="animate-spin text-primary" />
                             </div>
                           ) : (activeTab === "content"
                               ? contents
-                              : modalAssignments
+                              : activeTab === "assignment"
+                              ? modalAssignments
+                              : modalQuizzes
                             ).length === 0 ? (
                             <p className="text-center text-gray-500 text-sm py-4">
                               No items found
@@ -1076,16 +1230,20 @@ const ClassroomsTab = () => {
                           ) : (
                             (activeTab === "content"
                               ? contents
-                              : modalAssignments
+                              : activeTab === "assignment"
+                              ? modalAssignments
+                              : modalQuizzes
                             ).map((item) => {
                               const isSelected =
                                 activeTab === "content"
                                   ? formData.contentDocumentIds.includes(
                                       item.documentId
                                     )
-                                  : formData.assignmentDocumentIds.includes(
+                                  : activeTab === "assignment"
+                                  ? formData.assignmentDocumentIds.includes(
                                       item.documentId
-                                    );
+                                    )
+                                  : formData.quizIds?.includes(item.documentId);
 
                               return (
                                 <div
@@ -1093,7 +1251,9 @@ const ClassroomsTab = () => {
                                   onClick={() =>
                                     activeTab === "content"
                                       ? toggleContent(item)
-                                      : toggleAssignment(item)
+                                      : activeTab === "assignment"
+                                      ? toggleAssignment(item)
+                                      : toggleQuiz(item)
                                   }
                                   className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
                                     isSelected
@@ -1103,7 +1263,7 @@ const ClassroomsTab = () => {
                                 >
                                   <input
                                     type="checkbox"
-                                    checked={isSelected}
+                                    checked={isSelected || false}
                                     onChange={() => {}}
                                     className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                   />
@@ -1115,11 +1275,13 @@ const ClassroomsTab = () => {
                                         ) : (
                                           <FileText className="w-3 h-3 text-gray-400" />
                                         )
-                                      ) : (
+                                      ) : activeTab === "assignment" ? (
                                         <ClipboardList className="w-3 h-3 text-orange-400" />
+                                      ) : (
+                                        <HelpCircle className="w-3 h-3 text-purple-500" />
                                       )}
                                       <p className="text-sm font-medium text-gray-900 truncate">
-                                        {item.title}
+                                        {item.title || item.name}
                                       </p>
                                     </div>
                                     <p className="text-xs text-gray-500 line-clamp-2">
@@ -1142,12 +1304,16 @@ const ClassroomsTab = () => {
                             onClick={() =>
                               activeTab === "content"
                                 ? handlePageChange(contentPage - 1)
-                                : setAssignmentPage((p) => Math.max(1, p - 1))
+                                : activeTab === "assignment"
+                                ? setAssignmentPage((p) => Math.max(1, p - 1))
+                                : setQuizPage((p) => Math.max(1, p - 1))
                             }
                             disabled={
                               activeTab === "content"
                                 ? contentPage === 1
-                                : assignmentPage === 1
+                                : activeTab === "assignment"
+                                ? assignmentPage === 1
+                                : quizPage === 1
                             }
                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
                           >
@@ -1156,15 +1322,18 @@ const ClassroomsTab = () => {
                           <span className="font-medium text-gray-600">
                             {activeTab === "content"
                               ? `Page ${contentPage}`
-                              : `Page ${assignmentPage}`}
+                              : activeTab === "assignment"
+                              ? `Page ${assignmentPage}`
+                              : `Page ${quizPage}`}
                           </span>
                           <button
                             onClick={() =>
                               activeTab === "content"
                                 ? handlePageChange(contentPage + 1)
-                                : setAssignmentPage((p) => p + 1)
-                            } // Simple next page logic, ideally check total
-                            // disabled logic omitted for brevity or check total
+                                : activeTab === "assignment"
+                                ? setAssignmentPage((p) => p + 1)
+                                : setQuizPage((p) => p + 1)
+                            }
                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
                           >
                             <ChevronRight className="w-4 h-4" />
@@ -1178,7 +1347,9 @@ const ClassroomsTab = () => {
                           <label className="block text-sm font-bold text-gray-700">
                             {activeTab === "content"
                               ? `Selected Content (${selectedContents.length})`
-                              : `Selected Assignments (${selectedAssignments.length})`}
+                              : activeTab === "assignment"
+                              ? `Selected Assignments (${selectedAssignments.length})`
+                              : `Selected Quizzes (${selectedQuizzes.length})`}
                           </label>
                         </div>
 
@@ -1218,28 +1389,60 @@ const ClassroomsTab = () => {
                                 </SortableContext>
                               </DndContext>
                             )
-                          ) : // Assignments List (No DnD for now, just list)
-                          selectedAssignments.length === 0 ? (
+                          ) : activeTab === "assignment" ? (
+                            selectedAssignments.length === 0 ? (
+                              <p className="text-gray-400 text-sm p-4 text-center">
+                                No assignments selected
+                              </p>
+                            ) : (
+                              <div className="space-y-2">
+                                {selectedAssignments.map((assignment) => (
+                                  <div
+                                    key={assignment.documentId}
+                                    className="flex items-center justify-between p-3 bg-white rounded-lg border shadow-sm"
+                                  >
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {assignment.title}
+                                      </p>
+                                      <span className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded">
+                                        {assignment.type}
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        toggleAssignment(assignment)
+                                      }
+                                      className="text-red-500 hover:bg-red-50 p-1 rounded"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          ) : // Quiz List
+                          selectedQuizzes.length === 0 ? (
                             <p className="text-gray-400 text-sm p-4 text-center">
-                              No assignments selected
+                              No quizzes selected
                             </p>
                           ) : (
                             <div className="space-y-2">
-                              {selectedAssignments.map((assignment) => (
+                              {selectedQuizzes.map((quiz) => (
                                 <div
-                                  key={assignment.documentId}
+                                  key={quiz.documentId}
                                   className="flex items-center justify-between p-3 bg-white rounded-lg border shadow-sm"
                                 >
                                   <div>
                                     <p className="font-medium text-sm">
-                                      {assignment.title}
+                                      {quiz.title}
                                     </p>
-                                    <span className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded">
-                                      {assignment.type}
+                                    <span className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded">
+                                      Quiz
                                     </span>
                                   </div>
                                   <button
-                                    onClick={() => toggleAssignment(assignment)}
+                                    onClick={() => toggleQuiz(quiz)}
                                     className="text-red-500 hover:bg-red-50 p-1 rounded"
                                   >
                                     <X className="w-4 h-4" />
