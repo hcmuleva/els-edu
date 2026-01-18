@@ -337,6 +337,7 @@ export const AssignTab = () => {
   const [modalTitle, setModalTitle] = useState("");
   const [currentParent, setCurrentParent] = useState(null);
   const [availableItems, setAvailableItems] = useState([]);
+  const [availableTotal, setAvailableTotal] = useState(0);
   const [assignedItems, setAssignedItems] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
 
@@ -396,6 +397,7 @@ export const AssignTab = () => {
   // Handlers for Modals
   const handleViewDetails = async (title, parent, resource) => {
     setCountModalTitle(title);
+
     setModalLoading(true);
 
     try {
@@ -431,57 +433,83 @@ export const AssignTab = () => {
     }
   };
 
+  const handleModalSearch = React.useCallback(
+    async (query, overrideParent = null, overrideAssigned = null, page = 1) => {
+      // Helper to determine parent/assigned since state updates might not be flushed yet
+      const parentToUse = overrideParent || currentParent;
+      const assignedToUse = overrideAssigned || assignedItems;
+
+      if (!parentToUse) return;
+
+      try {
+        let resource = "";
+        if (activeTab === "courses") resource = "subjects";
+        else if (activeTab === "subjects") resource = "topics";
+        else if (activeTab === "topics") resource = "contents";
+
+        const assignedIds = (assignedToUse || []).map(
+          (i) => i.documentId || i.id
+        );
+
+        const filter = {};
+        if (assignedIds.length > 0) {
+          filter["filters[documentId][$notIn]"] = assignedIds;
+        }
+
+        if (query) {
+          if (resource === "contents") filter.title = query;
+          else filter.name = query;
+          // Use q if consistent with queryBuilder
+          filter.q = query;
+        }
+
+        const { data: searchResults, total } = await dataProvider.getList(
+          resource,
+          {
+            pagination: { page, perPage: 20 },
+            sort: {
+              field: resource === "contents" ? "title" : "name",
+              order: "ASC",
+            },
+            filter: filter,
+          }
+        );
+
+        setAvailableItems(searchResults);
+        setAvailableTotal(total);
+      } catch (error) {
+        console.error("Error searching:", error);
+      }
+    },
+    [activeTab, currentParent, assignedItems, dataProvider]
+  );
+
   const handleOpenAssign = async (parent) => {
     setCurrentParent(parent);
     setModalLoading(true);
     setTransferModalOpen(true);
+    // Reset search
+    setAvailableItems([]);
+    setAvailableTotal(0);
 
     try {
-      let resource = "";
-      let relationField = "";
       let assigned = [];
 
       if (activeTab === "courses") {
         setModalTitle(`Assign Subjects to "${parent.name}"`);
-        resource = "subjects";
-        relationField = "subjects";
         assigned = parent.subjects || [];
       } else if (activeTab === "subjects") {
         setModalTitle(`Assign Topics to "${parent.name}"`);
-        resource = "topics";
-        relationField = "topics";
         assigned = parent.topics || [];
       } else if (activeTab === "topics") {
         setModalTitle(`Assign Contents to "${parent.name}"`);
-        resource = "contents";
-        relationField = "contents";
         assigned = parent.contents || [];
       }
 
       setAssignedItems(assigned);
 
-      // Fetch all available items
-      const { data: allItems } = await dataProvider.getList(resource, {
-        pagination: { page: 1, perPage: 1000 },
-        sort: {
-          field: resource === "contents" ? "title" : "name",
-          order: "ASC",
-        },
-        filter: {},
-      });
-
-      // For one-to-many (Subject->Topics, Topic->Contents), items can only belong to one parent.
-      // So available items are those NOT assigned to ANY parent (or allowed to be stolen?).
-      // For simplified logic matching "TransferList", we usually just show ALL items minus CURRENTLY assigned.
-      // If we select an item already assigned to another parent, the backend usually handles the move.
-      // UI-wise:
-      // - Available = All Items - Assigned Items
-      const assignedIds = new Set(assigned.map((i) => i.documentId || i.id));
-      const available = allItems.filter(
-        (i) => !assignedIds.has(i.documentId || i.id)
-      );
-
-      setAvailableItems(available);
+      // Initial empty search to get default list using overrides, page 1
+      await handleModalSearch("", parent, assigned, 1);
     } catch (error) {
       notify("Error loading data", { type: "error" });
       setTransferModalOpen(false);
@@ -700,6 +728,14 @@ export const AssignTab = () => {
         onSave={handleSaveAssignments}
         loading={modalLoading}
         itemLabel={activeTab === "topics" ? "title" : "name"}
+        serverSide={true}
+        totalAvailable={availableTotal}
+        onSearch={(q, p) =>
+          handleModalSearch(q, currentParent, assignedItems, p)
+        }
+        onPageChange={(p, q) =>
+          handleModalSearch(q, currentParent, assignedItems, p)
+        }
       />
 
       {/* Count List Modal (Viewer) */}

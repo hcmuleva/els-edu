@@ -18,7 +18,15 @@ export const buildFilters = (resource, filters) => {
 
     // Handle pre-formatted filter keys (e.g., 'filters[user][documentId][$eq]')
     if (key.startsWith("filters[")) {
-      query[key] = value;
+      // Special handling for $in operator with arrays
+      // Strapi expects: filters[documentId][$in][0]=id1&filters[documentId][$in][1]=id2
+      if (key.includes("[$in]") && Array.isArray(value) && value.length > 0) {
+        value.forEach((item, index) => {
+          query[`${key}[${index}]`] = item;
+        });
+      } else {
+        query[key] = value;
+      }
       return;
     }
 
@@ -76,6 +84,14 @@ export const buildPopulate = (resource, meta) => {
   // Default populations for specific resources
   if (resource === "questions") {
     query["populate"] = "*";
+    return query;
+  }
+
+  if (resource === "users") {
+    // Populate usersubscriptions with course for user list to show course count
+    query["populate[usersubscriptions][populate][course][fields][0]"] = "name";
+    query["populate[usersubscriptions][populate][course][fields][1]"] =
+      "documentId";
     return query;
   }
 

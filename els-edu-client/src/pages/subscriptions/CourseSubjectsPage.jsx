@@ -14,6 +14,7 @@ import {
 import SubjectCard from "../../components/subjects/SubjectCard";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { subscriptionService } from "../../services/subscriptionService";
+import { subscribeToCustomCourseUpdates } from "../../services/ably";
 import Pagination from "../../components/common/Pagination";
 
 const GRADE_OPTIONS = [
@@ -100,53 +101,108 @@ const CourseSubjectsPage = () => {
         setError(null);
 
         // 1. Get Subscription (First time or if needed)
-        // We need this to get subscription.documentId for filtering subjects
+        // Check if it's a MongoDB custom course or Strapi subscription
         let currentSub = subscription;
         if (!currentSub) {
+          // First, try to get from Strapi subscriptions
           currentSub = await subscriptionService.getSubscriptionByCourse(
             dataProvider,
             identity.documentId,
             courseId
           );
+          
+          // If not found in Strapi, check if it's a MongoDB custom course
           if (!currentSub) {
-            setError("Subscription not found");
-            setInitialLoading(false);
-            setIsFetching(false);
-            return;
+            // Fetch all custom courses and find the one matching courseId
+            const customCourses = await subscriptionService.getCustomCourses();
+            currentSub = customCourses.find(
+              (c) => c.documentId === courseId || c.course?.documentId === courseId
+            );
+            
+            if (!currentSub) {
+              setError("Course not found");
+              setInitialLoading(false);
+              setIsFetching(false);
+              return;
+            }
           }
           setSubscription(currentSub);
         }
 
-        // 2. Fetch Subjects Paginated
-        const { data: subjectsData, total } = await dataProvider.getList(
-          "subjects",
-          {
-            pagination: { page: subjectPage, perPage: subjectsPerPage },
-            sort: { field: "name", order: "ASC" },
-            filter: {
-              "filters[usersubscriptions][documentId][$eq]":
-                currentSub.documentId,
-              ...(debouncedSearchQuery && {
-                "filters[name][$containsi]": debouncedSearchQuery,
-              }),
-              ...(selectedGrade && { "filters[grade][$eq]": selectedGrade }),
-              ...(selectedLevel !== null && {
-                "filters[level][$eq]": selectedLevel,
-              }),
-            },
-            meta: {
-              populate: {
-                coverpage: { fields: ["url"] },
-                topics: { fields: ["documentId"] },
-              },
-            },
+        // 2. Fetch Subjects - Different logic for MongoDB vs Strapi courses
+        let subjectsData = [];
+        let total = 0;
+
+        if (currentSub.source === "mongodb" || currentSub.subscription_type === "CUSTOM") {
+          // MongoDB custom course - use subjects already populated from backend
+          const subjects = currentSub.subjects || currentSub.course?.subjects || [];
+          
+          if (subjects.length > 0) {
+            // Subjects are already full objects from backend API
+            // Apply client-side filtering and pagination
+            let filtered = [...subjects];
+            
+            // Apply search filter
+            if (debouncedSearchQuery) {
+              filtered = filtered.filter((s) =>
+                s.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+              );
+            }
+            
+            // Apply grade filter
+            if (selectedGrade) {
+              filtered = filtered.filter((s) => s.grade === selectedGrade);
+            }
+            
+            // Apply level filter
+            if (selectedLevel !== null) {
+              filtered = filtered.filter((s) => s.level === selectedLevel);
+            }
+
+            // Sort by name
+            filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+            total = filtered.length;
+            
+            // Apply pagination
+            const start = (subjectPage - 1) * subjectsPerPage;
+            const end = start + subjectsPerPage;
+            subjectsData = filtered.slice(start, end);
           }
-        );
+        } else {
+          // Strapi subscription - use existing logic
+          const { data, total: totalCount } = await dataProvider.getList(
+            "subjects",
+            {
+              pagination: { page: subjectPage, perPage: subjectsPerPage },
+              sort: { field: "name", order: "ASC" },
+              filter: {
+                "filters[usersubscriptions][documentId][$eq]":
+                  currentSub.documentId,
+                ...(debouncedSearchQuery && {
+                  "filters[name][$containsi]": debouncedSearchQuery,
+                }),
+                ...(selectedGrade && { "filters[grade][$eq]": selectedGrade }),
+                ...(selectedLevel !== null && {
+                  "filters[level][$eq]": selectedLevel,
+                }),
+              },
+              meta: {
+                populate: {
+                  coverpage: { fields: ["url"] },
+                  topics: { fields: ["documentId"] },
+                },
+              },
+            }
+          );
+          subjectsData = data;
+          total = totalCount;
+        }
 
         setSubjects(subjectsData);
         setFilteredSubjects(subjectsData);
-        // setTotalSubjects(total || subjectsData.length); // Fallback if total undefined
-        // We will set total subjects from courseCounts to be more accurate across pagination
+        // Set totalSubjects for pagination (filtered count for MongoDB, server count for Strapi)
+        setTotalSubjects(total);
       } catch (e) {
         console.error("Error fetching course subjects:", e);
         setError(e.message || "Failed to load course subjects");
@@ -156,7 +212,8 @@ const CourseSubjectsPage = () => {
       }
     };
 
-    // Helper to fetch counts
+    // Helper to fetch counts (for display in header - subjectCount, topicCount, quizCount)
+    // Note: totalSubjects for pagination is set in fetchData above
     const fetchCounts = async () => {
       if (!courseId) return;
       try {
@@ -167,7 +224,6 @@ const CourseSubjectsPage = () => {
             topicCount: counts.topicCount,
             quizCount: counts.quizCount,
           });
-          setTotalSubjects(counts.subjectCount);
           if (counts.breakdown) {
             setSubjectBreakdown(counts.breakdown);
           }
@@ -198,6 +254,66 @@ const CourseSubjectsPage = () => {
     // Just sync filteredSubjects with subjects when they change (handled by fetch)
     setFilteredSubjects(subjects);
   }, [subjects]);
+
+  // Subscribe to custom course updates for real-time refresh
+  useEffect(() => {
+    // Only subscribe if this is a MongoDB custom course
+    if (!subscription || (subscription.source !== "mongodb" && subscription.subscription_type !== "CUSTOM")) {
+      return;
+    }
+
+    const unsubscribe = subscribeToCustomCourseUpdates((eventName, data) => {
+      console.log("[CourseSubjectsPage] Custom course update received:", eventName, data);
+      
+      // Check if the update is for the current course
+      const updatedCourseId = data.course?.documentId || data.course?.id || data.courseId;
+      if (updatedCourseId && updatedCourseId !== courseId) {
+        return; // Not for this course, ignore
+      }
+
+      if (eventName === "custom-course:updated") {
+        // Refresh course data and subjects
+        setTimeout(() => {
+          // Re-fetch the subscription and subjects
+          const refreshData = async () => {
+            try {
+              // Re-fetch custom courses to get updated data
+              const customCourses = await subscriptionService.getCustomCourses();
+              const updatedCourse = customCourses.find(
+                (c) => c.documentId === courseId || c.course?.documentId === courseId
+              );
+              
+              if (updatedCourse) {
+                setSubscription(updatedCourse);
+                // Re-fetch subjects
+                const subjects = updatedCourse.subjects || updatedCourse.course?.subjects || [];
+                setSubjects(subjects);
+                setFilteredSubjects(subjects);
+                setTotalSubjects(subjects.length);
+              }
+              
+              // Re-fetch counts
+              const counts = await subscriptionService.getCourseCounts(courseId);
+              if (counts) {
+                setCourseCounts({
+                  subjectCount: counts.subjectCount,
+                  topicCount: counts.topicCount,
+                  quizCount: counts.quizCount,
+                });
+              }
+            } catch (error) {
+              console.error("[CourseSubjectsPage] Error refreshing data:", error);
+            }
+          };
+          refreshData();
+        }, 500);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [subscription, courseId]);
 
   const handleResetFilters = () => {
     setSearchQuery("");
@@ -381,14 +497,15 @@ const CourseSubjectsPage = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Results Count */}
-        {filteredSubjects.length > 0 && (
+        {totalSubjects > 0 && (
           <div className="flex items-center gap-2 mb-6">
             <BookOpen className="w-4 h-4 text-gray-400" />
             <p className="text-sm text-gray-500">
               <span className="font-semibold text-gray-700">
-                {hasActiveFilters ? filteredSubjects.length : totalSubjects}
+                {totalSubjects}
               </span>{" "}
               subject{totalSubjects !== 1 ? "s" : ""}
+              {hasActiveFilters && ` (filtered)`}
             </p>
           </div>
         )}

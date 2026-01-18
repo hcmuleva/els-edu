@@ -4,6 +4,7 @@ import {
   useGetIdentity,
   useNotify,
   useAuthProvider,
+  useLogout,
   useSidebarState,
 } from "react-admin";
 import {
@@ -21,12 +22,17 @@ import {
   ChevronUp,
   FileText,
   Building2,
+  BarChart3,
+  Database,
+  School,
+  Bell as BellIcon,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useLocation, Link } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRoleNavigation } from "../hooks/useRoleNavigation";
+import NotificationBell from "../components/common/NotificationBell";
 
 // Portal Dropdown Component to avoid clipping
 const PortalDropdown = ({
@@ -43,19 +49,50 @@ const PortalDropdown = ({
     e.stopPropagation();
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      // Calculate position: bottom-right of trigger
-      // If align is right, we align the right edge of dropdown with right edge of trigger
-      // But since trigger is small, we usually want it to pop "up" and "right" or "up" and "left" depending on space.
-      // For sidebar at bottom: pop UP.
+      const padding = 12;
+      const dropdownWidth = 224; // w-56
+      const dropdownHeight = 350; // estimated max
 
-      // Simple logic: auto-detect if we are too low
+      let nextCoords = {
+        top: "auto",
+        left: "auto",
+        bottom: "auto",
+        right: "auto",
+      };
+
+      // Horizontal
+      if (align === "right") {
+        const rightAlignLeft = rect.right - dropdownWidth;
+        if (rightAlignLeft < padding) {
+          nextCoords.left = padding;
+        } else {
+          nextCoords.left = rightAlignLeft;
+        }
+      } else {
+        if (rect.left + dropdownWidth > window.innerWidth - padding) {
+          nextCoords.right = padding;
+        } else {
+          nextCoords.left = rect.left;
+        }
+      }
+
+      // Vertical
       const isBottomHalf = rect.top > window.innerHeight / 2;
+      if (isBottomHalf) {
+        nextCoords.bottom = window.innerHeight - rect.top + 10;
+        if (window.innerHeight - nextCoords.bottom - dropdownHeight < padding) {
+          nextCoords.bottom = "auto";
+          nextCoords.top = padding;
+        }
+      } else {
+        nextCoords.top = rect.bottom + 10;
+        if (nextCoords.top + dropdownHeight > window.innerHeight - padding) {
+          nextCoords.top = "auto";
+          nextCoords.bottom = padding;
+        }
+      }
 
-      setCoords({
-        top: isBottomHalf ? "auto" : rect.top,
-        bottom: isBottomHalf ? window.innerHeight - rect.top : "auto",
-        left: rect.right + 10, // Always pop to the right of the sidebar
-      });
+      setCoords(nextCoords);
     }
     setIsOpen(!isOpen);
   };
@@ -92,19 +129,20 @@ const PortalDropdown = ({
             <div
               className={cn(
                 "absolute bg-popover text-popover-foreground rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in zoom-in-95",
-                width
+                width,
               )}
               style={{
                 top: coords.top === "auto" ? "auto" : `${coords.top}px`,
                 bottom:
-                  coords.bottom === "auto" ? "auto" : `${coords.bottom - 10}px`,
-                left: `${coords.left}px`,
+                  coords.bottom === "auto" ? "auto" : `${coords.bottom}px`,
+                left: coords.left === "auto" ? "auto" : `${coords.left}px`,
+                right: coords.right === "auto" ? "auto" : `${coords.right}px`,
               }}
             >
               <div className="p-1 space-y-1">{children}</div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );
@@ -128,7 +166,7 @@ const DropdownItem = ({
       variant === "destructive"
         ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
         : "text-foreground/80 hover:text-foreground hover:bg-muted",
-      className
+      className,
     )}
   >
     {Icon && <Icon size={16} />}
@@ -157,7 +195,7 @@ const CustomMenuItem = ({
             "transition-colors duration-200 flex items-center justify-center",
             isSelected
               ? "text-primary"
-              : "text-muted-foreground group-hover:text-primary"
+              : "text-muted-foreground group-hover:text-primary",
           )}
         >
           {leftIcon}
@@ -172,7 +210,7 @@ const CustomMenuItem = ({
         // Collapsed: fixed square 40px (w-10), centered, no padding
         !isOpen &&
           "mx-auto w-10 h-10 my-1 rounded-xl p-0 flex justify-center items-center",
-        className
+        className,
       )}
       sx={{
         minHeight: isOpen ? "44px" : "40px", // Match height class
@@ -252,7 +290,7 @@ const SubMenu = ({ label, icon: Icon, children, isOpen }) => {
         onClick={() => setExpanded(!expanded)}
         className={cn(
           "flex items-center px-3 py-2.5 rounded-xl cursor-pointer transition-colors group",
-          "hover:bg-primary/5 text-muted-foreground hover:text-primary"
+          "hover:bg-primary/5 text-muted-foreground hover:text-primary",
         )}
       >
         <div className="min-w-[32px] flex justify-center mr-2">
@@ -267,7 +305,7 @@ const SubMenu = ({ label, icon: Icon, children, isOpen }) => {
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
-          expanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+          expanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0",
         )}
       >
         <div className="pl-2 border-l-2 border-border/50 ml-4 space-y-1">
@@ -296,13 +334,14 @@ const AppMenu = (props) => {
   const { data: identity, isLoading } = useGetIdentity();
   const notify = useNotify();
   const authProvider = useAuthProvider();
+  const logout = useLogout();
   const [open, setOpen] = useSidebarState();
 
   // Use role-based navigation hook
   const { canAccess, getManageRoute, userRole } = useRoleNavigation();
 
   const isTeacherOrAdmin = ["TEACHER", "ADMIN", "SUPERADMIN"].includes(
-    permissions
+    permissions,
   );
 
   if (isLoading) return null;
@@ -371,7 +410,7 @@ const AppMenu = (props) => {
 
   const handleLogout = async () => {
     try {
-      await authProvider.logout();
+      await logout();
       // No notification needed - redirect happens immediately
     } catch (error) {
       notify("Error logging out", { type: "error" });
@@ -384,14 +423,14 @@ const AppMenu = (props) => {
     <div
       className={cn(
         "h-full flex flex-col bg-card/50 backdrop-blur-xl border-r border-border transition-all duration-300 relative",
-        open ? "w-64" : "w-20"
+        open ? "w-64" : "w-20",
       )}
     >
       {/* Branding Header */}
       <div
         className={cn(
           "h-16 flex items-center mb-2 transition-all duration-300 shrink-0 overflow-hidden",
-          open ? "px-6 justify-start" : "justify-center px-0"
+          open ? "px-6 justify-start" : "justify-center px-0",
         )}
       >
         {/* Branding */}
@@ -399,7 +438,7 @@ const AppMenu = (props) => {
           to="/"
           className={cn(
             "flex items-center transition-all duration-300 no-underline",
-            open ? "gap-3" : "gap-0"
+            open ? "gap-3" : "gap-0",
           )}
         >
           {/* Standardized sized logo container: w-10 h-10 to match menu items */}
@@ -414,7 +453,7 @@ const AppMenu = (props) => {
           <div
             className={cn(
               "transition-all duration-300 overflow-hidden",
-              open ? "w-auto opacity-100" : "w-0 opacity-0"
+              open ? "w-auto opacity-100" : "w-0 opacity-0",
             )}
           >
             <span className="text-xl font-heading font-bold text-foreground tracking-tight whitespace-nowrap">
@@ -425,7 +464,7 @@ const AppMenu = (props) => {
       </div>
 
       {/* Menu Items */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <Menu
           {...props}
           className="w-full"
@@ -520,6 +559,14 @@ const AppMenu = (props) => {
             />
           )}
 
+          {/* Classroom - visible to all logged in users */}
+          <CustomMenuItem
+            to="/classroom"
+            primaryText="Classroom"
+            leftIcon={<School size={20} />}
+            isOpen={open}
+          />
+
           {/* My Progress - visible to: STUDENT, PARENT, SUPERADMIN */}
           {canAccess("progress") && (
             <CustomMenuItem
@@ -539,118 +586,185 @@ const AppMenu = (props) => {
               isOpen={open}
             />
           )}
+
+          {/* MongoDB Studio - visible to: ADMIN, SUPERADMIN, TEACHER */}
+          {(permissions === "ADMIN" ||
+            permissions === "SUPERADMIN" ||
+            permissions === "TEACHER") && (
+            <CustomMenuItem
+              to="/mongo-studio"
+              primaryText="MongoDB Studio"
+              leftIcon={<Database size={20} />}
+              isOpen={open}
+            />
+          )}
+
+          {/* Analytics - visible to: STUDENT, ADMIN, SUPERADMIN */}
+          {canAccess("analytics") && (
+            <CustomMenuItem
+              to="/analytics"
+              primaryText="Analytics"
+              leftIcon={<BarChart3 size={20} />}
+              isOpen={open}
+            />
+          )}
         </Menu>
       </div>
 
-      {/* Footer Area: Toggle + User Profile */}
-      <div className="mt-auto flex flex-col shrink-0 w-full overflow-hidden">
-        {/* Collapse Toggle - Moved to bottom */}
-        <div
+      {/* Footer Area: Toggle + User Profile + Notification */}
+      {/* Collapse Toggle Section */}
+      <div
+        className={cn(
+          "pt-2 pb-1 border-t border-border/50 bg-secondary/5 flex transition-all duration-300",
+          open ? "justify-start" : "justify-center",
+        )}
+      >
+        <button
+          onClick={toggleSidebar}
           className={cn(
-            "px-4 pb-4 pt-2 border-border/50 flex transition-all duration-300",
-            open ? "justify-start" : "justify-center"
+            "flex items-center gap-2 rounded-xl hover:bg-secondary/10 transition-all text-muted-foreground hover:text-primary transition-colors",
+            "border border-transparent",
+            open
+              ? "mx-3 flex-1 px-3 py-2 my-1 min-h-[44px]"
+              : "mx-auto w-10 h-10 justify-center items-center p-0",
           )}
-        >
-          <button
-            onClick={toggleSidebar}
-            className={cn(
-              "flex items-center gap-2 rounded-lg hover:bg-secondary/10 transition-colors text-muted-foreground hover:text-primary",
-              "border border-transparent hover:border-border/50",
-              // Unified w-10 h-10 for toggle in collapsed mode
-              open
-                ? "px-3 py-2 w-full min-h-[40px]"
-                : "w-10 h-10 justify-center p-0"
-            )}
-            title={open ? "Minimize Sidebar" : "Expand Sidebar"}
-          >
-            {open ? (
-              <>
-                <ChevronLeft size={20} />
-                <span className="text-sm font-medium">Minimize</span>
-              </>
-            ) : (
-              <MenuIcon size={20} />
-            )}
-          </button>
-        </div>
-
-        {/* User Footer */}
-        <div
-          className={cn(
-            "border-t border-border/50 bg-card/30 transition-all duration-300",
-            open ? "p-4" : "p-3"
-          )}
+          title={open ? "Minimize Sidebar" : "Expand Sidebar"}
         >
           <div
             className={cn(
-              "flex items-center transition-all duration-300",
-              open ? "gap-3" : "justify-center gap-0"
+              "flex items-center justify-center shrink-0",
+              open ? "w-5" : "w-full h-full",
             )}
           >
-            <div className="flex-1 min-w-0">
-              <PortalDropdown
-                trigger={
-                  <div
+            {open ? <ChevronLeft size={20} /> : <MenuIcon size={20} />}
+          </div>
+          {open && <span className="text-sm font-medium">Minimize</span>}
+        </button>
+      </div>
+
+      {/* Notification Section - BELOW MINIMIZE */}
+      <div
+        className={cn(
+          "pb-2 pt-1 transition-all duration-300",
+          open ? "flex justify-start" : "flex justify-center",
+        )}
+      >
+        <NotificationBell>
+          {({ unreadCount }) => (
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-xl hover:bg-secondary/10 transition-all text-muted-foreground hover:text-primary",
+                "border border-transparent group transition-colors",
+                open
+                  ? "mx-3 flex-1 px-3 py-2 my-1 min-h-[44px]"
+                  : "mx-auto w-10 h-10 justify-center items-center p-0",
+              )}
+            >
+              <div
+                className={cn(
+                  "relative flex items-center justify-center shrink-0",
+                  open ? "w-5" : "w-full h-full",
+                )}
+              >
+                <BellIcon size={20} />
+                {unreadCount > 0 && (
+                  <span
                     className={cn(
-                      "flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer group",
-                      "hover:bg-secondary/20",
-                      !open && "justify-center p-0"
+                      "absolute bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm",
+                      open
+                        ? "-top-1.5 -right-1.5 w-4 h-4"
+                        : "top-1.5 right-1.5 w-4 h-4",
                     )}
                   >
-                    <div className="relative shrink-0">
-                      <img
-                        src={
-                          identity?.avatar ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                            identity?.fullName || "User"
-                          }`
-                        }
-                        alt="User"
-                        className="w-10 h-10 rounded-full object-cover border-2 border-background shadow-sm group-hover:scale-105 transition-transform"
-                      />
-                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full"></div>
-                    </div>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </div>
+              {open && (
+                <span className="text-sm font-medium">Notifications</span>
+              )}
+            </div>
+          )}
+        </NotificationBell>
+      </div>
 
-                    {/* User Text Info - strictly hidden/width-0 when collapsed */}
-                    <div
-                      className={cn(
-                        "flex-1 min-w-0 text-left transition-all duration-300 overflow-hidden",
-                        open ? "w-auto opacity-100" : "w-0 opacity-0 hidden"
-                      )}
-                    >
-                      <h4 className="text-sm font-bold text-foreground truncate leading-none mb-0.5">
-                        {identity?.fullName || "User"}
-                      </h4>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground truncate">
-                        {permissions || "Guest"}
-                      </p>
-                    </div>
-
-                    {open && (
-                      <ChevronDown
-                        size={14}
-                        className="text-muted-foreground group-hover:text-primary transition-colors shrink-0"
-                      />
-                    )}
+      {/* User Footer */}
+      <div
+        className={cn(
+          "border-t border-border/50 bg-card/30 transition-all duration-300",
+          open ? "p-4" : "p-3",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center transition-all duration-300",
+            open ? "gap-3" : "justify-center",
+          )}
+        >
+          <div className="flex-1 min-w-0">
+            <PortalDropdown
+              trigger={
+                <div
+                  className={cn(
+                    "flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer group",
+                    "hover:bg-secondary/20",
+                    !open && "justify-center p-0",
+                  )}
+                >
+                  <div className="relative shrink-0">
+                    <img
+                      src={
+                        identity?.avatar ||
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+                          identity?.fullName || "User"
+                        }`
+                      }
+                      alt="User"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-background shadow-sm group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full"></div>
                   </div>
-                }
-              >
-                <div className="px-3 py-3 border-b border-border/50 mb-1 bg-muted/20">
-                  <p className="text-sm font-bold text-foreground truncate">
-                    {identity?.fullName}
-                  </p>
-                  <p className="text-xs text-muted-foreground opacity-80 truncate">
-                    {identity?.email}
-                  </p>
-                </div>
 
-                <div className="py-1">
-                  <DropdownItem
-                    icon={User}
-                    label="Profile"
-                    onClick={() => (window.location.href = "#/profile")}
-                  />
+                  {/* User Text Info - strictly hidden/width-0 when collapsed */}
+                  <div
+                    className={cn(
+                      "flex-1 min-w-0 text-left transition-all duration-300 overflow-hidden",
+                      open ? "w-auto opacity-100" : "w-0 opacity-0 hidden",
+                    )}
+                  >
+                    <h4 className="text-sm font-bold text-foreground truncate leading-none mb-0.5">
+                      {identity?.fullName || "User"}
+                    </h4>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground truncate">
+                      {permissions || "Guest"}
+                    </p>
+                  </div>
+
+                  {open && (
+                    <ChevronDown
+                      size={14}
+                      className="text-muted-foreground group-hover:text-primary transition-colors shrink-0"
+                    />
+                  )}
                 </div>
+              }
+            >
+              <div className="px-3 py-3 border-b border-border/50 mb-1 bg-muted/20 text-foreground">
+                <p className="text-sm font-bold truncate">
+                  {identity?.fullName}
+                </p>
+                <p className="text-xs text-muted-foreground opacity-80 truncate">
+                  {identity?.email}
+                </p>
+              </div>
+
+              {/* Scrollable container with hidden scrollbar */}
+              <div className="py-1 max-h-[70vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <DropdownItem
+                  icon={User}
+                  label="Profile"
+                  onClick={() => (window.location.href = "#/profile")}
+                />
 
                 {uniqueRoles.length > 1 && (
                   <div className="border-t border-border/50 my-1 pt-1">
@@ -679,8 +793,8 @@ const AppMenu = (props) => {
                   variant="destructive"
                   onClick={handleLogout}
                 />
-              </PortalDropdown>
-            </div>
+              </div>
+            </PortalDropdown>
           </div>
         </div>
       </div>

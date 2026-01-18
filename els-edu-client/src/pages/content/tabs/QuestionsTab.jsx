@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { CustomSelect } from "../../../components/common/CustomSelect";
 import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
+import CountListModal from "../../../components/studio/CountListModal";
 
 const QuestionViewModal = ({ question, onClose }) => {
   if (!question) return null;
@@ -262,6 +263,32 @@ export const QuestionsTab = () => {
 
   // View State
   const [viewingQuestion, setViewingQuestion] = useState(null);
+  const [activeCountTitle, setActiveCountTitle] = useState("");
+  const [activeCountItems, setActiveCountItems] = useState([]);
+
+  // Construct filters for server-side
+  const filters = useMemo(() => {
+    const f = {};
+    if (userId && (!isSuperAdmin || viewMode === "mine")) {
+      f.creator = userId;
+    }
+    if (searchQuery) f.q = searchQuery; // queryBuilder maps 'q' to questionText for questions
+    if (difficultyFilter) f.difficulty = difficultyFilter;
+    if (typeFilter) f.questionType = typeFilter;
+    if (subjectFilter) f["subjects[id]"] = subjectFilter; // Relation ID
+    if (topicFilter) f["topics[id]"] = topicFilter; // Relation ID
+
+    return f;
+  }, [
+    userId,
+    isSuperAdmin,
+    viewMode,
+    searchQuery,
+    difficultyFilter,
+    typeFilter,
+    subjectFilter,
+    topicFilter,
+  ]);
 
   const {
     data: questions,
@@ -271,21 +298,20 @@ export const QuestionsTab = () => {
   } = useGetList("questions", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: {
-        subject: { fields: ["name"] },
+        subject: { fields: ["name"] }, // Kept for backward compatibility if code uses single 'subject' although schema is 'subjects'?
+        subjects: { fields: ["name"] }, // Plural schema
         topic: { fields: ["name"] },
+        topics: { fields: ["name"] }, // Plural schema
       },
     },
   });
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page, viewMode]);
+  }, [sortField, sortOrder, userId, page, viewMode, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -324,49 +350,11 @@ export const QuestionsTab = () => {
     setSubjectFilter(null);
     setTypeFilter("");
     setDifficultyFilter("");
+    setPage(1);
   };
 
-  const getFilteredContent = () => {
-    let content = questions || [];
-
-    if (searchQuery) {
-      content = content.filter((item) =>
-        item.questionText?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (difficultyFilter) {
-      content = content.filter((item) => item.difficulty === difficultyFilter);
-    }
-
-    if (typeFilter) {
-      content = content.filter((item) => item.questionType === typeFilter);
-    }
-
-    if (topicFilter) {
-      content = content.filter((item) => {
-        const tId = item.topic?.id || item.topic;
-        return (
-          tId === topicFilter ||
-          (typeof tId === "object" && tId?.id === topicFilter)
-        );
-      });
-    }
-
-    if (subjectFilter) {
-      content = content.filter((item) => {
-        const sId = item.subject?.id || item.subject;
-        return (
-          sId === subjectFilter ||
-          (typeof sId === "object" && sId?.id === subjectFilter)
-        );
-      });
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
+  // No client-side filtering needed
+  const filteredContent = questions || [];
 
   const getDifficultyColor = (difficulty) => {
     if (difficulty === "easy")
@@ -409,6 +397,19 @@ export const QuestionsTab = () => {
         <QuestionViewModal
           question={viewingQuestion}
           onClose={() => setViewingQuestion(null)}
+        />
+      )}
+
+      {activeCountItems.length > 0 && (
+        <CountListModal
+          isOpen={activeCountItems.length > 0}
+          title={activeCountTitle}
+          items={activeCountItems}
+          nameField="name"
+          onClose={() => {
+            setActiveCountItems([]);
+            setActiveCountTitle("");
+          }}
         />
       )}
 
@@ -480,7 +481,7 @@ export const QuestionsTab = () => {
                 allowEmpty
                 searchable
                 disabled={!subjectFilter}
-                filter={subjectFilter ? { subject: subjectFilter } : {}}
+                filter={subjectFilter ? { "subjects[id]": subjectFilter } : {}}
               />
             </div>
             <div className="w-[180px]">
@@ -619,7 +620,7 @@ export const QuestionsTab = () => {
                       <td className="px-6 py-4 align-middle text-center">
                         <span
                           className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getTypeColor(
-                            item.questionType
+                            item.questionType,
                           )}`}
                         >
                           {item.questionType}
@@ -628,15 +629,15 @@ export const QuestionsTab = () => {
                       <td className="px-6 py-4 align-middle text-center">
                         <span
                           className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getDifficultyColor(
-                            item.difficulty
+                            item.difficulty,
                           )}`}
                         >
                           {item.difficulty?.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
-                        <span className="text-sm font-bold text-gray-700">
-                          {item.level || "-"}
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200">
+                          Level {item.level || 1}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle">
@@ -644,15 +645,37 @@ export const QuestionsTab = () => {
                           {getCorrectAnswers(item)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.subject?.name || "-"}
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(
+                              `Subjects for Question #${displayId}`,
+                            );
+                            setActiveCountItems(item.subjects || []);
+                          }}
+                          className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
+                          disabled={
+                            !item.subjects || item.subjects.length === 0
+                          }
+                        >
+                          {item.subjects?.length || 0} Subjects
+                        </button>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="text-sm font-bold text-gray-700">
-                          {item.topic?.name || "-"}
-                        </div>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCountTitle(
+                              `Topics for Question #${displayId}`,
+                            );
+                            setActiveCountItems(item.topics || []);
+                          }}
+                          className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95"
+                          disabled={!item.topics || item.topics.length === 0}
+                        >
+                          {item.topics?.length || 0} Topics
+                        </button>
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -686,7 +709,7 @@ export const QuestionsTab = () => {
                               e.stopPropagation();
                               if (
                                 window.confirm(
-                                  "Are you sure you want to delete this question?"
+                                  "Are you sure you want to delete this question?",
                                 )
                               ) {
                                 deleteOne("questions", { id: itemId });

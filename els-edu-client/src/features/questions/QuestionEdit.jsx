@@ -27,20 +27,26 @@ export const QuestionEdit = () => {
       const { documentId: docId, id, ...cleanData } = questionData;
       setQuestion({
         ...cleanData,
-        // Extract numeric ID (not documentId) for topic - Strapi relations use numeric IDs
-        topic:
-          cleanData.topic && typeof cleanData.topic === "object"
-            ? cleanData.topic.id // Use numeric ID, not documentId
-            : cleanData.topic
-            ? Number(cleanData.topic)
-            : null, // Ensure it's a number
-        // Extract numeric ID (not documentId) for subject - Strapi relations use numeric IDs
-        subject:
-          cleanData.subject && typeof cleanData.subject === "object"
-            ? cleanData.subject.id // Use numeric ID, not documentId
-            : cleanData.subject
-            ? Number(cleanData.subject)
-            : null, // Ensure it's a number
+        // Handle topics as array (many-to-many relation)
+        topics: cleanData.topics
+          ? Array.isArray(cleanData.topics)
+            ? cleanData.topics.map((t) =>
+                typeof t === "object"
+                  ? t.documentId || t.id || t
+                  : Number(t) || t
+              )
+            : []
+          : [],
+        // Handle subjects as array (many-to-many relation)
+        subjects: cleanData.subjects
+          ? Array.isArray(cleanData.subjects)
+            ? cleanData.subjects.map((s) =>
+                typeof s === "object"
+                  ? s.documentId || s.id || s
+                  : Number(s) || s
+              )
+            : []
+          : [],
         id: Date.now(), // Local ID for UI only
       });
     }
@@ -77,29 +83,39 @@ export const QuestionEdit = () => {
         updatedBy,
         creator, // Prevent overwriting creator
         localizations, // i18n plugin field - read-only, cannot be updated
+        topic, // Remove old singular topic field if it exists
+        subject, // Remove old singular subject field if it exists
         ...questionDataToSave
       } = question;
 
-      // Ensure topic and subject are properly formatted for Strapi
-      // Strapi expects numeric IDs for manyToOne relations, or null to disconnect
+      // Ensure topics and subjects are properly formatted for Strapi
+      // Strapi expects arrays of numeric IDs for many-to-many relations
       const formattedData = {
         ...questionDataToSave,
-        // Extract numeric ID if topic is an object, otherwise use the value (which should be numeric ID or null)
-        topic:
-          questionDataToSave.topic &&
-          typeof questionDataToSave.topic === "object"
-            ? questionDataToSave.topic.id || null
-            : questionDataToSave.topic
-            ? Number(questionDataToSave.topic)
-            : null,
-        // Extract numeric ID if subject is an object, otherwise use the value (which should be numeric ID or null)
-        subject:
-          questionDataToSave.subject &&
-          typeof questionDataToSave.subject === "object"
-            ? questionDataToSave.subject.id || null
-            : questionDataToSave.subject
-            ? Number(questionDataToSave.subject)
-            : null,
+        // Format topics as array of IDs (documentId or id)
+        topics: questionDataToSave.topics
+          ? Array.isArray(questionDataToSave.topics)
+            ? questionDataToSave.topics
+                .map((t) =>
+                  typeof t === "object"
+                    ? t.documentId || t.id || t
+                    : t
+                )
+                .filter((id) => id != null)
+            : []
+          : [],
+        // Format subjects as array of IDs (documentId or id)
+        subjects: questionDataToSave.subjects
+          ? Array.isArray(questionDataToSave.subjects)
+            ? questionDataToSave.subjects
+                .map((s) =>
+                  typeof s === "object"
+                    ? s.documentId || s.id || s
+                    : s
+                )
+                .filter((id) => id != null)
+            : []
+          : [],
       };
 
       // Explicitly remove documentId if it exists (it's read-only and cannot be updated)

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   List,
   Datagrid,
@@ -16,6 +16,7 @@ import {
 } from "react-admin";
 import { Sparkles, Clock, Target, Layers } from "lucide-react";
 import { CustomAsyncSelect } from "../../components/common/CustomAsyncSelect"; // Assuming we can use this in filters or use ReferenceInput
+import CountListModal from "../../components/studio/CountListModal";
 
 // Custom filter components need to be compatible with react-admin filters
 // For simplicity and compatibility, we'll use standard inputs for now or wrap custom ones if needed.
@@ -65,88 +66,182 @@ const QuizStats = () => {
   );
 };
 
-export const QuizList = () => (
-  <List
-    filters={quizFilters}
-    sort={{ field: "createdAt", order: "DESC" }}
-    perPage={25}
-    title="Quizzes"
-    empty={false} // Handle empty state if needed, or let RA handle it
-  >
-    <Datagrid bulkActionButtons={false} rowClick="show">
-      <TextField source="id" label="ID" sortable={false} />
+export const QuizList = () => {
+  const [activeCountTitle, setActiveCountTitle] = useState("");
+  const [activeCountItems, setActiveCountItems] = useState([]);
 
-      <FunctionField
-        label="Quiz"
-        render={(record) => (
-          <div>
-            <div className="font-bold text-foreground">
-              {record.title || "Untitled Quiz"}
-            </div>
-            <div className="text-xs text-muted-foreground truncate max-w-xs">
-              {record.description}
-            </div>
-          </div>
-        )}
-      />
-
-      <ChipField
-        source="quizType"
-        label="Type"
-        sx={{
-          "& .MuiChip-root": {
-            fontSize: "0.75rem",
-            height: "24px",
-            textTransform: "capitalize",
-          },
-        }}
-      />
-
-      <ChipField
-        source="difficulty"
-        label="Difficulty"
-        sx={{
-          "& .MuiChip-root": {
-            fontSize: "0.75rem",
-            height: "24px",
-            backgroundColor: (record) => {
-              if (record.difficulty === "beginner") return "#10b981";
-              if (record.difficulty === "advanced") return "#ef4444";
-              return "#f59e0b";
-            },
-            color: "white",
-            textTransform: "capitalize",
-          },
-        }}
-      />
-
-      <ReferenceField
-        source="topics.id"
-        reference="topics"
-        label="Topic"
-        link={false}
-        emptyText="-"
+  return (
+    <>
+      <List
+        filters={quizFilters}
+        sort={{ field: "createdAt", order: "DESC" }}
+        perPage={25}
+        title="Quizzes"
+        empty={false} // Handle empty state if needed, or let RA handle it
       >
-        <TextField source="name" />
-      </ReferenceField>
+        <Datagrid bulkActionButtons={false} rowClick="show">
+          <TextField source="id" label="ID" sortable={false} />
 
-      <ReferenceField
-        source="subjects.id"
-        reference="subjects"
-        label="Subject"
-        link={false}
-        emptyText="-"
-      >
-        <TextField source="name" />
-      </ReferenceField>
+          <FunctionField
+            label="Quiz"
+            render={(record) => (
+              <div>
+                <div className="font-bold text-foreground">
+                  {record.title || "Untitled Quiz"}
+                </div>
+                <div className="text-xs text-muted-foreground truncate max-w-xs">
+                  {record.description}
+                </div>
+              </div>
+            )}
+          />
 
-      <FunctionField label="Stats" render={() => <QuizStats />} />
+          <ChipField
+            source="quizType"
+            label="Type"
+            sx={{
+              "& .MuiChip-root": {
+                fontSize: "0.75rem",
+                height: "24px",
+                textTransform: "capitalize",
+              },
+            }}
+          />
 
-      <DateField source="createdAt" label="Created" showTime />
+          <ChipField
+            source="difficulty"
+            label="Difficulty"
+            sx={{
+              "& .MuiChip-root": {
+                fontSize: "0.75rem",
+                height: "24px",
+                backgroundColor: (record) => {
+                  if (record.difficulty === "beginner") return "#10b981";
+                  if (record.difficulty === "advanced") return "#ef4444";
+                  return "#f59e0b";
+                },
+                color: "white",
+                textTransform: "capitalize",
+              },
+            }}
+          />
 
-      <ShowButton />
-      <EditButton />
-      <DeleteButton />
-    </Datagrid>
-  </List>
-);
+          <FunctionField
+            label="Topics"
+            render={(record) => {
+              const topics = record.topics
+                ? Array.isArray(record.topics)
+                  ? record.topics
+                  : [record.topics]
+                : [];
+              const count = topics.length;
+
+              return (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveCountTitle(`Topics for ${record.title || "Quiz"}`);
+                    setActiveCountItems(topics);
+                  }}
+                  style={{
+                    padding: "4px 12px",
+                    backgroundColor: count > 0 ? "#eef2ff" : "#f9fafb",
+                    border: count > 0 ? "1px solid #c7d2fe" : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: count > 0 ? "#4f46e5" : "#9ca3af",
+                    cursor: count > 0 ? "pointer" : "not-allowed",
+                    transition: "all 0.2s",
+                    opacity: count > 0 ? 1 : 0.6,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (count > 0) {
+                      e.target.style.backgroundColor = "#e0e7ff";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (count > 0) {
+                      e.target.style.backgroundColor = "#eef2ff";
+                    }
+                  }}
+                  disabled={count === 0}
+                >
+                  {count} Topics
+                </button>
+              );
+            }}
+          />
+
+          <FunctionField
+            label="Subjects"
+            render={(record) => {
+              const subjects = record.subjects
+                ? Array.isArray(record.subjects)
+                  ? record.subjects
+                  : [record.subjects]
+                : [];
+              const count = subjects.length;
+
+              return (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveCountTitle(`Subjects for ${record.title || "Quiz"}`);
+                    setActiveCountItems(subjects);
+                  }}
+                  style={{
+                    padding: "4px 12px",
+                    backgroundColor: count > 0 ? "#f9fafb" : "#f9fafb",
+                    border: count > 0 ? "1px solid #e5e7eb" : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: count > 0 ? "#374151" : "#9ca3af",
+                    cursor: count > 0 ? "pointer" : "not-allowed",
+                    transition: "all 0.2s",
+                    opacity: count > 0 ? 1 : 0.6,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (count > 0) {
+                      e.target.style.backgroundColor = "#f3f4f6";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (count > 0) {
+                      e.target.style.backgroundColor = "#f9fafb";
+                    }
+                  }}
+                  disabled={count === 0}
+                >
+                  {count} Subjects
+                </button>
+              );
+            }}
+          />
+
+          <FunctionField label="Stats" render={() => <QuizStats />} />
+
+          <DateField source="createdAt" label="Created" showTime />
+
+          <ShowButton />
+          <EditButton />
+          <DeleteButton />
+        </Datagrid>
+      </List>
+
+      {activeCountItems.length > 0 && (
+        <CountListModal
+          isOpen={activeCountItems.length > 0}
+          title={activeCountTitle}
+          items={activeCountItems}
+          nameField="name"
+          onClose={() => {
+            setActiveCountItems([]);
+            setActiveCountTitle("");
+          }}
+        />
+      )}
+    </>
+  );
+};

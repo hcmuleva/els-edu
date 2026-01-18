@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -20,88 +20,101 @@ import {
   Avatar,
   IconButton,
   Autocomplete,
-} from '@mui/material';
+} from "@mui/material";
 import {
   PhotoCamera as PhotoCameraIcon,
   Person as PersonIcon,
-} from '@mui/icons-material';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { managementApi } from '../../services/managementApi';
-import { toast } from 'react-toastify';
+  Visibility,
+  VisibilityOff,
+} from "@mui/icons-material";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { managementApi } from "../../services/managementApi";
+import { toast } from "react-toastify";
+import { DEFAULT_ORG_DOCUMENT_ID } from "../../utils/constants";
 
 const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const queryClient = useQueryClient();
 
   // Fetch organizations for selection
-  const { data: orgsData } = useQuery(
-    ['organizations-select'],
-    () => managementApi.getOrganizations(1, 100),
-    { enabled: open }
-  );
+  const { data: orgsData } = useQuery({
+    queryKey: ["organizations-select"],
+    queryFn: () => managementApi.getOrganizations(1, 100),
+    enabled: open,
+  });
 
   const organizations = orgsData?.data || [];
 
-  // Create user mutation
-  const createUserMutation = useMutation(
-    managementApi.createEnhancedUser,
-    {
-      onSuccess: () => {
-        toast.success('User created successfully');
-        onUserCreated();
-        handleClose();
-      },
-      onError: (error) => {
-        toast.error('Failed to create user');
-        console.error(error);
+  // Pre-select the default org when organizations are loaded
+  useEffect(() => {
+    if (organizations.length > 0 && !formik.values.org) {
+      const defaultOrg = organizations.find(
+        (org) => org.documentId === DEFAULT_ORG_DOCUMENT_ID,
+      );
+      if (defaultOrg) {
+        formik.setFieldValue("org", defaultOrg);
       }
     }
-  );
+  }, [organizations]);
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: managementApi.createEnhancedUser,
+    onSuccess: () => {
+      toast.success("User created successfully");
+      onUserCreated();
+      handleClose();
+    },
+    onError: (error) => {
+      toast.error("Failed to create user");
+      console.error(error);
+    },
+  });
 
   // Form validation schema
   const validationSchema = Yup.object().shape({
     username: Yup.string()
-      .min(3, 'Username must be at least 3 characters')
-      .required('Username is required'),
+      .min(3, "Username must be at least 3 characters")
+      .required("Username is required"),
     email: Yup.string()
-      .email('Invalid email format')
-      .required('Email is required'),
+      .email("Invalid email format")
+      .required("Email is required"),
     password: Yup.string()
-      .min(6, 'Password must be at least 6 characters')
-      .required('Password is required'),
+      .min(6, "Password must be at least 6 characters")
+      .required("Password is required"),
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref('password'), null], 'Passwords must match')
-      .required('Please confirm your password'),
-    user_role: Yup.string()
-      .required('User role is required'),
-    first_name: Yup.string()
-      .required('First name is required'),
-    last_name: Yup.string()
-      .required('Last name is required'),
+      .oneOf([Yup.ref("password"), null], "Passwords must match")
+      .required("Please confirm your password"),
+    user_role: Yup.string().required("User role is required"),
+    first_name: Yup.string().required("First name is required"),
+    last_name: Yup.string().required("Last name is required"),
     mobile_number: Yup.string()
-      .matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits')
-      .required('Mobile number is required'),
+      .matches(/^[0-9]{10}$/, "Mobile number must be 10 digits")
+      .required("Mobile number is required"),
   });
 
   const formik = useFormik({
     initialValues: {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      user_role: '',
-      first_name: '',
-      last_name: '',
-      mobile_number: '',
-      user_experience_level: '',
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      user_role: "",
+      first_name: "",
+      last_name: "",
+      mobile_number: "",
+      user_experience_level: "",
       org: null,
-      gender: '',
-      user_status: 'APPROVED',
+      gender: "",
+      user_status: "APPROVED",
+      control_type: "STUDENT", // Default to student mode
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -124,12 +137,12 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
 
         createUserMutation.mutate(userData);
       } catch (error) {
-        toast.error('Failed to process user creation');
+        toast.error("Failed to process user creation");
       }
     },
   });
 
-  const steps = ['Basic Information', 'User Details', 'Profile & Organization'];
+  const steps = ["Basic Information", "User Details", "Profile & Organization"];
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -162,13 +175,26 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
   const isStepValid = (step) => {
     switch (step) {
       case 0:
-        return formik.values.username && formik.values.email && formik.values.password &&
-          formik.values.confirmPassword && !formik.errors.username && !formik.errors.email &&
-          !formik.errors.password && !formik.errors.confirmPassword;
+        return (
+          formik.values.username &&
+          formik.values.email &&
+          formik.values.password &&
+          formik.values.confirmPassword &&
+          !formik.errors.username &&
+          !formik.errors.email &&
+          !formik.errors.password &&
+          !formik.errors.confirmPassword
+        );
       case 1:
-        return formik.values.user_role && formik.values.first_name && formik.values.last_name &&
-          formik.values.mobile_number && !formik.errors.first_name && !formik.errors.last_name &&
-          !formik.errors.mobile_number;
+        return (
+          formik.values.user_role &&
+          formik.values.first_name &&
+          formik.values.last_name &&
+          formik.values.mobile_number &&
+          !formik.errors.first_name &&
+          !formik.errors.last_name &&
+          !formik.errors.mobile_number
+        );
       case 2:
         return true; // Optional fields
       default:
@@ -194,7 +220,9 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                 value={formik.values.username}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.username && Boolean(formik.errors.username)}
+                error={
+                  formik.touched.username && Boolean(formik.errors.username)
+                }
                 helperText={formik.touched.username && formik.errors.username}
                 placeholder="Enter unique username"
               />
@@ -218,13 +246,26 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                 fullWidth
                 name="password"
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.password && Boolean(formik.errors.password)}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
                 helperText={formik.touched.password && formik.errors.password}
                 placeholder="Min. 6 characters"
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -232,13 +273,32 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                 fullWidth
                 name="confirmPassword"
                 label="Confirm Password"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 value={formik.values.confirmPassword}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-                helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+                error={
+                  formik.touched.confirmPassword &&
+                  Boolean(formik.errors.confirmPassword)
+                }
+                helperText={
+                  formik.touched.confirmPassword &&
+                  formik.errors.confirmPassword
+                }
                 placeholder="Repeat password"
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      edge="end"
+                      size="small"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
               />
             </Grid>
           </Grid>
@@ -260,8 +320,12 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                 value={formik.values.first_name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.first_name && Boolean(formik.errors.first_name)}
-                helperText={formik.touched.first_name && formik.errors.first_name}
+                error={
+                  formik.touched.first_name && Boolean(formik.errors.first_name)
+                }
+                helperText={
+                  formik.touched.first_name && formik.errors.first_name
+                }
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -272,7 +336,9 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                 value={formik.values.last_name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.last_name && Boolean(formik.errors.last_name)}
+                error={
+                  formik.touched.last_name && Boolean(formik.errors.last_name)
+                }
                 helperText={formik.touched.last_name && formik.errors.last_name}
               />
             </Grid>
@@ -284,8 +350,13 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                 value={formik.values.mobile_number}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.mobile_number && Boolean(formik.errors.mobile_number)}
-                helperText={formik.touched.mobile_number && formik.errors.mobile_number}
+                error={
+                  formik.touched.mobile_number &&
+                  Boolean(formik.errors.mobile_number)
+                }
+                helperText={
+                  formik.touched.mobile_number && formik.errors.mobile_number
+                }
                 placeholder="10-digit mobile number"
               />
             </Grid>
@@ -297,7 +368,9 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                   value={formik.values.user_role}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  error={formik.touched.user_role && Boolean(formik.errors.user_role)}
+                  error={
+                    formik.touched.user_role && Boolean(formik.errors.user_role)
+                  }
                 >
                   <MenuItem value="STUDENT">Student</MenuItem>
                   <MenuItem value="TEACHER">Teacher</MenuItem>
@@ -305,7 +378,9 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
                   <MenuItem value="PARENT">Parent</MenuItem>
                 </Select>
                 {formik.touched.user_role && formik.errors.user_role && (
-                  <FormHelperText error>{formik.errors.user_role}</FormHelperText>
+                  <FormHelperText error>
+                    {formik.errors.user_role}
+                  </FormHelperText>
                 )}
               </FormControl>
             </Grid>
@@ -350,17 +425,19 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
               </Typography>
             </Grid>
             <Grid item xs={12}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
+              >
                 <Avatar
                   src={profileImagePreview}
-                  sx={{ width: 80, height: 80, bgcolor: 'primary.light' }}
+                  sx={{ width: 80, height: 80, bgcolor: "primary.light" }}
                 >
                   <PersonIcon sx={{ fontSize: 40 }} />
                 </Avatar>
                 <Box>
                   <input
                     accept="image/*"
-                    style={{ display: 'none' }}
+                    style={{ display: "none" }}
                     id="profile-image-upload"
                     type="file"
                     onChange={handleImageChange}
@@ -379,10 +456,10 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
             <Grid item xs={12}>
               <Autocomplete
                 options={organizations}
-                getOptionLabel={(option) => option.org_name || ''}
+                getOptionLabel={(option) => option.org_name || ""}
                 value={formik.values.org}
                 onChange={(event, newValue) => {
-                  formik.setFieldValue('org', newValue);
+                  formik.setFieldValue("org", newValue);
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -397,7 +474,7 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
         );
 
       default:
-        return 'Unknown step';
+        return "Unknown step";
     }
   };
 
@@ -421,9 +498,7 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
 
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose}>Cancel</Button>
-          {activeStep > 0 && (
-            <Button onClick={handleBack}>Back</Button>
-          )}
+          {activeStep > 0 && <Button onClick={handleBack}>Back</Button>}
           {activeStep < steps.length - 1 ? (
             <Button
               variant="contained"
@@ -438,7 +513,7 @@ const CreateUserDialog = ({ open, onClose, onUserCreated }) => {
               variant="contained"
               disabled={createUserMutation.isLoading || !formik.isValid}
             >
-              {createUserMutation.isLoading ? 'Creating...' : 'Create User'}
+              {createUserMutation.isLoading ? "Creating..." : "Create User"}
             </Button>
           )}
         </DialogActions>

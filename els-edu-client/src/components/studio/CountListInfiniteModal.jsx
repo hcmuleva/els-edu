@@ -33,13 +33,13 @@ const CountListInfiniteModal = ({
       enabled: isOpen && !!resource,
       keepPreviousData: true,
       staleTime: 5 * 60 * 1000,
-    }
+    },
   );
 
   // Flatten pages
   const items = useMemo(
     () => data?.pages.flatMap((page) => page.data) || [],
-    [data]
+    [data],
   );
   const total = data?.pages[0]?.meta?.pagination?.total || 0;
 
@@ -52,7 +52,7 @@ const CountListInfiniteModal = ({
         fetchNextPage();
       }
     },
-    [fetchNextPage, hasNextPage]
+    [fetchNextPage, hasNextPage],
   );
 
   useEffect(() => {
@@ -75,7 +75,7 @@ const CountListInfiniteModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}

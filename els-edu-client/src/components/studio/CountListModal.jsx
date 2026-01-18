@@ -1,25 +1,38 @@
 import React, { useState } from "react";
-import { X, Search, Info } from "lucide-react";
+import { X, Search, Info, Copy, Check } from "lucide-react";
 
 const CountListModal = ({
   isOpen = true,
   title,
   items = [],
   nameField = "name",
+  showDocumentId = false, // New prop to show document ID
   onClose,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [copiedId, setCopiedId] = useState(null);
 
   // Don't render the modal if isOpen is false
   if (!isOpen) return null;
 
   if (!items) return null;
 
-  const filteredItems = items.filter((item) =>
-    (item[nameField] || item.title || item.name || "")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = items.filter((item) => {
+    const searchText = searchQuery.toLowerCase();
+    const name = (item[nameField] || item.title || item.name || "").toLowerCase();
+    const docId = (item.documentId || "").toLowerCase();
+    return name.includes(searchText) || docId.includes(searchText);
+  });
+
+  const copyToClipboard = async (text, id) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
 
   return (
     <div
@@ -71,22 +84,63 @@ const CountListModal = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 rounded-xl border border-gray-100 bg-white hover:border-primary/30 hover:shadow-sm transition-all flex items-center gap-3 group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/40 group-hover:text-primary transition-colors">
-                    <Info className="w-4 h-4" />
+              {filteredItems.map((item, idx) => {
+                const itemId = item.documentId || item.id || idx;
+                const displayName = item[nameField] || item.title || item.name || "Untitled Item";
+                const displayDocId = item.documentId || item.id || "";
+                
+                return (
+                  <div
+                    key={itemId}
+                    className="p-4 rounded-xl border border-gray-100 bg-white hover:border-primary/30 hover:shadow-sm transition-all group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/40 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5">
+                        <Info className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {/* Name */}
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+                            Name
+                          </span>
+                          <span className="text-sm font-bold text-gray-900 block">
+                            {displayName}
+                          </span>
+                        </div>
+                        
+                        {/* Document ID */}
+                        {showDocumentId && displayDocId && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+                                Document ID
+                              </span>
+                              <span className="text-xs font-mono text-gray-600 break-all block">
+                                {displayDocId}
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(displayDocId, itemId);
+                              }}
+                              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+                              title="Copy Document ID"
+                            >
+                              {copiedId === itemId ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-gray-700 truncate">
-                    {item[nameField] ||
-                      item.title ||
-                      item.name ||
-                      "Untitled Item"}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

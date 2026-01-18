@@ -88,6 +88,12 @@
       "relation": "oneToMany",
       "target": "api::invoice.invoice",
       "mappedBy": "org"
+    },
+    "assignments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::assignment.assignment",
+      "mappedBy": "org"
     }
   }
 }

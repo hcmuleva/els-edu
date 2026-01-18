@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useGetList,
   useGetIdentity,
@@ -137,7 +137,7 @@ const ContentViewModal = ({ content, onClose }) => {
               </span>
               <span
                 className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap w-fit ${getTypeColor(
-                  content.type
+                  content.type,
                 )}`}
               >
                 {content.type}
@@ -207,6 +207,28 @@ export const ContentsTab = () => {
   const [activeCountTitle, setActiveCountTitle] = useState("");
   const [activeCountItems, setActiveCountItems] = useState([]);
 
+  // Construct filters for server-side
+  const filters = useMemo(() => {
+    const f = {};
+    if (userId && (!isSuperAdmin || viewMode === "mine")) {
+      f.creator = userId;
+    }
+    if (searchQuery) f.q = searchQuery; // queryBuilder maps 'q' to title
+    if (typeFilter) f.type = typeFilter;
+    if (subjectFilter) f["subjects[id]"] = subjectFilter; // Relation ID
+    if (topicFilter) f["topics[id]"] = topicFilter; // Relation ID
+
+    return f;
+  }, [
+    userId,
+    isSuperAdmin,
+    viewMode,
+    searchQuery,
+    typeFilter,
+    subjectFilter,
+    topicFilter,
+  ]);
+
   const {
     data: contents,
     total,
@@ -215,10 +237,7 @@ export const ContentsTab = () => {
   } = useGetList("contents", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: {
         topics: { fields: ["name"] },
@@ -231,7 +250,7 @@ export const ContentsTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page, viewMode]);
+  }, [sortField, sortOrder, userId, page, viewMode, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -270,48 +289,11 @@ export const ContentsTab = () => {
     setCourseFilter(null);
     setTopicFilter(null);
     setSubjectFilter(null);
+    setPage(1);
   };
 
-  const getFilteredContent = () => {
-    let content = contents || [];
-
-    if (searchQuery) {
-      content = content.filter((item) =>
-        item.title?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (typeFilter) {
-      content = content.filter((item) => item.type === typeFilter);
-    }
-
-    if (topicFilter) {
-      content = content.filter((item) => {
-        const tId = item.topic?.id || item.topic;
-        return (
-          tId === topicFilter ||
-          (typeof tId === "object" && tId?.id === topicFilter)
-        );
-      });
-    }
-
-    if (subjectFilter) {
-      content = content.filter((item) => {
-        const subjects = item.subjects || [];
-        return subjects.some((s) => {
-          const sId = s?.id || s;
-          return (
-            sId === subjectFilter ||
-            (typeof sId === "object" && sId?.id === subjectFilter)
-          );
-        });
-      });
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
+  // No client-side filtering needed
+  const filteredContent = contents || [];
 
   const typeOptions = [
     { id: "", name: "All Types" },
@@ -438,7 +420,7 @@ export const ContentsTab = () => {
                 allowEmpty
                 searchable
                 disabled={!courseFilter}
-                filter={courseFilter ? { courses: courseFilter } : {}}
+                filter={courseFilter ? { "courses[id]": courseFilter } : {}}
               />
             </div>
             <div className="w-[180px]">
@@ -454,7 +436,7 @@ export const ContentsTab = () => {
                 allowEmpty
                 searchable
                 disabled={!subjectFilter}
-                filter={subjectFilter ? { subject: subjectFilter } : {}}
+                filter={subjectFilter ? { "subjects[id]": subjectFilter } : {}}
               />
             </div>
 
@@ -512,6 +494,9 @@ export const ContentsTab = () => {
                     Type
                   </th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Level
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Topics
                   </th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -567,10 +552,15 @@ export const ContentsTab = () => {
                       <td className="px-6 py-4 align-middle text-center">
                         <span
                           className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getTypeColor(
-                            item.type
+                            item.type,
                           )}`}
                         >
                           {item.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200">
+                          Level {item.content_level || 1}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">

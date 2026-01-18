@@ -1,5 +1,5 @@
-import { strapiDataProvider } from '../api/dataProvider';
-import { mockInvoiceProvider } from './mockInvoiceProvider';
+import { strapiDataProvider } from "../api/dataProvider";
+import { mockInvoiceProvider } from "./mockInvoiceProvider";
 
 // Resources that should use the mock provider (empty array means all use Strapi)
 const MOCK_RESOURCES = [];

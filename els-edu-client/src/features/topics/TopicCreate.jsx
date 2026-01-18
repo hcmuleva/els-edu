@@ -7,6 +7,7 @@ import {
   useGetIdentity,
 } from "react-admin";
 import { ArrowLeft } from "lucide-react";
+import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 export const TopicCreate = () => {
@@ -20,6 +21,7 @@ export const TopicCreate = () => {
     description: "",
     icon: "",
     subjects: [],
+    topic_level: 1,
   });
 
   const handleSave = async () => {
@@ -40,6 +42,7 @@ export const TopicCreate = () => {
         description: formData.description || null,
         icon: formData.icon || null,
         subjects: formData.subjects.map((s) => s.documentId || s.id || s),
+        topic_level: topic.topic_level || 1,
         creator: identity?.id,
       };
 
@@ -196,6 +199,27 @@ export const TopicCreate = () => {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Topic Level */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground">
+              Topic Level <span className="text-red-500">*</span>
+            </label>
+            <CustomSelect
+              value={formData.topic_level}
+              onChange={(val) =>
+                setFormData((prev) => ({ ...prev, topic_level: parseInt(val) }))
+              }
+              options={[
+                { id: 1, name: "Level 1 - Beginner" },
+                { id: 2, name: "Level 2 - Elementary" },
+                { id: 3, name: "Level 3 - Intermediate" },
+                { id: 4, name: "Level 4 - Advanced" },
+                { id: 5, name: "Level 5 - Expert" },
+              ]}
+              placeholder="Select Level"
+            />
           </div>
         </div>
       </div>

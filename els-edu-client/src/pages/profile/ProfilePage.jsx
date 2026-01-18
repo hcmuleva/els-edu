@@ -6,6 +6,7 @@ import {
   useNotify,
   useAuthProvider,
   usePermissions,
+  useLogout,
 } from "react-admin";
 import { useNavigate } from "react-router-dom";
 import {
@@ -26,11 +27,14 @@ import {
   ChevronDown,
   Check,
   Repeat,
-  Users
+  Users,
+  ShieldCheck,
+  ShieldOff,
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { refreshUser } from "../../api/authProvider";
 import { uploadFile } from "../../services/user";
+import { mapGradeToDisplay } from "../../utils/constants";
 import ParentalLockModal from "../../components/auth/ParentalLockModal";
 
 const ProfilePage = () => {
@@ -40,6 +44,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const authProvider = useAuthProvider();
   const { permissions } = usePermissions();
+  const logout = useLogout();
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -115,7 +120,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      await authProvider.logout();
+      await logout();
     } catch (error) {
       notify("Error logging out", { type: "error" });
     }
@@ -140,6 +145,56 @@ const ProfilePage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteLock, setShowDeleteLock] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showParentalSetup, setShowParentalSetup] = useState(false);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [updatingParentalControl, setUpdatingParentalControl] = useState(false);
+
+  // Handle enabling parental control (PIN setup complete)
+  const handleEnableParentalControl = async (newPin) => {
+    try {
+      setUpdatingParentalControl(true);
+      await dataProvider.update("users", {
+        id: identity.id,
+        data: {
+          control_type: "PARENT",
+          parental_lock_code: newPin,
+        },
+      });
+      await refreshUser();
+      await refetch();
+      notify("Parental control enabled successfully", { type: "success" });
+      setShowParentalSetup(false);
+    } catch (error) {
+      console.error(error);
+      notify("Failed to enable parental control", { type: "error" });
+    } finally {
+      setUpdatingParentalControl(false);
+    }
+  };
+
+  // Handle disabling parental control
+  const handleDisableParentalControl = async () => {
+    try {
+      setUpdatingParentalControl(true);
+      await dataProvider.update("users", {
+        id: identity.id,
+        data: {
+          control_type: "STUDENT",
+          parental_lock_code: null,
+        },
+      });
+      await refreshUser();
+      await refetch();
+      localStorage.removeItem("current_role"); // Clear session role
+      notify("Parental control disabled", { type: "success" });
+      setShowDisableConfirm(false);
+    } catch (error) {
+      console.error(error);
+      notify("Failed to disable parental control", { type: "error" });
+    } finally {
+      setUpdatingParentalControl(false);
+    }
+  };
 
   // Initialize form data
   useEffect(() => {
@@ -180,14 +235,14 @@ const ProfilePage = () => {
         const averageScore =
           results.length > 0
             ? Math.round(
-              results.reduce((sum, r) => sum + r.percentage, 0) /
-              results.length
-            )
+                results.reduce((sum, r) => sum + r.percentage, 0) /
+                  results.length,
+              )
             : 0;
 
         const totalTime = results.reduce(
           (sum, r) => sum + (r.timeTaken || 0),
-          0
+          0,
         );
 
         setStats({
@@ -303,8 +358,9 @@ const ProfilePage = () => {
         // Update preview immediately with the new URL to reflect change
         const serverUrl = uploadedImage.url.startsWith("http")
           ? uploadedImage.url
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${uploadedImage.url
-          }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              uploadedImage.url
+            }`;
         setImagePreview(serverUrl);
       }
 
@@ -425,7 +481,6 @@ const ProfilePage = () => {
               )}
             </div>
           </div>
-
 
           {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -573,6 +628,26 @@ const ProfilePage = () => {
                 {identity.age || "Not set"}
               </div>
             </div>
+
+            {/* Grade (Read-Only) */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Grade{" "}
+                <span className="text-xs font-normal text-gray-400">
+                  (Locked)
+                </span>
+              </label>
+              <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg flex items-center justify-between">
+                <span>
+                  {identity.grade
+                    ? mapGradeToDisplay(identity.grade)
+                    : "Not set"}
+                </span>
+                <span className="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                  Read Only
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -617,21 +692,39 @@ const ProfilePage = () => {
               <div className="space-y-6">
                 {/* Identity Management Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Switch Profile (Kid/Parent) */}
-                  {identity?.control_type === "PARENT" && (
+                  {/* Parental Control Toggle */}
+                  {identity?.control_type === "PARENT" ? (
                     <button
-                      onClick={() => {
-                        localStorage.removeItem("current_role");
-                        navigate("/role-selection");
-                      }}
-                      className="group relative w-full px-6 py-5 bg-indigo-50/50 hover:bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-200 text-indigo-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4"
+                      onClick={() => setShowDisableConfirm(true)}
+                      disabled={updatingParentalControl}
+                      className="group relative w-full px-6 py-5 bg-red-50/50 hover:bg-red-50 border-2 border-red-100 hover:border-red-200 text-red-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4 disabled:opacity-50"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                        <Users className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                        <ShieldOff className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="text-base">Switch Profile</div>
-                        <div className="text-xs text-indigo-400 font-medium opacity-75">Parent / Student View</div>
+                        <div className="text-base">
+                          Disable Parental Control
+                        </div>
+                        <div className="text-xs text-red-400 font-medium opacity-75">
+                          Remove PIN protection
+                        </div>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowParentalSetup(true)}
+                      disabled={updatingParentalControl}
+                      className="group relative w-full px-6 py-5 bg-violet-50/50 hover:bg-violet-50 border-2 border-violet-100 hover:border-violet-200 text-violet-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4 disabled:opacity-50"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 group-hover:scale-110 transition-transform">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-base">Enable Parental Control</div>
+                        <div className="text-xs text-violet-400 font-medium opacity-75">
+                          Set up 4-digit PIN protection
+                        </div>
                       </div>
                     </button>
                   )}
@@ -642,7 +735,9 @@ const ProfilePage = () => {
                       <User className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Current Role</div>
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                        Current Role
+                      </div>
                       <div className="text-base font-black text-gray-900 capitalize">
                         {permissions || identity?.user_role || "Guest"}
                       </div>
@@ -656,10 +751,16 @@ const ProfilePage = () => {
                         ref={roleButtonRef}
                         onClick={() => {
                           if (!roleDropdownOpen && roleButtonRef.current) {
-                            const rect = roleButtonRef.current.getBoundingClientRect();
+                            const rect =
+                              roleButtonRef.current.getBoundingClientRect();
                             const spaceBelow = window.innerHeight - rect.bottom;
-                            const estimatedDropdownHeight = uniqueRoles.length * 50 + 60;
-                            setDropdownDirection(spaceBelow < estimatedDropdownHeight ? "up" : "down");
+                            const estimatedDropdownHeight =
+                              uniqueRoles.length * 50 + 60;
+                            setDropdownDirection(
+                              spaceBelow < estimatedDropdownHeight
+                                ? "up"
+                                : "down",
+                            );
                           }
                           setRoleDropdownOpen(!roleDropdownOpen);
                         }}
@@ -672,15 +773,19 @@ const ProfilePage = () => {
                           <span>Switch Account Role</span>
                         </div>
                         <ChevronDown
-                          className={`w-5 h-5 text-violet-400 transition-transform ${roleDropdownOpen ? "rotate-180" : ""
-                            }`}
+                          className={`w-5 h-5 text-violet-400 transition-transform ${
+                            roleDropdownOpen ? "rotate-180" : ""
+                          }`}
                         />
                       </button>
 
                       {roleDropdownOpen && (
                         <div
-                          className={`absolute left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden ${dropdownDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
-                            }`}
+                          className={`absolute left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden ${
+                            dropdownDirection === "up"
+                              ? "bottom-full mb-2"
+                              : "top-full mt-2"
+                          }`}
                         >
                           <div className="p-2">
                             <p className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50 mb-1">
@@ -690,11 +795,16 @@ const ProfilePage = () => {
                               <button
                                 key={role}
                                 onClick={() => handleRoleSwitch(role)}
-                                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 transition-all my-1 ${role === permissions ? "bg-primary-50 text-primary-700" : "text-gray-600 hover:bg-gray-50"
-                                  }`}
+                                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 transition-all my-1 ${
+                                  role === permissions
+                                    ? "bg-primary-50 text-primary-700"
+                                    : "text-gray-600 hover:bg-gray-50"
+                                }`}
                               >
                                 <span>{role}</span>
-                                {role === permissions && <Check className="w-4 h-4" />}
+                                {role === permissions && (
+                                  <Check className="w-4 h-4" />
+                                )}
                               </button>
                             ))}
                           </div>
@@ -725,7 +835,8 @@ const ProfilePage = () => {
                   </button>
 
                   {/* Delete Account */}
-                  {(!identity?.control_type || identity.control_type === "PARENT") && (
+                  {(!identity?.control_type ||
+                    identity.control_type === "PARENT") && (
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
                       className="px-6 py-4 bg-transparent border-2 border-gray-100 text-gray-400 rounded-2xl font-semibold hover:bg-gray-50 hover:text-gray-600 transition-all text-sm flex items-center justify-center gap-2"
@@ -747,9 +858,13 @@ const ProfilePage = () => {
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <LogOut className="w-8 h-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Account?</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Delete Account?
+              </h3>
               <p className="text-gray-600 text-sm mb-6">
-                If you delete your account, <strong>you cannot recover it</strong>. All your purchases, subscriptions, and progress will be permanently lost.
+                If you delete your account,{" "}
+                <strong>you cannot recover it</strong>. All your purchases,
+                subscriptions, and progress will be permanently lost.
               </p>
               <div className="flex gap-3">
                 <button
@@ -781,50 +896,98 @@ const ProfilePage = () => {
         onSuccess={async () => {
           setShowDeleteLock(false);
           try {
-            await dataProvider.delete("users", { id: identity.id, previousData: identity });
+            await dataProvider.delete("users", {
+              id: identity.id,
+              previousData: identity,
+            });
             // Logout after delete
             authProvider.logout();
           } catch (error) {
             console.error("Delete failed", error);
-            notify("Failed to delete account. Please try again.", { type: 'error' });
+            notify("Failed to delete account. Please try again.", {
+              type: "error",
+            });
           }
         }}
       />
 
-
       {/* Logout Confirmation Modal */}
-      {
-        showLogoutConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-              <div className="p-6 text-center">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <LogOut className="w-8 h-8 text-blue-500" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Sign Out?</h3>
-                <p className="text-gray-600 text-sm mb-6">
-                  Are you sure you want to sign out of your account?
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowLogoutConfirm(false)}
-                    className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-200"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <LogOut className="w-8 h-8 text-blue-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Sign Out?
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                Are you sure you want to sign out of your account?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-200"
+                >
+                  Sign Out
+                </button>
               </div>
             </div>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+
+      {/* Parental Control PIN Setup Modal */}
+      <ParentalLockModal
+        isOpen={showParentalSetup}
+        onClose={() => setShowParentalSetup(false)}
+        mode="SETUP"
+        onSetupComplete={handleEnableParentalControl}
+      />
+
+      {/* Disable Parental Control Confirmation */}
+      {showDisableConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldOff className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Disable Parental Control?
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                This will remove PIN protection and set the account back to
+                student mode.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDisableConfirm(false)}
+                  disabled={updatingParentalControl}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDisableParentalControl}
+                  disabled={updatingParentalControl}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-200 disabled:opacity-50"
+                >
+                  {updatingParentalControl ? "Disabling..." : "Disable"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -33,6 +33,22 @@ const fetchFullUserData = async (token, userId) => {
       "populate[role][fields][2]": "type",
       "populate[profile_picture][fields][0]": "url",
       "populate[profile_picture][fields][1]": "formats",
+      "fields[0]": "grade", // Explicitly fetch grade
+      "fields[1]": "dob",
+      "fields[2]": "age",
+      "fields[3]": "privacy_accepted",
+      "fields[4]": "user_role",
+      "fields[5]": "assigned_roles",
+      "fields[6]": "username",
+      "fields[7]": "email",
+      "fields[8]": "first_name",
+      "fields[9]": "last_name",
+      "fields[10]": "mobile_number",
+      "fields[11]": "gender",
+      "fields[12]": "documentId",
+      "fields[13]": "control_type",
+      "fields[14]": "parental_lock_code",
+      "fields[15]": "getstarted_completed",
     });
 
     const response = await fetch(
@@ -43,7 +59,7 @@ const fetchFullUserData = async (token, userId) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -98,7 +114,7 @@ export const authProvider = {
       if (response.status < 200 || response.status >= 300) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error?.message || "Invalid username or password"
+          errorData.error?.message || "Invalid username or password",
         );
       }
       const auth = await response.json();
@@ -143,10 +159,6 @@ export const authProvider = {
     localStorage.removeItem("userDocumentId");
     localStorage.removeItem("activeRoleId");
     localStorage.removeItem("activeRole");
-    // Force redirect to login page with base path (hash routing for React Admin)
-    // Use import.meta.env.BASE_URL for mobile/web compatibility
-    const basePath = import.meta.env.BASE_URL || "./";
-    window.location.href = `${basePath}#/login`;
     return Promise.resolve();
   },
   checkAuth: async () => {
@@ -241,8 +253,9 @@ export const authProvider = {
       if (typeof user.profile_picture === "string") {
         return user.profile_picture.startsWith("http")
           ? user.profile_picture
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${user.profile_picture
-          }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              user.profile_picture
+            }`;
       }
 
       // Strapi v5 structure: profile_picture object with direct url property
@@ -255,15 +268,17 @@ export const authProvider = {
       if (user.profile_picture.data?.url) {
         return user.profile_picture.data.url.startsWith("http")
           ? user.profile_picture.data.url
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${user.profile_picture.data.url
-          }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              user.profile_picture.data.url
+            }`;
       }
 
       if (user.profile_picture.attributes?.url) {
         return user.profile_picture.attributes.url.startsWith("http")
           ? user.profile_picture.attributes.url
-          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${user.profile_picture.attributes.url
-          }`;
+          : `${import.meta.env.VITE_API_URL || "http://localhost:1337"}${
+              user.profile_picture.attributes.url
+            }`;
       }
 
       return null;
@@ -292,6 +307,11 @@ export const authProvider = {
       profile_picture: user.profile_picture, // Also include raw profile_picture for debugging
       control_type: user.control_type,
       parental_lock_code: user.parental_lock_code,
+      org: user.org,
+      classStandard: user.grade, // Map grade to classStandard for backward compatibility
+      grade: user.grade, // New field
+      getstarted_completed: user.getstarted_completed,
+      privacy_accepted: user.privacy_accepted,
     });
   },
   // Custom method to switch role

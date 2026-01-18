@@ -1,6 +1,6 @@
 "use strict";
 
-/**
+/*
  * Course Lifecycle Hooks
  *
  * Detects when course subjects are modified and triggers subscription sync.

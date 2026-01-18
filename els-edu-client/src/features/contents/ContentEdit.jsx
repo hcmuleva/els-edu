@@ -35,6 +35,7 @@ export const ContentEdit = () => {
     topics: [],
     subjects: [],
     multimedia: [],
+    content_level: 1,
   });
 
   const [multimediaPreview, setMultimediaPreview] = useState([]);
@@ -68,6 +69,7 @@ export const ContentEdit = () => {
         topics: content.topics?.map((t) => t.documentId || t.id || t) || [],
         subjects: content.subjects?.map((s) => s.documentId || s.id || s) || [],
         multimedia: [], // New files only
+        content_level: content.content_level || 1,
       });
 
       if (content.multimedia) {
@@ -77,13 +79,13 @@ export const ContentEdit = () => {
       // Store full objects for initialData
       if (content.topics && Array.isArray(content.topics)) {
         const topicObjects = content.topics.filter(
-          (t) => typeof t === "object" && (t.documentId || t.id)
+          (t) => typeof t === "object" && (t.documentId || t.id),
         );
         setInitialTopics(topicObjects);
       }
       if (content.subjects && Array.isArray(content.subjects)) {
         const subjectObjects = content.subjects.filter(
-          (s) => typeof s === "object" && (s.documentId || s.id)
+          (s) => typeof s === "object" && (s.documentId || s.id),
         );
         setInitialSubjects(subjectObjects);
       }
@@ -187,7 +189,7 @@ export const ContentEdit = () => {
             json_description: descriptionBlocks,
             topics: formData.topics.length > 0 ? formData.topics : null,
             subjects: formData.subjects.length > 0 ? formData.subjects : null,
-          })
+          }),
         );
 
         // Add multimedia files
@@ -213,6 +215,7 @@ export const ContentEdit = () => {
             json_description: descriptionBlocks,
             topics: formData.topics.length > 0 ? formData.topics : null,
             subjects: formData.subjects.length > 0 ? formData.subjects : null,
+            content_level: formData.content_level || 1,
           },
         });
       }
@@ -443,6 +446,30 @@ export const ContentEdit = () => {
             </div>
           </div>
 
+          {/* Content Level */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground">
+              Content Level <span className="text-red-500">*</span>
+            </label>
+            <CustomSelect
+              value={formData.content_level}
+              onChange={(val) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  content_level: parseInt(val),
+                }))
+              }
+              options={[
+                { id: 1, name: "Level 1 - Beginner" },
+                { id: 2, name: "Level 2 - Elementary" },
+                { id: 3, name: "Level 3 - Intermediate" },
+                { id: 4, name: "Level 4 - Advanced" },
+                { id: 5, name: "Level 5 - Expert" },
+              ]}
+              placeholder="Select Level"
+            />
+          </div>
+
           {/* Multimedia Upload */}
           {formData.type !== "YOUTUBE" && formData.type !== "TEXT" && (
             <div className="space-y-4">
@@ -465,7 +492,7 @@ export const ContentEdit = () => {
                             src={`${
                               import.meta.env.VITE_API_URL?.replace(
                                 "/api",
-                                ""
+                                "",
                               ) || ""
                             }${file.url}`}
                             alt={file.name}

@@ -26,6 +26,7 @@ export const ContentCreate = () => {
     topics: [],
     subjects: [],
     multimedia: [],
+    content_level: 1,
   });
 
   const [multimediaPreview, setMultimediaPreview] = useState([]);
@@ -129,9 +130,10 @@ export const ContentCreate = () => {
               formData.subjects.length > 0
                 ? formData.subjects.map((s) => s.documentId || s.id || s)
                 : null,
+            content_level: formData.content_level || 1,
             creator: identity?.id,
             publishedAt: new Date(),
-          })
+          }),
         );
 
         // Add multimedia files
@@ -161,6 +163,7 @@ export const ContentCreate = () => {
               formData.subjects.length > 0
                 ? formData.subjects.map((s) => s.documentId || s.id || s)
                 : null,
+            content_level: formData.content_level || 1,
             creator: identity?.id,
           },
         });
@@ -328,6 +331,30 @@ export const ContentCreate = () => {
             </div>
           </div>
 
+          {/* Content Level */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground">
+              Content Level <span className="text-red-500">*</span>
+            </label>
+            <CustomSelect
+              value={formData.content_level}
+              onChange={(val) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  content_level: parseInt(val),
+                }))
+              }
+              options={[
+                { id: 1, name: "Level 1 - Beginner" },
+                { id: 2, name: "Level 2 - Elementary" },
+                { id: 3, name: "Level 3 - Intermediate" },
+                { id: 4, name: "Level 4 - Advanced" },
+                { id: 5, name: "Level 5 - Expert" },
+              ]}
+              placeholder="Select Level"
+            />
+          </div>
+
           {/* Multimedia Upload */}
           {formData.type !== "YOUTUBE" && formData.type !== "TEXT" && (
             <div className="space-y-2">
@@ -379,8 +406,8 @@ export const ContentCreate = () => {
                     {formData.type === "IMAGE"
                       ? "PNG, JPG, GIF"
                       : formData.type === "VIDEO"
-                        ? "MP4, MOV, AVI"
-                        : "Any file type"}{" "}
+                      ? "MP4, MOV, AVI"
+                      : "Any file type"}{" "}
                     up to 50MB
                   </p>
                 </div>
@@ -392,8 +419,8 @@ export const ContentCreate = () => {
                     formData.type === "IMAGE"
                       ? "image/*"
                       : formData.type === "VIDEO"
-                        ? "video/*"
-                        : "*"
+                      ? "video/*"
+                      : "*"
                   }
                   onChange={handleMultimediaChange}
                 />

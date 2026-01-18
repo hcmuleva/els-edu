@@ -4,7 +4,7 @@ import { strapiDataProvider } from "../api/dataProvider";
 
 // Default org configuration
 // This should be the documentId of the "Edu Org"
-export const DEFAULT_ORG_DOCUMENT_ID = "qvn5sg2bvvhh74sf2m4qd7to";
+export const DEFAULT_ORG_DOCUMENT_ID = "o77q7t80lb3jys4gqrsoue64";
 export const DEFAULT_ORG_NAME = "Edu Org";
 
 /**
@@ -87,6 +87,53 @@ export const updateUserData = async (userId, data) => {
     return result;
   } catch (error) {
     console.error("Error updating user:", error);
+    throw error;
+  }
+};
+
+/**
+ * Add a user to an organization by calling the Org API and connecting the user
+ * This prevents removing other users from the organization
+ * @param {string} orgDocumentId - The documentId of the org
+ * @param {string} userDocumentId - The documentId of the user to adding
+ * @returns {Promise<Object>} - The updated org data
+ */
+export const assignUserToOrg = async (orgDocumentId, userDocumentId) => {
+  if (!orgDocumentId || !userDocumentId) {
+    throw new Error("Missing orgDocumentId or userDocumentId");
+  }
+
+  const token = localStorage.getItem("token");
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
+
+  try {
+    const response = await fetch(`${apiUrl}/orgs/${orgDocumentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        data: {
+          users: {
+            connect: [userDocumentId],
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error?.message || "Failed to assign user to org",
+      );
+    }
+
+    const result = await response.json();
+    console.log("User connected to org successfully:", result);
+    return result;
+  } catch (error) {
+    console.error("Error connecting user to org:", error);
     throw error;
   }
 };

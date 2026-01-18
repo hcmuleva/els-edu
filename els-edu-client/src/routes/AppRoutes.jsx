@@ -22,6 +22,13 @@ import UnauthorizedPage from "../pages/auth/UnauthorizedPage";
 import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import { ProtectedParentRoute } from "../components/common/ProtectedParentRoute";
+import { ProtectedDefaultOrgRoute } from "../components/common/ProtectedDefaultOrgRoute";
+import SelfAssessmentPage from "../pages/analytics/SelfAssessmentPage";
+import AnalyticsResultsPage from "../pages/analytics/AnalyticsResultsPage";
+import SkillQuizPage from "../pages/analytics/SkillQuizPage";
+import MongoStudioPage from "../pages/mongo-studio/MongoStudioPage";
+import AssignmentDetailsPage from "../pages/mongo-studio/AssignmentDetailsPage";
+import { ClassroomPage, ClassDetailPage } from "../pages/classroom";
 
 const AppRoutes = () => (
   <>
@@ -90,9 +97,11 @@ const AppRoutes = () => (
         path="/browse-courses"
         element={
           <ProtectedRoute>
-            <ProtectedParentRoute>
-              <BrowseCoursesPage />
-            </ProtectedParentRoute>
+            <ProtectedDefaultOrgRoute>
+              <ProtectedParentRoute>
+                <BrowseCoursesPage />
+              </ProtectedParentRoute>
+            </ProtectedDefaultOrgRoute>
           </ProtectedRoute>
         }
       />
@@ -100,7 +109,9 @@ const AppRoutes = () => (
         path="/browse-courses/:courseId"
         element={
           <ProtectedRoute>
-            <CourseDetailPage />
+            <ProtectedDefaultOrgRoute>
+              <CourseDetailPage />
+            </ProtectedDefaultOrgRoute>
           </ProtectedRoute>
         }
       />
@@ -156,6 +167,78 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
             <OrgManagePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Analytics - Results (main view, redirects to survey if no data) */}
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <AnalyticsResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Analytics - Survey wizard */}
+      <Route
+        path="/analytics/survey"
+        element={
+          <ProtectedRoute>
+            <SelfAssessmentPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Analytics - Skill Quiz */}
+      <Route
+        path="/analytics/quiz"
+        element={
+          <ProtectedRoute>
+            <SkillQuizPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* MongoDB Studio - only ADMIN, SUPERADMIN, and TEACHER */}
+      <Route
+        path="/mongo-studio"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN", "TEACHER"]}>
+            <MongoStudioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mongo-studio/assignments/:id"
+        element={
+          <ProtectedRoute>
+            <AssignmentDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Classroom - accessible to all logged in users */}
+      <Route
+        path="/classroom"
+        element={
+          <ProtectedRoute>
+            <ClassroomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/classroom/:id"
+        element={
+          <ProtectedRoute>
+            <ClassDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/assignments/:id"
+        element={
+          <ProtectedRoute>
+            <AssignmentDetailsPage />
           </ProtectedRoute>
         }
       />

@@ -201,7 +201,7 @@ export const CustomAsyncSelect = ({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-border/50 overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-border/50 overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-100">
           {/* Search Input */}
           {searchable && (
             <div className="p-2 border-b border-gray-100 sticky top-0 bg-white">
@@ -220,7 +220,10 @@ export const CustomAsyncSelect = ({
           )}
 
           {/* Options List - Max height ~6 items (6 * 40px = 240px) */}
-          <div className="overflow-y-auto p-1" style={{ maxHeight: "240px" }}>
+          <div
+            className="overflow-y-auto p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ maxHeight: "240px" }}
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button

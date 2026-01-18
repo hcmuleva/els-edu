@@ -86,7 +86,7 @@ const ContentPage = () => {
       <Title title="My Studio" />
 
       {/* Sticky Header */}
-      <div className="sticky top-0 z-20 bg-white -mx-6 -mt-6 px-6 py-6 border-b border-gray-100 shadow-sm mb-6">
+      <div className="sticky top-0 z-30 bg-white -mx-6 -mt-6 px-6 py-6 border-b border-gray-100 shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-black text-gray-800 font-heading">

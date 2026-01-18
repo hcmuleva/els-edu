@@ -1,5 +1,9 @@
 import { useMemo } from "react";
-import { NAVIGATION_BY_ROLE, canAccessNavItem } from "../utils/constants";
+import {
+  NAVIGATION_BY_ROLE,
+  canAccessNavItem,
+  DEFAULT_ORG_DOCUMENT_ID,
+} from "../utils/constants";
 
 /**
  * Custom hook for role-based navigation
@@ -18,12 +22,20 @@ export const useRoleNavigation = () => {
   const userRole = storedUser?.user_role || "STUDENT";
   const userOrg = storedUser?.org;
 
+  // Check if user belongs to the default org
+  const userOrgDocumentId = userOrg?.documentId || userOrg;
+  const isDefaultOrg = userOrgDocumentId === DEFAULT_ORG_DOCUMENT_ID;
+
   /**
    * Check if current user can access a navigation item
    * @param {string} navItem - Navigation item identifier (e.g., 'dashboard', 'manage')
    * @returns {boolean}
    */
   const canAccess = (navItem) => {
+    // Browse courses is only available to users in the default org
+    if (navItem === "browse-courses" && !isDefaultOrg) {
+      return false;
+    }
     return canAccessNavItem(userRole, navItem);
   };
 
@@ -68,6 +80,7 @@ export const useRoleNavigation = () => {
   return {
     userRole,
     userOrg,
+    isDefaultOrg,
     canAccess,
     getManageRoute,
     hasAnyRole,

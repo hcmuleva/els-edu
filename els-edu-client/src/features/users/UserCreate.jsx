@@ -10,6 +10,11 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import {
+  GRADES_DISPLAY,
+  mapGradeToBackend,
+  calculateAge,
+} from "../../utils/constants";
 
 // All available roles in the system
 const allRoleChoices = [
@@ -50,7 +55,7 @@ export const UserCreate = () => {
     if (currentUserRole === "SUPERADMIN") return allRoleChoices;
     if (currentUserRole === "ADMIN") {
       return allRoleChoices.filter(
-        (r) => r.id !== "ADMIN" && r.id !== "SUPERADMIN"
+        (r) => r.id !== "ADMIN" && r.id !== "SUPERADMIN",
       );
     }
     // Others shouldn't reach here, but fallback to empty
@@ -64,8 +69,8 @@ export const UserCreate = () => {
     email: "",
     password: "",
     gender: "",
-    age: "",
-    user_experience_level: "",
+    dob: "",
+    grade: "",
     user_role: availableRoles[0]?.id || "STUDENT",
     assigned_roles: [{ role: availableRoles[0]?.id || "STUDENT" }],
     org: canSelectOrg ? "" : currentUserOrgDocumentId, // Auto-set org documentId for non-superadmin
@@ -76,7 +81,7 @@ export const UserCreate = () => {
     if (!canCreateUsers) {
       notify(
         "You don't have permission to create users. Only Admins and Super Admins can create users.",
-        { type: "error" }
+        { type: "error" },
       );
       redirect("/manage");
     }
@@ -186,7 +191,7 @@ export const UserCreate = () => {
         // User was created but we couldn't get the id for update
         console.warn(
           "Could not extract user id from create response:",
-          createResult
+          createResult,
         );
         notify("User created successfully!", { type: "success" });
         setTimeout(() => redirect("/manage"), 500);
@@ -201,34 +206,17 @@ export const UserCreate = () => {
           import.meta.env.VITE_API_URL || "http://localhost:1337/api";
         const token = localStorage.getItem("token");
 
-        // For org relation, determine numeric id
-        let orgId = null;
-        if (canSelectOrg && formData.org) {
-          // SUPERADMIN selected an org by documentId - fetch numeric id
-          try {
-            const orgResult = await dataProvider.getList("orgs", {
-              filter: { documentId: formData.org },
-              pagination: { page: 1, perPage: 1 },
-              sort: { field: "id", order: "ASC" },
-            });
-            orgId = orgResult?.data?.[0]?.id || null;
-            console.log("Selected org numeric id:", orgId);
-          } catch (orgError) {
-            console.warn("Failed to fetch org numeric id:", orgError);
-          }
-        } else {
-          // Non-SUPERADMIN (ADMIN) - use their org's numeric id directly
-          orgId = currentUserOrgId;
-          console.log("Using current user org id:", orgId);
-        }
+        const age = calculateAge(formData.dob);
+        const backendGrade = mapGradeToBackend(formData.grade);
 
         const updatePayload = {
           gender: formData.gender || null,
-          age: formData.age ? parseInt(formData.age) : null,
-          user_experience_level: formData.user_experience_level || null,
+          dob: formData.dob || null,
+          age: age || null,
+          grade: backendGrade || null,
           user_role: formData.user_role,
           assigned_roles: formData.assigned_roles,
-          org: orgId, // Use numeric id for org relation
+          control_type: "STUDENT",
         };
 
         console.log("Update payload:", updatePayload);
@@ -250,18 +238,57 @@ export const UserCreate = () => {
 
         const updateResult = await updateResponse.json();
         console.log("User update result:", updateResult);
+
+        // Step 3: Assign user to org via org API (to prevent overwriting other users)
+        try {
+          const { assignUserToOrg } = await import("../../services/org");
+          // Determine org document ID
+          const targetOrgDocId =
+            canSelectOrg && formData.org
+              ? formData.org
+              : currentUserOrgDocumentId;
+
+          if (targetOrgDocId) {
+            // Need user's documentId for the relation connection
+            // updateResult should contain it, otherwise we fall back to fetching it or using ID if allowed (usually docId needed)
+            const userDocId =
+              updateResult?.documentId || updateResult?.data?.documentId;
+
+            if (userDocId) {
+              await assignUserToOrg(targetOrgDocId, userDocId);
+              notify("User assigned to organization successfully", {
+                type: "info",
+              });
+            } else {
+              console.warn("Could not get user documentId for org assignment");
+            }
+          }
+        } catch (orgError) {
+          console.error("Failed to assign user to org:", orgError);
+          notify("User created but failed to assign to organizing", {
+            type: "warning",
+          });
+        }
+
         notify("User created successfully!", { type: "success" });
       } catch (updateError) {
         console.error("Failed to update user:", updateError);
         // User was created but update failed - still show success with warning
         notify(
           "User created, but some details couldn't be updated. Please edit the user to complete setup.",
-          { type: "warning" }
+          { type: "warning" },
         );
       }
 
       setTimeout(() => {
-        redirect("/manage");
+        // Redirect based on role - ADMIN goes to their org page, SUPERADMIN to /manage
+        if (currentUserRole === "SUPERADMIN") {
+          redirect("/manage");
+        } else if (currentUserRole === "ADMIN" && currentUserOrgDocumentId) {
+          redirect(`/admin/org/${currentUserOrgDocumentId}`);
+        } else {
+          redirect("/");
+        }
       }, 500);
     } catch (error) {
       console.error("Error creating user:", error);
@@ -478,6 +505,27 @@ export const UserCreate = () => {
                     Profile Information
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Date of Birth */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground">
+                        Date of Birth
+                      </label>
+                      <input
+                        type="date"
+                        name="dob"
+                        value={formData.dob}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-gray-50 border border-border/60 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                      />
+                      {formData.dob && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Age: {calculateAge(formData.dob) || "Invalid date"}{" "}
+                          years
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Gender */}
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-muted-foreground">
                         Gender
@@ -493,35 +541,24 @@ export const UserCreate = () => {
                         <option value="FEMALE">Female</option>
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-muted-foreground">
-                        Age
-                      </label>
-                      <input
-                        type="number"
-                        name="age"
-                        value={formData.age}
-                        onChange={handleChange}
-                        min="1"
-                        max="120"
-                        className="w-full px-4 py-3 bg-gray-50 border border-border/60 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                        placeholder="Enter age"
-                      />
-                    </div>
+
+                    {/* Grade Selection */}
                     <div className="space-y-2 md:col-span-2">
                       <label className="text-xs font-semibold text-muted-foreground">
-                        Experience Level
+                        Grade / Class
                       </label>
                       <select
-                        name="user_experience_level"
-                        value={formData.user_experience_level}
+                        name="grade"
+                        value={formData.grade}
                         onChange={handleChange}
                         className="w-full px-4 py-3 bg-gray-50 border border-border/60 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none cursor-pointer"
                       >
-                        <option value="">Select level</option>
-                        <option value="SCHOOL">School</option>
-                        <option value="COLLEGE">College</option>
-                        <option value="PROFESSIONAL">Professional</option>
+                        <option value="">Select Grade</option>
+                        {GRADES_DISPLAY.map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -550,13 +587,13 @@ export const UserCreate = () => {
                             "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
                             active
                               ? "bg-primary border-primary text-white shadow-md shadow-primary/20 scale-[1.02]"
-                              : "bg-gray-50 border-border/60 text-muted-foreground hover:border-primary/40 hover:bg-white"
+                              : "bg-gray-50 border-border/60 text-muted-foreground hover:border-primary/40 hover:bg-white",
                           )}
                         >
                           <Icon
                             className={cn(
                               "w-5 h-5",
-                              active ? "text-white" : "text-muted-foreground"
+                              active ? "text-white" : "text-muted-foreground",
                             )}
                           />
                           <span className="text-xs font-bold">{role.name}</span>
@@ -569,50 +606,50 @@ export const UserCreate = () => {
                 {/* Additional Assigned Roles - For SUPERADMIN/ADMIN only */}
                 {(currentUserRole === "SUPERADMIN" ||
                   currentUserRole === "ADMIN") && (
-                    <section className="space-y-4">
-                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-primary" />
-                        Additional Roles (Optional)
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Assign additional roles to enable role switching. The
-                        primary role is always included.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {availableRoles.map((role) => {
-                          const isAssigned = formData.assigned_roles?.some(
-                            (r) => r.role === role.id
-                          );
-                          const isPrimary = formData.user_role === role.id;
-                          return (
-                            <button
-                              key={role.id}
-                              type="button"
-                              onClick={() =>
-                                !isPrimary && toggleAssignedRole(role.id)
-                              }
-                              disabled={isPrimary}
-                              className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all",
-                                isAssigned
-                                  ? "bg-primary/10 border-primary text-primary"
-                                  : "bg-gray-50 border-border/60 text-muted-foreground hover:border-primary/40",
-                                isPrimary && "opacity-70 cursor-not-allowed"
-                              )}
-                            >
-                              {isAssigned && <Check className="w-3 h-3" />}
-                              {role.name}
-                              {isPrimary && (
-                                <span className="text-[10px] opacity-60">
-                                  (Primary)
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
+                  <section className="space-y-4">
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      Additional Roles (Optional)
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Assign additional roles to enable role switching. The
+                      primary role is always included.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {availableRoles.map((role) => {
+                        const isAssigned = formData.assigned_roles?.some(
+                          (r) => r.role === role.id,
+                        );
+                        const isPrimary = formData.user_role === role.id;
+                        return (
+                          <button
+                            key={role.id}
+                            type="button"
+                            onClick={() =>
+                              !isPrimary && toggleAssignedRole(role.id)
+                            }
+                            disabled={isPrimary}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all",
+                              isAssigned
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-gray-50 border-border/60 text-muted-foreground hover:border-primary/40",
+                              isPrimary && "opacity-70 cursor-not-allowed",
+                            )}
+                          >
+                            {isAssigned && <Check className="w-3 h-3" />}
+                            {role.name}
+                            {isPrimary && (
+                              <span className="text-[10px] opacity-60">
+                                (Primary)
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
               </div>
             </form>
           </div>

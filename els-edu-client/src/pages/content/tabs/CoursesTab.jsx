@@ -440,6 +440,31 @@ export const CoursesTab = () => {
   const [activeCountTitle, setActiveCountTitle] = useState("");
   const [activeCountItems, setActiveCountItems] = useState([]);
 
+  // Construct filters for server-side
+  const filters = useMemo(() => {
+    const f = {};
+    if (userId && (!isSuperAdmin || viewMode === "mine")) {
+      f.creator = userId;
+    }
+    if (searchQuery) f.q = searchQuery; // Data provider maps 'q' to name/title
+    if (categoryFilter) f.category = categoryFilter;
+    if (subcategoryFilter) f.subcategory = subcategoryFilter;
+    if (conditionFilter) f.condition = conditionFilter;
+    if (privacyFilter) f.privacy = privacyFilter;
+    if (visibilityFilter) f.visibility = visibilityFilter;
+    return f;
+  }, [
+    userId,
+    isSuperAdmin,
+    viewMode,
+    searchQuery,
+    categoryFilter,
+    subcategoryFilter,
+    conditionFilter,
+    privacyFilter,
+    visibilityFilter,
+  ]);
+
   const {
     data: courses,
     total,
@@ -448,10 +473,7 @@ export const CoursesTab = () => {
   } = useGetList("courses", {
     pagination: { page, perPage },
     sort: { field: sortField, order: sortOrder },
-    filter:
-      userId && (!isSuperAdmin || viewMode === "mine")
-        ? { creator: userId }
-        : {},
+    filter: filters,
     meta: {
       populate: "*", // Populate all relations including cover
     },
@@ -459,7 +481,7 @@ export const CoursesTab = () => {
 
   useEffect(() => {
     if (userId) refetch();
-  }, [sortField, sortOrder, userId, page, viewMode]);
+  }, [sortField, sortOrder, userId, page, viewMode, filters]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -498,43 +520,11 @@ export const CoursesTab = () => {
     setConditionFilter("");
     setPrivacyFilter("");
     setVisibilityFilter("");
+    setPage(1); // Reset to first page
   };
 
-  const getFilteredContent = () => {
-    let content = courses || [];
-
-    if (searchQuery) {
-      content = content.filter((item) =>
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (categoryFilter) {
-      content = content.filter((item) => item.category === categoryFilter);
-    }
-
-    if (subcategoryFilter) {
-      content = content.filter(
-        (item) => item.subcategory === subcategoryFilter
-      );
-    }
-
-    if (conditionFilter) {
-      content = content.filter((item) => item.condition === conditionFilter);
-    }
-
-    if (privacyFilter) {
-      content = content.filter((item) => item.privacy === privacyFilter);
-    }
-
-    if (visibilityFilter) {
-      content = content.filter((item) => item.visibility === visibilityFilter);
-    }
-
-    return content;
-  };
-
-  const filteredContent = getFilteredContent();
+  // No client-side filtering needed
+  const filteredContent = courses || [];
 
   const categoryOptions = [
     { id: "", name: "All Categories" },

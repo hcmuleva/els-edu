@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronRight, ChevronLeft, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -17,6 +18,11 @@ export const TransferListModal = ({
   loading = false,
   itemLabel = "name",
   itemSecondaryLabel = null,
+  // New props for server-side operations
+  serverSide = false,
+  totalAvailable = 0,
+  onPageChange,
+  onSearch,
 }) => {
   const [selected, setSelected] = useState(new Set());
   const [localAssigned, setLocalAssigned] = useState([]);
@@ -25,17 +31,43 @@ export const TransferListModal = ({
   const [assignedSearch, setAssignedSearch] = useState("");
   const [availablePage, setAvailablePage] = useState(1);
   const [assignedPage, setAssignedPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = serverSide ? 20 : 10;
+
+  useEffect(() => {
+    if (isOpen) {
+      setAvailablePage(1);
+      setAssignedPage(1);
+      setAvailableSearch("");
+      setAssignedSearch("");
+      setSelected(new Set());
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     setLocalAssigned(assignedItems || []);
-    setLocalAvailable(availableItems || []);
-    setSelected(new Set());
-    setAvailableSearch("");
-    setAssignedSearch("");
-    setAvailablePage(1);
-    setAssignedPage(1);
-  }, [availableItems, assignedItems, isOpen]);
+    if (!serverSide) {
+      setLocalAvailable(availableItems || []);
+    }
+  }, [availableItems, assignedItems, isOpen, serverSide]);
+
+  // Debounce search for server-side
+  useEffect(() => {
+    if (serverSide && onSearch) {
+      const timer = setTimeout(() => {
+        setAvailablePage(1);
+        onSearch(availableSearch, 1);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [availableSearch, serverSide]);
+
+  // Handle page change for server-side
+  const handleAvailablePageChange = (newPage) => {
+    setAvailablePage(newPage);
+    if (serverSide && onPageChange) {
+      onPageChange(newPage, availableSearch);
+    }
+  };
 
   const toggleSelect = (id) => {
     const newSelected = new Set(selected);
@@ -48,55 +80,100 @@ export const TransferListModal = ({
   };
 
   const moveToAssigned = () => {
-    const toMove = localAvailable.filter((item) =>
-      selected.has(item.documentId || item.id)
-    );
-    setLocalAssigned([...localAssigned, ...toMove]);
-    setLocalAvailable(
-      localAvailable.filter((item) => !selected.has(item.documentId || item.id))
-    );
+    if (serverSide) {
+      // In server-side mode, availableItems are just the current page.
+      // We find items in availableItems matching selection.
+      const toMove = availableItems.filter((item) =>
+        selected.has(item.documentId || item.id),
+      );
+      setLocalAssigned([...localAssigned, ...toMove]);
+      // We do NOT remove from availableItems strictly in UI because it's server generated,
+      // but we could visually hide them or let the user refresh.
+      // Creating a local exclusion list or just letting them stay until refresh?
+      // Standard transfer list behavior: they move.
+      // For server-side, we might want to locally hide them?
+      // Let's assume onSave reloads everything.
+      // For UI consistency, we can filter them out of display if we want, but simplest is:
+      // Just add to assigned.
+      // But wait, if we move them, they should disappear from left.
+      // We can add them to a "hidden" set?
+      // Actually, let's keep it simple: Just add to assigned. The user can see they are in assigned.
+    } else {
+      const toMove = localAvailable.filter((item) =>
+        selected.has(item.documentId || item.id),
+      );
+      setLocalAssigned([...localAssigned, ...toMove]);
+      setLocalAvailable(
+        localAvailable.filter(
+          (item) => !selected.has(item.documentId || item.id),
+        ),
+      );
+    }
     setSelected(new Set());
   };
 
   const moveToAvailable = () => {
     const toMove = localAssigned.filter((item) =>
-      selected.has(item.documentId || item.id)
+      selected.has(item.documentId || item.id),
     );
-    setLocalAvailable([...localAvailable, ...toMove]);
+    // If serverSide, we don't necessarily add them back to "localAvailable" array for display
+    // because that array is controlled by props.
+    // However, they are removed from 'assigned' list.
+    // They should theoretically reappear in 'available' if we searched for them?
+    // For now, just removing from assigned is enough.
     setLocalAssigned(
-      localAssigned.filter((item) => !selected.has(item.documentId || item.id))
+      localAssigned.filter((item) => !selected.has(item.documentId || item.id)),
     );
+    // If not serverSide, push back to available
+    if (!serverSide) {
+      setLocalAvailable([...localAvailable, ...toMove]);
+    }
     setSelected(new Set());
   };
 
-  // Filter and paginate
-  const filteredAvailable = localAvailable.filter((item) =>
-    (item[itemLabel] || item.name || "")
-      .toLowerCase()
-      .includes(availableSearch.toLowerCase())
-  );
+  // Filter and paginate (Client Side Logic)
+  const filteredAvailable = serverSide
+    ? availableItems.filter((item) => {
+        const isAssigned = localAssigned.some(
+          (assigned) =>
+            (assigned.documentId || assigned.id) ===
+            (item.documentId || item.id),
+        );
+        return !isAssigned;
+      })
+    : localAvailable.filter((item) =>
+        (item[itemLabel] || item.name || "")
+          .toLowerCase()
+          .includes(availableSearch.toLowerCase()),
+      );
+
   const filteredAssigned = localAssigned.filter((item) =>
     (item[itemLabel] || item.name || "")
       .toLowerCase()
-      .includes(assignedSearch.toLowerCase())
+      .includes(assignedSearch.toLowerCase()),
   );
 
-  const paginatedAvailable = filteredAvailable.slice(
-    (availablePage - 1) * pageSize,
-    availablePage * pageSize
-  );
+  const paginatedAvailable = serverSide
+    ? filteredAvailable
+    : filteredAvailable.slice(
+        (availablePage - 1) * pageSize,
+        availablePage * pageSize,
+      );
+
   const paginatedAssigned = filteredAssigned.slice(
     (assignedPage - 1) * pageSize,
-    assignedPage * pageSize
+    assignedPage * pageSize,
   );
 
-  const availableTotalPages = Math.ceil(filteredAvailable.length / pageSize);
+  const availableTotalPages = serverSide
+    ? Math.ceil(totalAvailable / pageSize)
+    : Math.ceil(filteredAvailable.length / pageSize);
   const assignedTotalPages = Math.ceil(filteredAssigned.length / pageSize);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
@@ -123,7 +200,8 @@ export const TransferListModal = ({
             <div className="flex flex-col border border-gray-200 rounded-xl overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                 <h3 className="text-sm font-bold text-gray-700 mb-2">
-                  Available ({filteredAvailable.length})
+                  Available (
+                  {serverSide ? totalAvailable : filteredAvailable.length})
                 </h3>
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -134,12 +212,12 @@ export const TransferListModal = ({
                     value={availableSearch}
                     onChange={(e) => {
                       setAvailableSearch(e.target.value);
-                      setAvailablePage(1);
+                      if (!serverSide) setAvailablePage(1);
                     }}
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px]">
+              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {paginatedAvailable.map((item) => (
                   <div
                     key={item.documentId || item.id}
@@ -148,7 +226,7 @@ export const TransferListModal = ({
                       "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                       selected.has(item.documentId || item.id)
                         ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-gray-50 border border-transparent"
+                        : "hover:bg-gray-50 border border-transparent",
                     )}
                   >
                     <div className="font-medium text-gray-800">
@@ -175,7 +253,9 @@ export const TransferListModal = ({
                   <div className="flex gap-1">
                     <button
                       onClick={() =>
-                        setAvailablePage((p) => Math.max(1, p - 1))
+                        handleAvailablePageChange(
+                          Math.max(1, availablePage - 1),
+                        )
                       }
                       disabled={availablePage === 1}
                       className="px-2 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40 transition-colors"
@@ -184,8 +264,8 @@ export const TransferListModal = ({
                     </button>
                     <button
                       onClick={() =>
-                        setAvailablePage((p) =>
-                          Math.min(availableTotalPages, p + 1)
+                        handleAvailablePageChange(
+                          Math.min(availableTotalPages, availablePage + 1),
                         )
                       }
                       disabled={availablePage >= availableTotalPages}
@@ -204,7 +284,7 @@ export const TransferListModal = ({
                 onClick={moveToAssigned}
                 disabled={
                   ![...selected].some((id) =>
-                    localAvailable.find((i) => (i.documentId || i.id) === id)
+                    localAvailable.find((i) => (i.documentId || i.id) === id),
                   )
                 }
                 className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary disabled:opacity-40 transition-all rotate-90 md:rotate-0"
@@ -216,7 +296,7 @@ export const TransferListModal = ({
                 onClick={moveToAvailable}
                 disabled={
                   ![...selected].some((id) =>
-                    localAssigned.find((i) => (i.documentId || i.id) === id)
+                    localAssigned.find((i) => (i.documentId || i.id) === id),
                   )
                 }
                 className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary disabled:opacity-40 transition-all rotate-90 md:rotate-0"
@@ -246,7 +326,7 @@ export const TransferListModal = ({
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px]">
+              <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[250px] max-h-[300px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {paginatedAssigned.map((item) => (
                   <div
                     key={item.documentId || item.id}
@@ -255,7 +335,7 @@ export const TransferListModal = ({
                       "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                       selected.has(item.documentId || item.id)
                         ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-gray-50 border border-transparent"
+                        : "hover:bg-gray-50 border border-transparent",
                     )}
                   >
                     <div className="font-medium text-gray-800">
@@ -290,7 +370,7 @@ export const TransferListModal = ({
                     <button
                       onClick={() =>
                         setAssignedPage((p) =>
-                          Math.min(assignedTotalPages, p + 1)
+                          Math.min(assignedTotalPages, p + 1),
                         )
                       }
                       disabled={assignedPage >= assignedTotalPages}
@@ -323,7 +403,8 @@ export const TransferListModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

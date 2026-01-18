@@ -63,11 +63,7 @@
     "difficulty": {
       "type": "enumeration",
       "default": "medium",
-      "enum": [
-        "easy",
-        "medium",
-        "hard"
-      ]
+      "enum": ["easy", "medium", "hard"]
     },
     "quizzes": {
       "type": "relation",
@@ -175,6 +171,9 @@
     },
     "level": {
       "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 5,
       "pluginOptions": {
         "i18n": {
           "localized": true

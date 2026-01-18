@@ -20,6 +20,7 @@ import {
 import { PieChart } from "@mui/x-charts/PieChart";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
+import mongoService from "../../services/mongoService";
 
 // Question Breakdown Component
 const QuizResultExpand = ({ record }) => {
@@ -42,21 +43,23 @@ const QuizResultExpand = ({ record }) => {
         {record.questionAnalysis.map((q, index) => (
           <div
             key={index}
-            className={`p-3 rounded-xl border ${!q.isAttempted
-              ? "border-gray-200 bg-white"
-              : q.isCorrect
+            className={`p-3 rounded-xl border ${
+              !q.isAttempted
+                ? "border-gray-200 bg-white"
+                : q.isCorrect
                 ? "border-emerald-200 bg-emerald-50"
                 : "border-rose-200 bg-rose-50"
-              }`}
+            }`}
           >
             <div className="flex items-start gap-2">
               <div
-                className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${!q.isAttempted
-                  ? "bg-gray-300 text-gray-700"
-                  : q.isCorrect
+                className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                  !q.isAttempted
+                    ? "bg-gray-300 text-gray-700"
+                    : q.isCorrect
                     ? "bg-emerald-500 text-white"
                     : "bg-rose-500 text-white"
-                  }`}
+                }`}
               >
                 {index + 1}
               </div>
@@ -107,15 +110,80 @@ const ProgressPage = () => {
 
       try {
         setLoading(true);
-        const { data } = await dataProvider.getList("quiz-results", {
-          filter: { user: identity.id },
-          pagination: { page: 1, perPage: 1000 },
-          sort: { field: "completedAt", order: "DESC" },
-          meta: { populate: ["quiz", "subject"] },
+        // Fetch from Mongo
+        const { data } = await mongoService.getUserQuizzes({
+          filters: {
+            userDocumentId: identity.documentId || identity.id,
+          },
+          sort: { createdAt: "desc" },
         });
-        setQuizResults(data || []);
+
+        // Map Mongo data to expected format for UI
+        const mappedResults = (data || []).map((r) => {
+          // Handle different schema variations (Skill Quiz vs Class Quiz)
+          const percentage = r.score?.percentage ?? r.overallPercentage ?? 0;
+          const totalQuestions = r.score?.total ?? r.totalQuestions ?? 0;
+          const correctAnswers =
+            r.summary?.correct ?? r.score?.correct ?? r.totalCorrect ?? 0;
+          // For older schema without explicit wrong count, approximate it
+          const incorrectAnswers =
+            r.summary?.wrong ??
+            r.score?.incorrect ??
+            totalQuestions - correctAnswers ??
+            0;
+          const unansweredQuestions =
+            r.summary?.skipped ?? r.score?.unanswered ?? 0;
+
+          // Helper to map question details
+          const mapQuestions = (questions) => {
+            if (!Array.isArray(questions)) return [];
+            return questions.map((a) => ({
+              questionText:
+                a.questionText ||
+                `Question ${a.questionId?.substring(0, 8)}...`,
+              isAttempted:
+                a.selectedAnswer !== undefined ||
+                a.selectedOption !== undefined,
+              isCorrect: a.isCorrect,
+              timeSpent: a.timeSpent || 0,
+              questionId: a.questionId,
+            }));
+          };
+
+          const questions = r.answers || r.questionDetails || [];
+
+          return {
+            id: r.documentId || r._id || r.id,
+            documentId: r.documentId || r._id || r.id,
+            quiz: {
+              title:
+                r.quizTitle ||
+                r.title ||
+                (r.skillResults?.[0]?.skillName
+                  ? `${r.skillResults[0].skillName} Assessment`
+                  : "Untitled Quiz"),
+              documentId: r.quizId || r._id,
+            },
+            subject: r.metadata?.subject ? { name: r.metadata.subject } : null,
+            percentage,
+            isPassed: r.summary?.passed ?? r.isPassed ?? percentage >= 70,
+            completedAt: r.completedAt || r.createdAt,
+            timeTaken:
+              r.summary?.timeTaken ??
+              questions.reduce((acc, q) => acc + (q.timeSpent || 0), 0) ??
+              0,
+            correctAnswers,
+            incorrectAnswers,
+            unansweredQuestions,
+            totalQuestions,
+            questionAnalysis: mapQuestions(questions),
+          };
+        });
+
+        setQuizResults(mappedResults);
       } catch (error) {
         console.error("Error fetching quiz results:", error);
+        setQuizResults([]);
       } finally {
         setLoading(false);
       }
@@ -175,9 +243,9 @@ const ProgressPage = () => {
     averageScore:
       timeFilteredResults.length > 0
         ? Math.round(
-          timeFilteredResults.reduce((sum, r) => sum + r.percentage, 0) /
-          timeFilteredResults.length
-        )
+            timeFilteredResults.reduce((sum, r) => sum + r.percentage, 0) /
+              timeFilteredResults.length
+          )
         : 0,
     totalTimeSpent: timeFilteredResults.reduce(
       (sum, r) => sum + (r.timeTaken || 0),
@@ -335,10 +403,11 @@ const ProgressPage = () => {
                   setActiveTimeFilter(filter.id);
                   setActiveResultFilter("all"); // Reset result filter when changing time
                 }}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTimeFilter === filter.id
-                  ? "bg-primary-500 text-white shadow-md shadow-primary-200"
-                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
-                  }`}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  activeTimeFilter === filter.id
+                    ? "bg-primary-500 text-white shadow-md shadow-primary-200"
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
+                }`}
               >
                 {filter.label}
               </button>
@@ -554,22 +623,23 @@ const ProgressPage = () => {
                 key={filter.id}
                 onClick={() => setActiveResultFilter(filter.id)}
                 disabled={filter.count === 0}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${isActive
-                  ? filter.color === "primary"
-                    ? "bg-primary-500 text-white"
-                    : filter.color === "emerald"
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? filter.color === "primary"
+                      ? "bg-primary-500 text-white"
+                      : filter.color === "emerald"
                       ? "bg-emerald-500 text-white"
                       : filter.color === "rose"
-                        ? "bg-rose-500 text-white"
-                        : filter.color === "orange"
-                          ? "bg-orange-500 text-white"
-                          : filter.color === "amber"
-                            ? "bg-amber-500 text-white"
-                            : "bg-violet-500 text-white"
-                  : filter.count === 0
+                      ? "bg-rose-500 text-white"
+                      : filter.color === "orange"
+                      ? "bg-orange-500 text-white"
+                      : filter.color === "amber"
+                      ? "bg-amber-500 text-white"
+                      : "bg-violet-500 text-white"
+                    : filter.count === 0
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                }`}
               >
                 {Icon && <Icon className="w-3.5 h-3.5" />}
                 {filter.label} ({filter.count})
@@ -664,10 +734,11 @@ const ProgressPage = () => {
                           {/* Score Badge */}
                           <div className="flex-shrink-0">
                             <div
-                              className={`px-3 py-1.5 rounded-lg font-black text-base ${record.isPassed
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-rose-100 text-rose-700"
-                                }`}
+                              className={`px-3 py-1.5 rounded-lg font-black text-base ${
+                                record.isPassed
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-rose-100 text-rose-700"
+                              }`}
                             >
                               {record.percentage}%
                             </div>
@@ -677,10 +748,11 @@ const ProgressPage = () => {
                         {/* Badges Row */}
                         <div className="flex flex-wrap gap-2 mb-3">
                           <span
-                            className={`px-3 py-1 rounded-lg text-xs font-bold ${record.isPassed
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-rose-100 text-rose-700"
-                              }`}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                              record.isPassed
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-rose-100 text-rose-700"
+                            }`}
                           >
                             {record.isPassed ? "✓ Passed" : "✗ Failed"}
                           </span>
@@ -737,7 +809,8 @@ const ProgressPage = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(
-                                `/quiz/${record.quiz?.documentId || record.quiz?.id
+                                `/quiz/${
+                                  record.quiz?.documentId || record.quiz?.id
                                 }/play`
                               );
                             }}
@@ -762,7 +835,8 @@ const ProgressPage = () => {
                                     ...new Set(wrongQuestions),
                                   ];
                                   navigate(
-                                    `/quiz/${record.quiz?.documentId || record.quiz?.id
+                                    `/quiz/${
+                                      record.quiz?.documentId || record.quiz?.id
                                     }/play?replay=${uniqueQuestions.join(",")}`
                                   );
                                 }}
@@ -787,7 +861,8 @@ const ProgressPage = () => {
                                     ...new Set(unansweredQuestions),
                                   ];
                                   navigate(
-                                    `/quiz/${record.quiz?.documentId || record.quiz?.id
+                                    `/quiz/${
+                                      record.quiz?.documentId || record.quiz?.id
                                     }/play?replay=${uniqueQuestions.join(",")}`
                                   );
                                 }}

@@ -18,13 +18,15 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import { cn } from "../../lib/utils";
+import CustomCourseAssignmentModal from "../../components/admin/CustomCourseAssignmentModal";
+import CountListModal from "../../components/studio/CountListModal";
 
 const StatCard = ({ title, value, subtitle, icon: Icon, gradient }) => (
   <div
     className={cn(
       "bg-card rounded-2xl shadow-sm border border-border/50 p-6 flex flex-col justify-between",
       "hover:shadow-lg hover:border-primary/20 transition-all duration-300 group",
-      gradient
+      gradient,
     )}
   >
     <div className="flex items-center justify-between mb-4">
@@ -54,7 +56,7 @@ const TabButton = ({ active, onClick, children }) => (
       "px-4 py-2 text-sm font-medium rounded-full border transition-all",
       active
         ? "bg-primary text-primary-foreground border-primary shadow-sm"
-        : "bg-background text-muted-foreground border-border hover:bg-muted"
+        : "bg-background text-muted-foreground border-border hover:bg-muted",
     )}
   >
     {children}
@@ -104,22 +106,24 @@ const TransferListModal = ({
 
   const moveToAssigned = () => {
     const toMove = localAvailable.filter((item) =>
-      selected.has(item.documentId || item.id)
+      selected.has(item.documentId || item.id),
     );
     setLocalAssigned([...localAssigned, ...toMove]);
     setLocalAvailable(
-      localAvailable.filter((item) => !selected.has(item.documentId || item.id))
+      localAvailable.filter(
+        (item) => !selected.has(item.documentId || item.id),
+      ),
     );
     setSelected(new Set());
   };
 
   const moveToAvailable = () => {
     const toMove = localAssigned.filter((item) =>
-      selected.has(item.documentId || item.id)
+      selected.has(item.documentId || item.id),
     );
     setLocalAvailable([...localAvailable, ...toMove]);
     setLocalAssigned(
-      localAssigned.filter((item) => !selected.has(item.documentId || item.id))
+      localAssigned.filter((item) => !selected.has(item.documentId || item.id)),
     );
     setSelected(new Set());
   };
@@ -128,21 +132,21 @@ const TransferListModal = ({
   const filteredAvailable = localAvailable.filter((item) =>
     (item[itemLabel] || item.name || "")
       .toLowerCase()
-      .includes(availableSearch.toLowerCase())
+      .includes(availableSearch.toLowerCase()),
   );
   const filteredAssigned = localAssigned.filter((item) =>
     (item[itemLabel] || item.name || "")
       .toLowerCase()
-      .includes(assignedSearch.toLowerCase())
+      .includes(assignedSearch.toLowerCase()),
   );
 
   const paginatedAvailable = filteredAvailable.slice(
     (availablePage - 1) * pageSize,
-    availablePage * pageSize
+    availablePage * pageSize,
   );
   const paginatedAssigned = filteredAssigned.slice(
     (assignedPage - 1) * pageSize,
-    assignedPage * pageSize
+    assignedPage * pageSize,
   );
 
   const availableTotalPages = Math.ceil(filteredAvailable.length / pageSize);
@@ -196,7 +200,7 @@ const TransferListModal = ({
                       "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                       selected.has(item.documentId || item.id)
                         ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-muted border border-transparent"
+                        : "hover:bg-muted border border-transparent",
                     )}
                   >
                     {item[itemLabel] || item.name || item.username}
@@ -226,7 +230,7 @@ const TransferListModal = ({
                     <button
                       onClick={() =>
                         setAvailablePage((p) =>
-                          Math.min(availableTotalPages, p + 1)
+                          Math.min(availableTotalPages, p + 1),
                         )
                       }
                       disabled={availablePage >= availableTotalPages}
@@ -245,7 +249,7 @@ const TransferListModal = ({
                 onClick={moveToAssigned}
                 disabled={
                   ![...selected].some((id) =>
-                    localAvailable.find((i) => (i.documentId || i.id) === id)
+                    localAvailable.find((i) => (i.documentId || i.id) === id),
                   )
                 }
                 className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-all"
@@ -256,7 +260,7 @@ const TransferListModal = ({
                 onClick={moveToAvailable}
                 disabled={
                   ![...selected].some((id) =>
-                    localAssigned.find((i) => (i.documentId || i.id) === id)
+                    localAssigned.find((i) => (i.documentId || i.id) === id),
                   )
                 }
                 className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-all"
@@ -291,7 +295,7 @@ const TransferListModal = ({
                       "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                       selected.has(item.documentId || item.id)
                         ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-muted border border-transparent"
+                        : "hover:bg-muted border border-transparent",
                     )}
                   >
                     {item[itemLabel] || item.name || item.username}
@@ -319,7 +323,7 @@ const TransferListModal = ({
                     <button
                       onClick={() =>
                         setAssignedPage((p) =>
-                          Math.min(assignedTotalPages, p + 1)
+                          Math.min(assignedTotalPages, p + 1),
                         )
                       }
                       disabled={assignedPage >= assignedTotalPages}
@@ -357,7 +361,7 @@ const TransferListModal = ({
 };
 
 // Actions Dropdown Component - positioned to avoid overlap
-const ActionsDropdown = ({ onEdit, onAssignCourses }) => {
+const ActionsDropdown = ({ onEdit, onAssignCourses, onAssignCustomCourse }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -417,6 +421,19 @@ const ActionsDropdown = ({ onEdit, onAssignCourses }) => {
             <GraduationCap className="w-4 h-4" />
             Assign Courses
           </button>
+          {onAssignCustomCourse && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAssignCustomCourse();
+                setIsOpen(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-muted transition-colors"
+            >
+              <BookOpen className="w-4 h-4" />
+              Assign Custom Course
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -455,6 +472,9 @@ const OrgManagePage = () => {
   const [userCourses, setUserCourses] = useState([]);
   const [savingUserCourses, setSavingUserCourses] = useState(false);
 
+  // Custom course assignment modal
+  const [customCourseModalOpen, setCustomCourseModalOpen] = useState(false);
+
   // Success notification
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -462,6 +482,11 @@ const OrgManagePage = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [courseDrawerOpen, setCourseDrawerOpen] = useState(false);
   const [updatingCourse, setUpdatingCourse] = useState(false);
+
+  // Courses count modal
+  const [coursesCountModalOpen, setCoursesCountModalOpen] = useState(false);
+  const [activeCoursesTitle, setActiveCoursesTitle] = useState("");
+  const [activeCoursesItems, setActiveCoursesItems] = useState([]);
 
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const currentUserRole = storedUser?.user_role || "STUDENT";
@@ -507,7 +532,7 @@ const OrgManagePage = () => {
         "ADMIN org check - userOrgDocumentId:",
         userOrgDocumentId,
         "URL documentId:",
-        documentId
+        documentId,
       );
 
       // Only redirect if user has an org AND it doesn't match the URL
@@ -516,7 +541,7 @@ const OrgManagePage = () => {
         // ADMIN trying to access a different org - redirect to their own
         console.log(
           "ADMIN accessing different org, redirecting to:",
-          userOrgDocumentId
+          userOrgDocumentId,
         );
         navigate(`/admin/org/${userOrgDocumentId}`);
         return;
@@ -570,8 +595,8 @@ const OrgManagePage = () => {
         console.error(e);
         setError(
           e.response?.data?.error?.message ||
-          e.message ||
-          "Failed to load organization data"
+            e.message ||
+            "Failed to load organization data",
         );
       } finally {
         setLoading(false);
@@ -600,6 +625,9 @@ const OrgManagePage = () => {
           limit: pageSize,
           "populate[org][fields][0]": "org_name",
           "populate[org][fields][1]": "documentId",
+          "populate[usersubscriptions][populate][course][fields][0]": "name",
+          "populate[usersubscriptions][populate][course][fields][1]":
+            "documentId",
           "filters[org][documentId][$eq]": documentId,
         };
         if (searchQuery) {
@@ -634,8 +662,11 @@ const OrgManagePage = () => {
             experience: u.user_experience_level || "-",
             joinedAt: u.createdAt,
             organization: u.org?.org_name || u.org?.name || "-",
+            courses: (u.usersubscriptions || [])
+              .map((sub) => sub.course)
+              .filter(Boolean),
             raw: u,
-          }))
+          })),
         );
       } else if (tab === "courses") {
         params = {
@@ -659,15 +690,16 @@ const OrgManagePage = () => {
             subcategory: c.subcategory || "-",
             status: c.condition || "N/A",
             createdAt: c.createdAt,
-          }))
+            raw: c, // Store raw data for editing
+          })),
         );
       }
     } catch (e) {
       console.error(e);
       setError(
         e.response?.data?.error?.message ||
-        e.message ||
-        "Failed to load table data"
+          e.message ||
+          "Failed to load table data",
       );
     } finally {
       setLoading(false);
@@ -767,7 +799,7 @@ const OrgManagePage = () => {
         .filter(Boolean);
       const assignedIds = new Set(assignedCourses.map((c) => c.documentId));
       const availableCourses = available.filter(
-        (c) => !assignedIds.has(c.documentId)
+        (c) => !assignedIds.has(c.documentId),
       );
 
       setAllCourses(availableCourses);
@@ -797,7 +829,7 @@ const OrgManagePage = () => {
       });
       const currentSubs = subsRes.data?.data || subsRes.data || [];
       const currentCourseIds = new Set(
-        currentSubs.map((s) => s.course?.documentId).filter(Boolean)
+        currentSubs.map((s) => s.course?.documentId).filter(Boolean),
       );
       const newCourseIds = new Set(assignedCourses.map((c) => c.documentId));
 
@@ -846,7 +878,7 @@ const OrgManagePage = () => {
     } catch (e) {
       console.error(e);
       setError(
-        e.response?.data?.error?.message || "Failed to save user courses"
+        e.response?.data?.error?.message || "Failed to save user courses",
       );
     } finally {
       setSavingUserCourses(false);
@@ -861,7 +893,7 @@ const OrgManagePage = () => {
           <th className="px-4 py-3 text-left w-1/5">User</th>
           <th className="px-4 py-3 text-left w-1/5">Contact</th>
           <th className="px-4 py-3 text-left w-24">Role</th>
-          <th className="px-4 py-3 text-left w-32">Experience</th>
+          <th className="px-4 py-3 text-left w-20">Courses</th>
           <th className="px-4 py-3 text-left w-24">Joined</th>
           <th className="px-4 py-3 text-left w-24">Status</th>
           <th className="px-4 py-3 text-left sticky right-0 bg-card z-20 w-20">
@@ -918,9 +950,26 @@ const OrgManagePage = () => {
             </span>
           </td>
           <td className="px-4 py-3 text-sm">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-purple-300 bg-purple-50 text-purple-700 uppercase">
-              {row.experience}
-            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const courses = row.courses || [];
+                if (courses.length > 0) {
+                  setActiveCoursesTitle(`Courses for ${row.username}`);
+                  setActiveCoursesItems(courses);
+                  setCoursesCountModalOpen(true);
+                }
+              }}
+              className={cn(
+                "px-3 py-1 rounded-md text-xs font-bold transition-all",
+                (row.courses?.length || 0) > 0
+                  ? "bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 cursor-pointer"
+                  : "bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60",
+              )}
+              disabled={(row.courses?.length || 0) === 0}
+            >
+              {row.courses?.length || 0} Courses
+            </button>
           </td>
           <td className="px-4 py-3 text-sm text-muted-foreground">
             {row.joinedAt ? new Date(row.joinedAt).toLocaleDateString() : "-"}
@@ -932,8 +981,8 @@ const OrgManagePage = () => {
                 row.status === "APPROVED" || row.status === "ACTIVE"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : row.status === "REJECTED" || row.status === "BLOCKED"
-                    ? "bg-red-50 text-red-700 border-red-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200"
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200",
               )}
             >
               {row.status}
@@ -947,6 +996,10 @@ const OrgManagePage = () => {
                   setDrawerOpen(true);
                 }}
                 onAssignCourses={() => openUserCoursesModal(row.raw)}
+                onAssignCustomCourse={() => {
+                  setSelectedUser(row.raw);
+                  setCustomCourseModalOpen(true);
+                }}
               />
             ) : (
               <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">
@@ -979,8 +1032,8 @@ const OrgManagePage = () => {
               row.status === "APPROVED"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : row.status === "DRAFT" || row.status === "REVIEW"
-                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                  : "bg-red-50 text-red-700 border-red-200"
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-red-50 text-red-700 border-red-200",
             )}
           >
             {row.status}
@@ -993,7 +1046,8 @@ const OrgManagePage = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedCourse(row);
+              // Use raw data for editing to get original field values
+              setSelectedCourse(row.raw || row);
               setCourseDrawerOpen(true);
             }}
             className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-xs hover:bg-muted hover:text-primary transition-all"
@@ -1112,7 +1166,7 @@ const OrgManagePage = () => {
                 + Add User
               </button>
             )}
-            {activeTab === "courses" && (
+            {activeTab === "courses" && currentUserRole === "SUPERADMIN" && (
               <button
                 onClick={openOrgCoursesModal}
                 className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 shadow-sm transition-all flex items-center gap-1"
@@ -1218,7 +1272,7 @@ const OrgManagePage = () => {
           </div>
         )}
 
-        <div className="overflow-x-auto min-h-[400px]">
+        <div className="overflow-x-auto min-h-[400px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <table className="min-w-full text-left">
             <thead>{renderTableHeader()}</thead>
             <tbody className="divide-y divide-border/40">
@@ -1243,7 +1297,7 @@ const OrgManagePage = () => {
             Showing {(page - 1) * pageSize + 1} to{" "}
             {Math.max(
               (page - 1) * pageSize + 1,
-              Math.min(page * pageSize, total)
+              Math.min(page * pageSize, total),
             )}{" "}
             of {total}
           </div>
@@ -1272,21 +1326,21 @@ const OrgManagePage = () => {
       {/* User Edit Drawer */}
       <div
         className={cn(
-          "fixed inset-0 z-40",
-          drawerOpen ? "pointer-events-auto" : "pointer-events-none"
+          "fixed inset-0 z-[60]",
+          drawerOpen ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
         <div
           className={cn(
             "absolute inset-0 bg-black/20 transition-opacity",
-            drawerOpen ? "opacity-100" : "opacity-0"
+            drawerOpen ? "opacity-100" : "opacity-0",
           )}
           onClick={() => setDrawerOpen(false)}
         />
         <div
           className={cn(
             "absolute inset-y-0 right-0 w-full max-w-md bg-card border-l shadow-2xl transform transition-transform duration-300",
-            drawerOpen ? "translate-x-0" : "translate-x-full"
+            drawerOpen ? "translate-x-0" : "translate-x-full",
           )}
         >
           {selectedUser && (
@@ -1341,8 +1395,8 @@ const OrgManagePage = () => {
                       (selectedUser.blocked
                         ? "BLOCKED"
                         : selectedUser.confirmed
-                          ? "APPROVED"
-                          : "PENDING")
+                        ? "APPROVED"
+                        : "PENDING")
                     }
                     onChange={(e) =>
                       setSelectedUser((prev) => ({
@@ -1384,7 +1438,7 @@ const OrgManagePage = () => {
                     } catch (e) {
                       setError(
                         e.response?.data?.error?.message ||
-                        "Failed to update user"
+                          "Failed to update user",
                       );
                     } finally {
                       setUpdatingUser(false);
@@ -1404,21 +1458,21 @@ const OrgManagePage = () => {
       {/* Course Edit Drawer */}
       <div
         className={cn(
-          "fixed inset-0 z-40",
-          courseDrawerOpen ? "pointer-events-auto" : "pointer-events-none"
+          "fixed inset-0 z-[60]",
+          courseDrawerOpen ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
         <div
           className={cn(
             "absolute inset-0 bg-black/20 transition-opacity",
-            courseDrawerOpen ? "opacity-100" : "opacity-0"
+            courseDrawerOpen ? "opacity-100" : "opacity-0",
           )}
           onClick={() => setCourseDrawerOpen(false)}
         />
         <div
           className={cn(
             "absolute inset-y-0 right-0 w-full max-w-md bg-card border-l shadow-2xl transform transition-transform duration-300",
-            courseDrawerOpen ? "translate-x-0" : "translate-x-full"
+            courseDrawerOpen ? "translate-x-0" : "translate-x-full",
           )}
         >
           {selectedCourse && (
@@ -1518,11 +1572,11 @@ const OrgManagePage = () => {
                   </h3>
                   <select
                     className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
-                    value={selectedCourse.status || ""}
+                    value={selectedCourse.condition || ""}
                     onChange={(e) =>
                       setSelectedCourse((prev) => ({
                         ...prev,
-                        status: e.target.value,
+                        condition: e.target.value,
                       }))
                     }
                   >
@@ -1561,9 +1615,10 @@ const OrgManagePage = () => {
                               ? null
                               : selectedCourse.subcategory,
                           condition:
-                            selectedCourse.status === "N/A"
+                            selectedCourse.condition === "N/A" ||
+                            selectedCourse.condition === ""
                               ? null
-                              : selectedCourse.status,
+                              : selectedCourse.condition,
                         },
                       });
                       await loadTabData("courses");
@@ -1573,7 +1628,7 @@ const OrgManagePage = () => {
                     } catch (e) {
                       setError(
                         e.response?.data?.error?.message ||
-                        "Failed to update course"
+                          "Failed to update course",
                       );
                     } finally {
                       setUpdatingCourse(false);
@@ -1611,9 +1666,9 @@ const OrgManagePage = () => {
         subtitle={
           selectedUser
             ? `${selectedUser.username} (${selectedUser.documentId?.slice(
-              0,
-              8
-            )}...)`
+                0,
+                8,
+              )}...)`
             : ""
         }
         availableItems={allCourses}
@@ -1622,6 +1677,37 @@ const OrgManagePage = () => {
         loading={savingUserCourses}
         itemLabel="name"
       />
+
+      {/* Custom Course Assignment Modal */}
+      <CustomCourseAssignmentModal
+        isOpen={customCourseModalOpen}
+        onClose={() => {
+          setCustomCourseModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onSuccess={() => {
+          // Refresh data if needed
+          if (activeTab === "users") {
+            loadTabData("users", page);
+          }
+        }}
+      />
+
+      {/* Courses Count Modal */}
+      {coursesCountModalOpen && (
+        <CountListModal
+          isOpen={coursesCountModalOpen}
+          title={activeCoursesTitle}
+          items={activeCoursesItems}
+          nameField="name"
+          onClose={() => {
+            setCoursesCountModalOpen(false);
+            setActiveCoursesItems([]);
+            setActiveCoursesTitle("");
+          }}
+        />
+      )}
     </div>
   );
 };

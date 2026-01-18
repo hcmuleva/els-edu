@@ -32,12 +32,7 @@
     "multimedia": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "youtubeurl": {
       "type": "string"
@@ -73,16 +68,16 @@
     },
     "category": {
       "type": "enumeration",
-      "enum": [
-        "TIPSTRICS",
-        "FORMULA",
-        "CONTENT",
-        "READING",
-        "OTHER"
-      ]
+      "enum": ["TIPSTRICS", "FORMULA", "CONTENT", "READING", "OTHER"]
     },
     "thumbnail": {
       "type": "string"
+    },
+    "content_level": {
+      "type": "integer",
+      "default": 1,
+      "min": 1,
+      "max": 5
     }
   }
 }
