@@ -281,7 +281,14 @@ export const UserCreate = () => {
       }
 
       setTimeout(() => {
-        redirect("/manage");
+        // Redirect based on role - ADMIN goes to their org page, SUPERADMIN to /manage
+        if (currentUserRole === "SUPERADMIN") {
+          redirect("/manage");
+        } else if (currentUserRole === "ADMIN" && currentUserOrgDocumentId) {
+          redirect(`/admin/org/${currentUserOrgDocumentId}`);
+        } else {
+          redirect("/");
+        }
       }, 500);
     } catch (error) {
       console.error("Error creating user:", error);

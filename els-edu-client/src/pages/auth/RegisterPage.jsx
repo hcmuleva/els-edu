@@ -133,6 +133,7 @@ const RegisterPage = () => {
               dob: formData.dob,
               age: age,
               privacy_accepted: true,
+              control_type: "STUDENT", // Default to student mode
               // Removed org assignment from here to avoid overwriting issues
             },
           }),

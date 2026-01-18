@@ -33,12 +33,8 @@ export const ProtectedRoute = ({
   // 2. Check Role Selection Requirements
   // Skip check if we are already on the role selection page
   if (location.pathname !== "/role-selection") {
-    // 1. If no control_type (Legacy User), force setup
-    if (!user.control_type) {
-      return <Navigate to="/role-selection" replace />;
-    }
-
-    // 2. If PARENT control type but no session role selected, force selection
+    // If PARENT control type but no session role selected, force selection
+    // Note: Users without control_type are treated as STUDENT and don't need role selection
     if (
       user.control_type === "PARENT" &&
       !localStorage.getItem("current_role")

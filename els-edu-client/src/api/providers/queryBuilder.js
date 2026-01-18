@@ -87,6 +87,14 @@ export const buildPopulate = (resource, meta) => {
     return query;
   }
 
+  if (resource === "users") {
+    // Populate usersubscriptions with course for user list to show course count
+    query["populate[usersubscriptions][populate][course][fields][0]"] = "name";
+    query["populate[usersubscriptions][populate][course][fields][1]"] =
+      "documentId";
+    return query;
+  }
+
   if (resource === "quizzes") {
     if (meta && meta.populate) {
       const populateValue = meta.populate;

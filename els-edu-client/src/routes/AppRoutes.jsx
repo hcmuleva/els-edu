@@ -22,6 +22,7 @@ import UnauthorizedPage from "../pages/auth/UnauthorizedPage";
 import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import { ProtectedParentRoute } from "../components/common/ProtectedParentRoute";
+import { ProtectedDefaultOrgRoute } from "../components/common/ProtectedDefaultOrgRoute";
 import SelfAssessmentPage from "../pages/analytics/SelfAssessmentPage";
 import AnalyticsResultsPage from "../pages/analytics/AnalyticsResultsPage";
 import SkillQuizPage from "../pages/analytics/SkillQuizPage";
@@ -96,9 +97,11 @@ const AppRoutes = () => (
         path="/browse-courses"
         element={
           <ProtectedRoute>
-            <ProtectedParentRoute>
-              <BrowseCoursesPage />
-            </ProtectedParentRoute>
+            <ProtectedDefaultOrgRoute>
+              <ProtectedParentRoute>
+                <BrowseCoursesPage />
+              </ProtectedParentRoute>
+            </ProtectedDefaultOrgRoute>
           </ProtectedRoute>
         }
       />
@@ -106,7 +109,9 @@ const AppRoutes = () => (
         path="/browse-courses/:courseId"
         element={
           <ProtectedRoute>
-            <CourseDetailPage />
+            <ProtectedDefaultOrgRoute>
+              <CourseDetailPage />
+            </ProtectedDefaultOrgRoute>
           </ProtectedRoute>
         }
       />

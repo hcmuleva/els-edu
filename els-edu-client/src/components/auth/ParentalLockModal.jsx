@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Lock, Delete, X } from "lucide-react";
 
 /**
@@ -111,9 +112,9 @@ const ParentalLockModal = ({
         : "Re-enter to confirm"
       : "Enter PIN to access";
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-xs overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200 my-auto">
         {/* Header */}
         <div className="bg-primary text-white p-6 relative">
           <button
@@ -191,7 +192,8 @@ const ParentalLockModal = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

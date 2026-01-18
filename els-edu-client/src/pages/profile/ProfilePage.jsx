@@ -28,6 +28,8 @@ import {
   Check,
   Repeat,
   Users,
+  ShieldCheck,
+  ShieldOff,
 } from "lucide-react";
 import { CustomSelect } from "../../components/common/CustomSelect";
 import { refreshUser } from "../../api/authProvider";
@@ -143,6 +145,56 @@ const ProfilePage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteLock, setShowDeleteLock] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showParentalSetup, setShowParentalSetup] = useState(false);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [updatingParentalControl, setUpdatingParentalControl] = useState(false);
+
+  // Handle enabling parental control (PIN setup complete)
+  const handleEnableParentalControl = async (newPin) => {
+    try {
+      setUpdatingParentalControl(true);
+      await dataProvider.update("users", {
+        id: identity.id,
+        data: {
+          control_type: "PARENT",
+          parental_lock_code: newPin,
+        },
+      });
+      await refreshUser();
+      await refetch();
+      notify("Parental control enabled successfully", { type: "success" });
+      setShowParentalSetup(false);
+    } catch (error) {
+      console.error(error);
+      notify("Failed to enable parental control", { type: "error" });
+    } finally {
+      setUpdatingParentalControl(false);
+    }
+  };
+
+  // Handle disabling parental control
+  const handleDisableParentalControl = async () => {
+    try {
+      setUpdatingParentalControl(true);
+      await dataProvider.update("users", {
+        id: identity.id,
+        data: {
+          control_type: "STUDENT",
+          parental_lock_code: null,
+        },
+      });
+      await refreshUser();
+      await refetch();
+      localStorage.removeItem("current_role"); // Clear session role
+      notify("Parental control disabled", { type: "success" });
+      setShowDisableConfirm(false);
+    } catch (error) {
+      console.error(error);
+      notify("Failed to disable parental control", { type: "error" });
+    } finally {
+      setUpdatingParentalControl(false);
+    }
+  };
 
   // Initialize form data
   useEffect(() => {
@@ -640,22 +692,38 @@ const ProfilePage = () => {
               <div className="space-y-6">
                 {/* Identity Management Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Switch Profile (Kid/Parent) */}
-                  {identity?.control_type === "PARENT" && (
+                  {/* Parental Control Toggle */}
+                  {identity?.control_type === "PARENT" ? (
                     <button
-                      onClick={() => {
-                        localStorage.removeItem("current_role");
-                        navigate("/role-selection");
-                      }}
-                      className="group relative w-full px-6 py-5 bg-indigo-50/50 hover:bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-200 text-indigo-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4"
+                      onClick={() => setShowDisableConfirm(true)}
+                      disabled={updatingParentalControl}
+                      className="group relative w-full px-6 py-5 bg-red-50/50 hover:bg-red-50 border-2 border-red-100 hover:border-red-200 text-red-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4 disabled:opacity-50"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                        <Users className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                        <ShieldOff className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="text-base">Switch Profile</div>
-                        <div className="text-xs text-indigo-400 font-medium opacity-75">
-                          Parent / Student View
+                        <div className="text-base">
+                          Disable Parental Control
+                        </div>
+                        <div className="text-xs text-red-400 font-medium opacity-75">
+                          Remove PIN protection
+                        </div>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowParentalSetup(true)}
+                      disabled={updatingParentalControl}
+                      className="group relative w-full px-6 py-5 bg-violet-50/50 hover:bg-violet-50 border-2 border-violet-100 hover:border-violet-200 text-violet-900 rounded-2xl font-bold transition-all text-left flex items-center gap-4 disabled:opacity-50"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 group-hover:scale-110 transition-transform">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-base">Enable Parental Control</div>
+                        <div className="text-xs text-violet-400 font-medium opacity-75">
+                          Set up 4-digit PIN protection
                         </div>
                       </div>
                     </button>
@@ -869,6 +937,50 @@ const ProfilePage = () => {
                   className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-200"
                 >
                   Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Parental Control PIN Setup Modal */}
+      <ParentalLockModal
+        isOpen={showParentalSetup}
+        onClose={() => setShowParentalSetup(false)}
+        mode="SETUP"
+        onSetupComplete={handleEnableParentalControl}
+      />
+
+      {/* Disable Parental Control Confirmation */}
+      {showDisableConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldOff className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Disable Parental Control?
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                This will remove PIN protection and set the account back to
+                student mode.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDisableConfirm(false)}
+                  disabled={updatingParentalControl}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDisableParentalControl}
+                  disabled={updatingParentalControl}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-200 disabled:opacity-50"
+                >
+                  {updatingParentalControl ? "Disabling..." : "Disable"}
                 </button>
               </div>
             </div>

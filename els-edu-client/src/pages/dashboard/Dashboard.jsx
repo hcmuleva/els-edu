@@ -17,11 +17,16 @@ import {
 } from "lucide-react";
 import ClassroomDashboardSection from "../../components/dashboard/ClassroomDashboardSection";
 import mongoService from "../../services/mongoService";
+import { useRoleNavigation } from "../../hooks/useRoleNavigation";
 
 const Dashboard = () => {
   const { identity, isLoading: identityLoading } = useGetIdentity();
   const dataProvider = useDataProvider();
   const navigate = useNavigate();
+  const { canAccess } = useRoleNavigation();
+
+  // Check if user can browse courses (only for default org users)
+  const canBrowseCourses = canAccess("browse-courses");
 
   const [showTour, setShowTour] = useState(false);
   const [stats, setStats] = useState({
@@ -190,17 +195,22 @@ const Dashboard = () => {
 
                 <div className="space-y-3 md:space-y-4">
                   {[
+                    // Only show Browse Courses step if user can access it
+                    ...(canBrowseCourses
+                      ? [
+                          {
+                            step: 1,
+                            icon: BookOpen,
+                            title: "Browse Courses",
+                            description:
+                              "Explore our wide range of courses tailored for you",
+                            action: "/browse-courses",
+                            color: "from-blue-500 to-cyan-500",
+                          },
+                        ]
+                      : []),
                     {
-                      step: 1,
-                      icon: BookOpen,
-                      title: "Browse Courses",
-                      description:
-                        "Explore our wide range of courses tailored for you",
-                      action: "/browse-courses",
-                      color: "from-blue-500 to-cyan-500",
-                    },
-                    {
-                      step: 2,
+                      step: canBrowseCourses ? 2 : 1,
                       icon: CheckCircle2,
                       title: "Enroll in Courses",
                       description: "Subscribe to any course that interests you",
@@ -208,7 +218,7 @@ const Dashboard = () => {
                       color: "from-emerald-500 to-teal-500",
                     },
                     {
-                      step: 3,
+                      step: canBrowseCourses ? 3 : 2,
                       icon: Zap,
                       title: "Start Learning",
                       description:
@@ -277,12 +287,21 @@ const Dashboard = () => {
                   journey today!
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
+                  {canBrowseCourses && (
+                    <button
+                      onClick={() => navigate("/browse-courses")}
+                      className="w-full sm:w-auto px-5 py-3 bg-white text-primary-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Browse Courses
+                    </button>
+                  )}
                   <button
-                    onClick={() => navigate("/browse-courses")}
-                    className="w-full sm:w-auto px-5 py-3 bg-white text-primary-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+                    onClick={() => navigate("/my-subscriptions")}
+                    className="w-full sm:w-auto px-5 py-3 bg-white/10 backdrop-blur text-white border border-white/30 rounded-xl font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95"
                   >
-                    <BookOpen className="w-4 h-4" />
-                    Browse Courses
+                    <GraduationCap className="w-4 h-4" />
+                    My Subscriptions
                   </button>
                   <button
                     onClick={() => setShowTour(true)}
@@ -432,24 +451,26 @@ const Dashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-            <button
-              onClick={() => navigate("/browse-courses")}
-              className="w-full p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-primary-300 hover:shadow-md transition-all text-left group active:scale-95"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
-                  <BookOpen className="w-6 h-6 text-white" />
+            {canBrowseCourses && (
+              <button
+                onClick={() => navigate("/browse-courses")}
+                className="w-full p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-primary-300 hover:shadow-md transition-all text-left group active:scale-95"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-sm">
+                    <BookOpen className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
+                      Browse Courses
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Explore available courses
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
-                    Browse Courses
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Explore available courses
-                  </p>
-                </div>
-              </div>
-            </button>
+              </button>
+            )}
 
             <button
               onClick={() => navigate("/my-subscriptions")}
