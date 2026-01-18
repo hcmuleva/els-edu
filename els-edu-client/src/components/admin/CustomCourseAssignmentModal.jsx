@@ -16,7 +16,10 @@ import { useDataProvider } from "react-admin";
 import api from "../../services/api";
 import { cn } from "../../lib/utils";
 import { CustomSelect } from "../common/CustomSelect";
-import { subscribeToUserCustomCourseUpdates, subscribeToCustomCourseUpdates } from "../../services/ably";
+import {
+  subscribeToUserCustomCourseUpdates,
+  subscribeToCustomCourseUpdates,
+} from "../../services/ably";
 
 // Transfer List Component for Subjects
 const SubjectTransferList = ({
@@ -41,29 +44,40 @@ const SubjectTransferList = ({
       availableSubjectsCount: availableSubjects?.length || 0,
       unassignedSubjectsCount: unassignedSubjects?.length || 0,
     });
-    
+
     // Ensure we have arrays
-    const safeAssigned = Array.isArray(assignedSubjects) ? assignedSubjects : [];
-    const safeAvailable = Array.isArray(availableSubjects) ? availableSubjects : [];
-    
+    const safeAssigned = Array.isArray(assignedSubjects)
+      ? assignedSubjects
+      : [];
+    const safeAvailable = Array.isArray(availableSubjects)
+      ? availableSubjects
+      : [];
+
     setLocalAssigned(safeAssigned);
-    
+
     // Get all subjects from skills, excluding already assigned ones
-    const assignedIds = new Set(safeAssigned.map((s) => s?.documentId).filter(Boolean));
+    const assignedIds = new Set(
+      safeAssigned.map((s) => s?.documentId).filter(Boolean),
+    );
     const surveyAvailable = safeAvailable.filter(
-      (s) => s && s.documentId && !assignedIds.has(s.documentId)
+      (s) => s && s.documentId && !assignedIds.has(s.documentId),
     );
-    
+
     // Include unassigned subjects that aren't in the survey
-    const safeUnassigned = Array.isArray(unassignedSubjects) ? unassignedSubjects : [];
+    const safeUnassigned = Array.isArray(unassignedSubjects)
+      ? unassignedSubjects
+      : [];
     const unassignedNotInSurvey = safeUnassigned.filter(
-      (s) => s && s.documentId && !assignedIds.has(s.documentId) && 
-             !surveyAvailable.some((sa) => sa.documentId === s.documentId)
+      (s) =>
+        s &&
+        s.documentId &&
+        !assignedIds.has(s.documentId) &&
+        !surveyAvailable.some((sa) => sa.documentId === s.documentId),
     );
-    
+
     // Combine survey subjects with previously unassigned subjects
     const allAvailable = [...surveyAvailable, ...unassignedNotInSurvey];
-    
+
     console.log("[SubjectTransferList] Calculated lists", {
       safeAssignedCount: safeAssigned.length,
       safeAvailableCount: safeAvailable.length,
@@ -71,7 +85,7 @@ const SubjectTransferList = ({
       unassignedNotInSurveyCount: unassignedNotInSurvey.length,
       allAvailableCount: allAvailable.length,
     });
-    
+
     setLocalAvailable(allAvailable);
     setSelected(new Set());
   }, [availableSubjects, assignedSubjects, unassignedSubjects]);
@@ -88,24 +102,24 @@ const SubjectTransferList = ({
 
   const moveToAssigned = () => {
     const toMove = localAvailable.filter((item) =>
-      selected.has(item.documentId)
+      selected.has(item.documentId),
     );
-    
+
     if (toMove.length === 0) return;
-    
+
     const newAssigned = [...localAssigned, ...toMove];
     const newAvailable = localAvailable.filter(
-      (item) => !selected.has(item.documentId)
+      (item) => !selected.has(item.documentId),
     );
-    
+
     // Remove from unassignedSubjects if they were reassigned
     const toMoveIds = new Set(toMove.map((s) => s.documentId));
     if (onUnassignedChange) {
-      onUnassignedChange((prev) => 
-        prev.filter((s) => !toMoveIds.has(s.documentId))
+      onUnassignedChange((prev) =>
+        prev.filter((s) => !toMoveIds.has(s.documentId)),
       );
     }
-    
+
     setLocalAssigned(newAssigned);
     setLocalAvailable(newAvailable);
     setSelected(new Set());
@@ -114,29 +128,35 @@ const SubjectTransferList = ({
 
   const moveToAvailable = () => {
     const toMove = localAssigned.filter((item) =>
-      selected.has(item.documentId)
+      selected.has(item.documentId),
     );
-    
+
     if (toMove.length === 0) return;
-    
+
     const newAssigned = localAssigned.filter(
-      (item) => !selected.has(item.documentId)
+      (item) => !selected.has(item.documentId),
     );
     const newAvailable = [...localAvailable, ...toMove];
-    
+
     // Track unassigned subjects (those not originally in availableSubjects)
     const toMoveIds = new Set(toMove.map((s) => s.documentId));
-    const availableSubjectIds = new Set(availableSubjects.map((s) => s.documentId));
-    const newlyUnassigned = toMove.filter((s) => !availableSubjectIds.has(s.documentId));
-    
+    const availableSubjectIds = new Set(
+      availableSubjects.map((s) => s.documentId),
+    );
+    const newlyUnassigned = toMove.filter(
+      (s) => !availableSubjectIds.has(s.documentId),
+    );
+
     if (newlyUnassigned.length > 0 && onUnassignedChange) {
       onUnassignedChange((prev) => {
         const existingIds = new Set(prev.map((s) => s.documentId));
-        const toAdd = newlyUnassigned.filter((s) => !existingIds.has(s.documentId));
+        const toAdd = newlyUnassigned.filter(
+          (s) => !existingIds.has(s.documentId),
+        );
         return [...prev, ...toAdd];
       });
     }
-    
+
     setLocalAssigned(newAssigned);
     setLocalAvailable(newAvailable);
     setSelected(new Set());
@@ -144,17 +164,17 @@ const SubjectTransferList = ({
   };
 
   // Filter subjects
-  const filteredAvailable = (localAvailable || []).filter((item) =>
-    item && (item.name || "")
-      .toLowerCase()
-      .includes(availableSearch.toLowerCase())
+  const filteredAvailable = (localAvailable || []).filter(
+    (item) =>
+      item &&
+      (item.name || "").toLowerCase().includes(availableSearch.toLowerCase()),
   );
-  const filteredAssigned = (localAssigned || []).filter((item) =>
-    item && (item.name || "")
-      .toLowerCase()
-      .includes(assignedSearch.toLowerCase())
+  const filteredAssigned = (localAssigned || []).filter(
+    (item) =>
+      item &&
+      (item.name || "").toLowerCase().includes(assignedSearch.toLowerCase()),
   );
-  
+
   console.log("[SubjectTransferList] Filtered lists", {
     filteredAvailableCount: filteredAvailable.length,
     filteredAssignedCount: filteredAssigned.length,
@@ -195,7 +215,7 @@ const SubjectTransferList = ({
                   "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                   selected.has(subject.documentId)
                     ? "bg-primary/10 border border-primary/30"
-                    : "hover:bg-gray-50 border border-transparent"
+                    : "hover:bg-gray-50 border border-transparent",
                 )}
               >
                 <div className="font-medium text-gray-800">{subject.name}</div>
@@ -216,7 +236,7 @@ const SubjectTransferList = ({
           onClick={moveToAssigned}
           disabled={
             ![...selected].some((id) =>
-              localAvailable.find((i) => i.documentId === id)
+              localAvailable.find((i) => i.documentId === id),
             )
           }
           className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary disabled:opacity-40 transition-all"
@@ -228,7 +248,7 @@ const SubjectTransferList = ({
           onClick={moveToAvailable}
           disabled={
             ![...selected].some((id) =>
-              localAssigned.find((i) => i.documentId === id)
+              localAssigned.find((i) => i.documentId === id),
             )
           }
           className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary disabled:opacity-40 transition-all"
@@ -269,7 +289,7 @@ const SubjectTransferList = ({
                   "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                   selected.has(subject.documentId)
                     ? "bg-primary/10 border border-primary/30"
-                    : "hover:bg-gray-50 border border-transparent"
+                    : "hover:bg-gray-50 border border-transparent",
                 )}
               >
                 <div className="font-medium text-gray-800">{subject.name}</div>
@@ -287,12 +307,7 @@ const SubjectTransferList = ({
   );
 };
 
-const CustomCourseAssignmentModal = ({
-  isOpen,
-  onClose,
-  user,
-  onSuccess,
-}) => {
+const CustomCourseAssignmentModal = ({ isOpen, onClose, user, onSuccess }) => {
   const dataProvider = useDataProvider();
   const [loading, setLoading] = useState(false);
   const [surveys, setSurveys] = useState([]);
@@ -324,7 +339,7 @@ const CustomCourseAssignmentModal = ({
     try {
       setLoadingCourses(true);
       const response = await api.get(
-        `/user-courses/user/${user.documentId}/custom-courses`
+        `/user-courses/user/${user.documentId}/custom-courses`,
       );
       setCustomCourses(response.data?.data || []);
     } catch (error) {
@@ -340,7 +355,7 @@ const CustomCourseAssignmentModal = ({
     try {
       setLoading(true);
       const response = await api.get(
-        `/user-courses/user/${user.documentId}/surveys`
+        `/user-courses/user/${user.documentId}/surveys`,
       );
       setSurveys(response.data?.data || []);
     } catch (error) {
@@ -391,17 +406,23 @@ const CustomCourseAssignmentModal = ({
           // Refresh courses list when a course is assigned
           fetchCustomCourses();
         }
-      }
+      },
     );
 
     // Subscribe to global updates (for create/update/delete)
-    const unsubscribeGlobal = subscribeToCustomCourseUpdates((eventName, data) => {
-      console.log("[ABLY] Global custom course update:", eventName, data);
-      if (eventName === "custom-course:created" || eventName === "custom-course:updated" || eventName === "custom-course:deleted") {
-        // Refresh courses list when a course is created, updated, or deleted
-        fetchCustomCourses();
-      }
-    });
+    const unsubscribeGlobal = subscribeToCustomCourseUpdates(
+      (eventName, data) => {
+        console.log("[ABLY] Global custom course update:", eventName, data);
+        if (
+          eventName === "custom-course:created" ||
+          eventName === "custom-course:updated" ||
+          eventName === "custom-course:deleted"
+        ) {
+          // Refresh courses list when a course is created, updated, or deleted
+          fetchCustomCourses();
+        }
+      },
+    );
 
     return () => {
       unsubscribeUser();
@@ -414,7 +435,7 @@ const CustomCourseAssignmentModal = ({
       setLoadingSubjects(true);
       setSelectedSurveyId(surveyId);
       const response = await api.get(
-        `/user-courses/survey/${surveyId}/subjects`
+        `/user-courses/survey/${surveyId}/subjects`,
       );
       const data = response.data?.data || {};
       console.log("Survey subjects data:", data);
@@ -423,17 +444,22 @@ const CustomCourseAssignmentModal = ({
       setAllSubjects(surveySubjects);
       console.log("Set skillsWithSubjects:", data.skills);
       console.log("Set allSubjects:", surveySubjects);
-      
+
       // If editing a course, calculate which assigned subjects are not in the survey
       // These should appear in the suggested (unassigned) list
       // This ensures that when you reopen edit, subjects not in the survey show in Suggested
       if (editingCourse && assignedSubjects.length > 0) {
-        const surveySubjectIds = new Set(surveySubjects.map((s) => s.documentId));
+        const surveySubjectIds = new Set(
+          surveySubjects.map((s) => s.documentId),
+        );
         const unassignedFromCourse = assignedSubjects.filter(
-          (s) => !surveySubjectIds.has(s.documentId)
+          (s) => !surveySubjectIds.has(s.documentId),
         );
         if (unassignedFromCourse.length > 0) {
-          console.log("[handleSurveySelect] Found unassigned subjects not in survey:", unassignedFromCourse);
+          console.log(
+            "[handleSurveySelect] Found unassigned subjects not in survey:",
+            unassignedFromCourse,
+          );
           setUnassignedSubjects(unassignedFromCourse);
         } else {
           // Clear unassigned if all assigned subjects are in the survey
@@ -467,7 +493,7 @@ const CustomCourseAssignmentModal = ({
       setError("");
       await api.post(
         `/user-courses/user/${user.documentId}/custom-courses`,
-        formData
+        formData,
       );
       await fetchCustomCourses();
       setShowCreateForm(false);
@@ -484,9 +510,7 @@ const CustomCourseAssignmentModal = ({
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error creating course:", error);
-      setError(
-        error.response?.data?.error || "Failed to create custom course"
-      );
+      setError(error.response?.data?.error || "Failed to create custom course");
     } finally {
       setSaving(false);
     }
@@ -503,7 +527,7 @@ const CustomCourseAssignmentModal = ({
       setError("");
       await api.put(
         `/user-courses/custom-courses/${editingCourse.documentId}`,
-        formData
+        formData,
       );
       await fetchCustomCourses();
       setEditingCourse(null);
@@ -521,9 +545,7 @@ const CustomCourseAssignmentModal = ({
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error updating course:", error);
-      setError(
-        error.response?.data?.error || "Failed to update custom course"
-      );
+      setError(error.response?.data?.error || "Failed to update custom course");
     } finally {
       setSaving(false);
     }
@@ -549,39 +571,49 @@ const CustomCourseAssignmentModal = ({
     setEditingCourse(course);
     setShowCreateForm(true);
     setUnassignedSubjects([]); // Reset unassigned subjects when starting to edit
-    
+
     // Load subjects for this course
     const courseSubjectIds = course.subjectDocumentIds || [];
-    
+
     // Fetch full subject data for assigned subjects
     try {
       if (courseSubjectIds.length > 0) {
-        const { data: assignedSubjectsData } = await dataProvider.getList("subjects", {
-          pagination: { page: 1, perPage: 1000 },
-          filter: {
-            "filters[documentId][$in]": courseSubjectIds,
+        const { data: assignedSubjectsData } = await dataProvider.getList(
+          "subjects",
+          {
+            pagination: { page: 1, perPage: 1000 },
+            filter: {
+              "filters[documentId][$in]": courseSubjectIds,
+            },
+            meta: {
+              populate: [],
+            },
           },
-          meta: {
-            populate: [],
-          },
-        });
+        );
         const loadedAssigned = assignedSubjectsData || [];
         setAssignedSubjects(loadedAssigned);
-        
+
         // If a survey is already selected, calculate which assigned subjects are not in the survey
         // These should appear in the suggested (unassigned) list
         // This ensures subjects assigned to the course but not in the survey show in Suggested
         if (selectedSurveyId && allSubjects.length > 0) {
-          const surveySubjectIds = new Set(allSubjects.map((s) => s.documentId));
+          const surveySubjectIds = new Set(
+            allSubjects.map((s) => s.documentId),
+          );
           const unassignedFromCourse = loadedAssigned.filter(
-            (s) => !surveySubjectIds.has(s.documentId)
+            (s) => !surveySubjectIds.has(s.documentId),
           );
           if (unassignedFromCourse.length > 0) {
-            console.log("[handleEditCourse] Found assigned subjects not in survey (will show in Suggested):", unassignedFromCourse);
+            console.log(
+              "[handleEditCourse] Found assigned subjects not in survey (will show in Suggested):",
+              unassignedFromCourse,
+            );
             setUnassignedSubjects(unassignedFromCourse);
           }
         } else {
-          console.log("[handleEditCourse] No survey selected or no survey subjects, unassignedSubjects will be empty");
+          console.log(
+            "[handleEditCourse] No survey selected or no survey subjects, unassignedSubjects will be empty",
+          );
         }
       } else {
         setAssignedSubjects([]);
@@ -622,7 +654,9 @@ const CustomCourseAssignmentModal = ({
 
   const surveyOptions = surveys.map((survey) => ({
     id: survey._id?.toString() || survey.id?.toString(),
-    name: `${survey.surveyType === "company" ? "Company" : "Self"} Survey - ${new Date(survey.completedAt).toLocaleDateString()}`,
+    name: `${
+      survey.surveyType === "company" ? "Company" : "Self"
+    } Survey - ${new Date(survey.completedAt).toLocaleDateString()}`,
   }));
 
   const categoryOptions = [
@@ -644,7 +678,7 @@ const CustomCourseAssignmentModal = ({
   ];
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col border border-border">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
@@ -703,63 +737,72 @@ const CustomCourseAssignmentModal = ({
           )}
 
           {/* Display Subjects from Selected Survey */}
-          {!loadingSubjects && selectedSurveyId && skillsWithSubjects.length > 0 && (
-            <div className="border border-border rounded-lg p-4 space-y-4">
-              <h3 className="font-semibold text-foreground">
-                Subjects Available from Survey
-              </h3>
-              <div className="space-y-3">
-                {skillsWithSubjects.map((skillData) => (
-                  <div key={skillData.skillName} className="space-y-2">
-                    <div className="px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
-                      <div className="font-semibold text-sm text-foreground">
-                        {skillData.skillName}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex gap-3 mt-1">
-                        {skillData.requiredLevel && (
-                          <span>Required: Level {skillData.requiredLevel}</span>
-                        )}
-                        {skillData.currentLevel && (
-                          <span>Current: Level {skillData.currentLevel}</span>
-                        )}
-                        {!skillData.currentLevel && skillData.requiredLevel && (
-                          <span className="text-amber-600">Not assessed yet</span>
-                        )}
-                      </div>
-                    </div>
-                    {skillData.subjects && skillData.subjects.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2 pl-4">
-                        {skillData.subjects.map((subject) => (
-                          <div
-                            key={subject.documentId}
-                            className="px-3 py-2 rounded-lg bg-muted/50 text-sm border border-border"
-                          >
-                            <div className="font-medium text-foreground">
-                              {subject.name}
-                            </div>
-                            {subject.grade && (
-                              <div className="text-xs text-muted-foreground">
-                                {subject.grade} • Level {subject.level || "N/A"}
-                              </div>
+          {!loadingSubjects &&
+            selectedSurveyId &&
+            skillsWithSubjects.length > 0 && (
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <h3 className="font-semibold text-foreground">
+                  Subjects Available from Survey
+                </h3>
+                <div className="space-y-3">
+                  {skillsWithSubjects.map((skillData) => (
+                    <div key={skillData.skillName} className="space-y-2">
+                      <div className="px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                        <div className="font-semibold text-sm text-foreground">
+                          {skillData.skillName}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex gap-3 mt-1">
+                          {skillData.requiredLevel && (
+                            <span>
+                              Required: Level {skillData.requiredLevel}
+                            </span>
+                          )}
+                          {skillData.currentLevel && (
+                            <span>Current: Level {skillData.currentLevel}</span>
+                          )}
+                          {!skillData.currentLevel &&
+                            skillData.requiredLevel && (
+                              <span className="text-amber-600">
+                                Not assessed yet
+                              </span>
                             )}
-                          </div>
-                        ))}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground pl-4">
-                        No subjects available for this skill
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {allSubjects.length === 0 && (
-                <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  No subjects found for the selected survey. Please ensure skills have associated topics and subjects.
+                      {skillData.subjects && skillData.subjects.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2 pl-4">
+                          {skillData.subjects.map((subject) => (
+                            <div
+                              key={subject.documentId}
+                              className="px-3 py-2 rounded-lg bg-muted/50 text-sm border border-border"
+                            >
+                              <div className="font-medium text-foreground">
+                                {subject.name}
+                              </div>
+                              {subject.grade && (
+                                <div className="text-xs text-muted-foreground">
+                                  {subject.grade} • Level{" "}
+                                  {subject.level || "N/A"}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground pl-4">
+                          No subjects available for this skill
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-          )}
+                {allSubjects.length === 0 && (
+                  <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    No subjects found for the selected survey. Please ensure
+                    skills have associated topics and subjects.
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* Create/Edit Course Form */}
           {showCreateForm && (
@@ -851,7 +894,7 @@ const CustomCourseAssignmentModal = ({
                 </label>
                 {!selectedSurveyId && (
                   <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                    {editingCourse 
+                    {editingCourse
                       ? "Select a survey to see suggested subjects. You can still unassign subjects from the Assigned list."
                       : "Please select a survey to see suggested subjects."}
                   </div>
@@ -868,7 +911,9 @@ const CustomCourseAssignmentModal = ({
 
               <div className="flex gap-2">
                 <button
-                  onClick={editingCourse ? handleUpdateCourse : handleCreateCourse}
+                  onClick={
+                    editingCourse ? handleUpdateCourse : handleCreateCourse
+                  }
                   disabled={saving}
                   className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
@@ -930,7 +975,8 @@ const CustomCourseAssignmentModal = ({
                         </div>
                       )}
                       <div className="text-xs text-muted-foreground mt-1">
-                        {course.subjects?.length || 0} subjects • {course.status}
+                        {course.subjects?.length || 0} subjects •{" "}
+                        {course.status}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -967,7 +1013,7 @@ const CustomCourseAssignmentModal = ({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

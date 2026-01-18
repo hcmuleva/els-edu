@@ -46,7 +46,7 @@ const ClassroomDashboardSection = () => {
         // Fetch classrooms
         const allClassrooms = await classroomService.getClassrooms(
           userOrgDocumentId,
-          userGrade
+          userGrade,
         );
 
         // Filter by status
@@ -61,7 +61,7 @@ const ClassroomDashboardSection = () => {
           const assignments = await classroomService.getUserAssignments(
             userOrgDocumentId,
             identity.documentId,
-            "assigned"
+            "assigned",
           );
           setPendingAssignments(assignments);
         }
@@ -115,10 +115,12 @@ const ClassroomDashboardSection = () => {
                 onClick={() => navigate(`/classroom/${lc._id}`)}
                 className="w-full bg-white/15 backdrop-blur rounded-xl p-4 text-left hover:bg-white/25 transition-all"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-white">{lc.title}</h3>
-                    <p className="text-sm text-white/80 truncate">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-white truncate">
+                      {lc.title}
+                    </h3>
+                    <p className="text-sm text-white/80 line-clamp-2 break-words">
                       {lc.description}
                     </p>
                   </div>
@@ -161,7 +163,7 @@ const ClassroomDashboardSection = () => {
           {/* Pending Assignments */}
           <button
             onClick={() => navigate("/classroom")}
-            className="bg-orange-50 rounded-xl p-4 text-center hover:bg-orange-100 transition-colors"
+            className="bg-gradient-to-br from-orange-50/50 to-white rounded-2xl md:rounded-xl p-4 text-center hover:shadow-md border border-orange-100/50 transition-all custom-active-scale"
           >
             <ClipboardList className="w-6 h-6 text-orange-600 mx-auto mb-2" />
             <p className="text-2xl font-black text-orange-600">
@@ -175,7 +177,7 @@ const ClassroomDashboardSection = () => {
           {/* Upcoming Classes */}
           <button
             onClick={() => navigate("/classroom")}
-            className="bg-blue-50 rounded-xl p-4 text-center hover:bg-blue-100 transition-colors"
+            className="bg-gradient-to-br from-blue-50/50 to-white rounded-2xl md:rounded-xl p-4 text-center hover:shadow-md border border-blue-100/50 transition-all custom-active-scale"
           >
             <Calendar className="w-6 h-6 text-blue-600 mx-auto mb-2" />
             <p className="text-2xl font-black text-blue-600">
@@ -189,7 +191,7 @@ const ClassroomDashboardSection = () => {
           {/* Live Classes Count */}
           <button
             onClick={() => navigate("/classroom")}
-            className="bg-red-50 rounded-xl p-4 text-center hover:bg-red-100 transition-colors col-span-2 md:col-span-1"
+            className="bg-gradient-to-br from-red-50/50 to-white rounded-2xl md:rounded-xl p-4 text-center hover:shadow-md border border-red-100/50 transition-all custom-active-scale col-span-2 md:col-span-1"
           >
             <Radio className="w-6 h-6 text-red-600 mx-auto mb-2" />
             <p className="text-2xl font-black text-red-600">

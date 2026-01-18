@@ -587,6 +587,15 @@ export interface ApiContentContent extends Struct.CollectionTypeSchema {
     category: Schema.Attribute.Enumeration<
       ['TIPSTRICS', 'FORMULA', 'CONTENT', 'READING', 'OTHER']
     >;
+    content_level: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1231,7 +1240,15 @@ export interface ApiQuestionQuestion extends Struct.CollectionTypeSchema {
         i18n: {
           localized: true;
         };
-      }>;
+      }> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
       'oneToMany',

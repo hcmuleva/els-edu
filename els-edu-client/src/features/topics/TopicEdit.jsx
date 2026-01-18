@@ -9,6 +9,7 @@ import {
 } from "react-admin";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { CustomSelect } from "../../components/common/CustomSelect";
 import { CustomAsyncMultiSelect } from "../../components/common/CustomAsyncMultiSelect";
 
 export const TopicEdit = () => {
@@ -22,7 +23,7 @@ export const TopicEdit = () => {
     { id },
     {
       meta: { populate: ["subjects"] },
-    }
+    },
   );
 
   const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ export const TopicEdit = () => {
     description: "",
     icon: "",
     subjects: [],
+    topic_level: 1,
   });
 
   // Store full subject objects for initialData
@@ -43,12 +45,13 @@ export const TopicEdit = () => {
         description: topic.description || "",
         icon: topic.icon || "",
         subjects: topic.subjects?.map((s) => s.documentId || s.id || s) || [],
+        topic_level: topic.topic_level || 1,
       });
 
       // Store the full subject objects for initialData
       if (topic.subjects && Array.isArray(topic.subjects)) {
         const subjectObjects = topic.subjects.filter(
-          (s) => typeof s === "object" && (s.documentId || s.id)
+          (s) => typeof s === "object" && (s.documentId || s.id),
         );
         setInitialSubjects(subjectObjects);
       }
@@ -73,6 +76,7 @@ export const TopicEdit = () => {
         description: formData.description || null,
         icon: formData.icon || null,
         subjects: formData.subjects,
+        topic_level: formData.topic_level || 1,
       };
 
       await update("topics", { id, data: topicData });
@@ -240,6 +244,27 @@ export const TopicEdit = () => {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Topic Level */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground">
+              Topic Level <span className="text-red-500">*</span>
+            </label>
+            <CustomSelect
+              value={formData.topic_level}
+              onChange={(val) =>
+                setFormData((prev) => ({ ...prev, topic_level: parseInt(val) }))
+              }
+              options={[
+                { id: 1, name: "Level 1 - Beginner" },
+                { id: 2, name: "Level 2 - Elementary" },
+                { id: 3, name: "Level 3 - Intermediate" },
+                { id: 4, name: "Level 4 - Advanced" },
+                { id: 5, name: "Level 5 - Expert" },
+              ]}
+              placeholder="Select Level"
+            />
           </div>
         </div>
       </div>

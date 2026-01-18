@@ -37,6 +37,7 @@ export const QuestionSelector = ({
   const [filters, setFilters] = useState({
     difficulty: "all",
     questionType: "all",
+    level: "all",
     subject: null,
     topic: null,
   });
@@ -53,6 +54,7 @@ export const QuestionSelector = ({
     if (filters.difficulty !== "all") filter.difficulty = filters.difficulty;
     if (filters.questionType !== "all")
       filter.questionType = filters.questionType;
+    if (filters.level !== "all") filter.level = filters.level;
     // Filter by subject ID if selected - use bracket notation that queryBuilder understands
     if (filters.subject) filter["subjects[id]"] = filters.subject;
     // Filter by topic ID if selected - use bracket notation that queryBuilder understands
@@ -79,7 +81,7 @@ export const QuestionSelector = ({
     {
       enabled: open, // Only fetch when modal is open
       staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    }
+    },
   );
 
   // Update fetch guard when fetching state changes
@@ -90,13 +92,14 @@ export const QuestionSelector = ({
   // Flatten pages into a single array of questions
   const questions = useMemo(
     () => data?.pages.flatMap((page) => page.data) ?? [],
-    [data]
+    [data],
   );
 
   const resetFilters = () => {
     setFilters({
       difficulty: "all",
       questionType: "all",
+      level: "all",
       subject: null,
       topic: null,
     });
@@ -121,7 +124,7 @@ export const QuestionSelector = ({
         fetchNextPage();
       }
     },
-    [fetchNextPage, hasNextPage]
+    [fetchNextPage, hasNextPage],
   );
 
   useEffect(() => {
@@ -139,13 +142,13 @@ export const QuestionSelector = ({
 
   const handleToggle = (id) => {
     setLocalSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const handleConfirm = () => {
     const selectedQuestions = questions.filter((q) =>
-      localSelected.includes(q.id)
+      localSelected.includes(q.id),
     );
     onSelectQuestions(selectedQuestions);
     onClose();
@@ -295,7 +298,25 @@ export const QuestionSelector = ({
                 className="w-full"
               />
             </div>
-            <div className="col-span-1">
+            <div className="col-span-2">
+              <CustomSelect
+                value={filters.level}
+                onChange={(val) =>
+                  setFilters((prev) => ({ ...prev, level: val }))
+                }
+                options={[
+                  { id: "all", name: "Any Level" },
+                  { id: 1, name: "Level 1" },
+                  { id: 2, name: "Level 2" },
+                  { id: 3, name: "Level 3" },
+                  { id: 4, name: "Level 4" },
+                  { id: 5, name: "Level 5" },
+                ]}
+                placeholder="Level"
+                className="w-full"
+              />
+            </div>
+            <div className="col-span-2">
               <button
                 onClick={resetFilters}
                 title="Reset Filters"

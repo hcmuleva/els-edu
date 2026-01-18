@@ -71,7 +71,7 @@ const ClassDetailPage = () => {
         if (classroomObj?.contentDocumentIds?.length > 0) {
           const contentIds = classroomObj.contentDocumentIds;
           const contentPromises = contentIds.map((docId) =>
-            classroomService.getContent(docId)
+            classroomService.getContent(docId),
           );
 
           const contentResults = await Promise.all(contentPromises);
@@ -83,7 +83,7 @@ const ClassDetailPage = () => {
         // Fetch or create progress
         const progressList = await classroomService.getClassProgress(
           classroomId,
-          identity?.documentId
+          identity?.documentId,
         );
 
         if (progressList.length > 0) {
@@ -166,7 +166,7 @@ const ClassDetailPage = () => {
         progress?.progress?.completedContentIds?.includes(contentId) || false
       );
     },
-    [progress]
+    [progress],
   );
 
   // Mark content as completed
@@ -179,7 +179,7 @@ const ClassDetailPage = () => {
         contentDocId,
       ];
       const progressPercentage = Math.round(
-        (completedIds.length / contents.length) * 100
+        (completedIds.length / contents.length) * 100,
       );
 
       const updateData = {
@@ -225,7 +225,7 @@ const ClassDetailPage = () => {
     // YouTube embed
     if (contentType === "YOUTUBE" && youtubeUrl) {
       const videoId = youtubeUrl.match(
-        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
       )?.[1];
 
       return (
@@ -307,12 +307,12 @@ const ClassDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col w-full">
+    <div className="max-w-6xl mx-auto pb-20 md:pb-0 w-full">
       <Title title={classroom?.title || "Class Detail"} />
 
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="bg-white border-b sticky top-0 z-10 -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-6 pt-safe">
+        <div className="max-w-6xl mx-auto px-4 py-3 md:px-8">
           <button
             onClick={() => navigate("/classroom")}
             className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors"
@@ -323,7 +323,7 @@ const ClassDetailPage = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
+      <div className="w-full overflow-x-hidden">
         {classroom?.status === "scheduled" ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm text-center p-6">
             <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 text-blue-500 animate-pulse">
@@ -364,8 +364,25 @@ const ClassDetailPage = () => {
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Main Content Area */}
             <div className="lg:col-span-2 space-y-6 min-w-0">
+              {/* Ended Banner */}
+              {classroom?.status === "ended" && (
+                <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex items-start gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg text-orange-600 shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-orange-800">
+                      Class has Ended
+                    </h3>
+                    <p className="text-orange-600 text-sm mt-0.5">
+                      This class has ended but you can still access the lectures
+                      and complete quizzes.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Video Player */}
               {renderMediaPlayer()}
 
@@ -386,9 +403,9 @@ const ClassDetailPage = () => {
                         onClick={() =>
                           markContentCompleted(activeContent.documentId)
                         }
-                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors"
+                        className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors text-xs sm:text-sm"
                       >
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                         Mark Complete
                       </button>
                     )}
@@ -498,7 +515,7 @@ const ClassDetailPage = () => {
                         contents.map((content, index) => {
                           const isActive = index === activeContentIndex;
                           const isCompleted = isContentCompleted(
-                            content.documentId
+                            content.documentId,
                           );
 
                           return (
@@ -615,7 +632,7 @@ const ClassDetailPage = () => {
                           key={assignment.documentId}
                           onClick={() =>
                             navigate(
-                              `/assignments/${assignment.documentId}?classroom=${classroomId}`
+                              `/assignments/${assignment.documentId}?classroom=${classroomId}`,
                             )
                           }
                           className="p-3 pb-4 rounded-lg border hover:bg-gray-50 transition-colors cursor-pointer"
@@ -635,7 +652,7 @@ const ClassDetailPage = () => {
                                   <Clock className="w-3 h-3" />
                                   Due:{" "}
                                   {new Date(
-                                    assignment.dueDate
+                                    assignment.dueDate,
                                   ).toLocaleDateString()}
                                 </p>
                               )}

@@ -408,6 +408,9 @@ export const TopicsTab = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Description
                   </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Level
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Subject
                   </th>
@@ -470,6 +473,11 @@ export const TopicsTab = () => {
                         >
                           {item.description || "-"}
                         </p>
+                      </td>
+                      <td className="px-6 py-4 align-middle text-center">
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200">
+                          Level {item.topic_level || 1}
+                        </span>
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <span

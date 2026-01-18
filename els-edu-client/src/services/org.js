@@ -90,3 +90,50 @@ export const updateUserData = async (userId, data) => {
     throw error;
   }
 };
+
+/**
+ * Add a user to an organization by calling the Org API and connecting the user
+ * This prevents removing other users from the organization
+ * @param {string} orgDocumentId - The documentId of the org
+ * @param {string} userDocumentId - The documentId of the user to adding
+ * @returns {Promise<Object>} - The updated org data
+ */
+export const assignUserToOrg = async (orgDocumentId, userDocumentId) => {
+  if (!orgDocumentId || !userDocumentId) {
+    throw new Error("Missing orgDocumentId or userDocumentId");
+  }
+
+  const token = localStorage.getItem("token");
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
+
+  try {
+    const response = await fetch(`${apiUrl}/orgs/${orgDocumentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        data: {
+          users: {
+            connect: [userDocumentId],
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error?.message || "Failed to assign user to org",
+      );
+    }
+
+    const result = await response.json();
+    console.log("User connected to org successfully:", result);
+    return result;
+  } catch (error) {
+    console.error("Error connecting user to org:", error);
+    throw error;
+  }
+};

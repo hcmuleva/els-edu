@@ -1,4 +1,4 @@
-    import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Title, useGetIdentity, useNotify } from "react-admin";
 import { useNavigate } from "react-router-dom";
 import {
@@ -120,10 +120,10 @@ const AnalyticsResultsPage = () => {
     if (!latestSurvey?.skills || !latestRecommendations?.skills) return [];
     return latestSurvey.skills.map((s) => {
       const enriched = latestRecommendations.skills.find(
-        (sk) => sk.name === s.skillName
+        (sk) => sk.name === s.skillName,
       );
       const quizSkill = latestQuiz?.skillResults?.find(
-        (q) => q.skillName === s.skillName
+        (q) => q.skillName === s.skillName,
       );
       return {
         skill: s.skillName,
@@ -141,7 +141,7 @@ const AnalyticsResultsPage = () => {
 
     const skillsWithGaps = latestSurvey.skills.filter((s) => {
       const enriched = latestRecommendations.skills.find(
-        (sk) => sk.name === s.skillName
+        (sk) => sk.name === s.skillName,
       );
       return (enriched?.requiredLevel || 3) > s.selfRating;
     });
@@ -325,7 +325,7 @@ const AnalyticsResultsPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto py-4">
         <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
@@ -345,7 +345,7 @@ const AnalyticsResultsPage = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-6xl mx-auto px-4 space-y-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         {/* OVERALL TAB */}
         {activeTab === "overall" && (
           <div className="space-y-4 animate-fadeIn">
@@ -537,10 +537,10 @@ const AnalyticsResultsPage = () => {
                       {latestSurvey.skills.map((skill) => {
                         const required =
                           latestRecommendations?.skills?.find(
-                            (s) => s.name === skill.skillName
+                            (s) => s.name === skill.skillName,
                           )?.requiredLevel || 3;
                         const quizSkill = latestQuiz.skillResults?.find(
-                          (q) => q.skillName === skill.skillName
+                          (q) => q.skillName === skill.skillName,
                         );
                         const meetsRequirement =
                           quizSkill?.actualLevel >= required;
@@ -871,13 +871,13 @@ const AnalyticsResultsPage = () => {
                   <tbody className="divide-y divide-gray-50">
                     {latestSurvey.skills.map((skill) => {
                       const enriched = latestRecommendations?.skills?.find(
-                        (s) => s.name === skill.skillName
+                        (s) => s.name === skill.skillName,
                       );
                       const required = enriched?.requiredLevel || 3;
                       const gap = required - skill.selfRating;
                       const indicator = getGapIndicator(
                         skill.selfRating,
-                        required
+                        required,
                       );
                       const GapIcon = indicator.icon;
 
@@ -1001,7 +1001,7 @@ const AnalyticsResultsPage = () => {
                         levels are{" "}
                         {latestQuiz.skillResults?.every((s) => {
                           const self = latestSurvey?.skills?.find(
-                            (ss) => ss.skillName === s.skillName
+                            (ss) => ss.skillName === s.skillName,
                           );
                           return s.actualLevel >= (self?.selfRating || 0);
                         }) ? (
@@ -1045,7 +1045,7 @@ const AnalyticsResultsPage = () => {
                       <tbody className="divide-y divide-gray-50">
                         {latestQuiz.skillResults?.map((skill) => {
                           const selfSkill = latestSurvey.skills.find(
-                            (s) => s.skillName === skill.skillName
+                            (s) => s.skillName === skill.skillName,
                           );
                           const selfVsActual = selfSkill
                             ? skill.actualLevel - selfSkill.selfRating

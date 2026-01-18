@@ -133,34 +133,44 @@ const RegisterPage = () => {
               dob: formData.dob,
               age: age,
               privacy_accepted: true,
-              org: DEFAULT_ORG_DOCUMENT_ID,
+              // Removed org assignment from here to avoid overwriting issues
             },
           }),
         });
 
         if (!updateResponse.ok) {
           console.warn(
-            "Failed to update user profile, but registration succeeded"
+            "Failed to update user profile, but registration succeeded",
           );
         }
       } catch (updateError) {
         console.warn(
           "Failed to update user with additional fields:",
-          updateError
+          updateError,
         );
         // Continue even if update fails - user is registered
       }
 
       // Step 3: Assign user to default org AND set role using dataProvider
       try {
+        // Set role
         await updateUserData(user.id, {
-          org: DEFAULT_ORG_DOCUMENT_ID,
           user_role: "STUDENT",
           assigned_roles: [{ role: "STUDENT" }],
         });
-        console.log(
-          `User assigned to org ${DEFAULT_ORG_NAME} and role STUDENT`
-        );
+
+        // Assign to org using connect syntax
+        const { assignUserToOrg } = await import("../../services/org");
+        // We need the user documentId. It was stored in localStorage earlier
+        const userDocId = user.documentId;
+        if (userDocId) {
+          await assignUserToOrg(DEFAULT_ORG_DOCUMENT_ID, userDocId);
+          console.log(
+            `User assigned to org ${DEFAULT_ORG_NAME} and role STUDENT`,
+          );
+        } else {
+          console.warn("User documentId not found, cannot assign to org");
+        }
       } catch (updateError) {
         console.warn("Failed to set org and role:", updateError);
       }
@@ -184,19 +194,6 @@ const RegisterPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Import the addUserToDefaultOrg function from org service
-  const addUserToDefaultOrg = async (userId) => {
-    const { strapiDataProvider } = await import("../../api/dataProvider");
-    const result = await strapiDataProvider.update("users", {
-      id: userId,
-      data: {
-        org: DEFAULT_ORG_DOCUMENT_ID,
-      },
-      previousData: {},
-    });
-    return result;
   };
 
   return (

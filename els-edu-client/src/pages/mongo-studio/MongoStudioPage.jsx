@@ -60,7 +60,7 @@ const MongoStudioPage = () => {
     // Teachers only see Classrooms and Assignments
     if (permissions === "TEACHER") {
       availableTabs = allTabs.filter((tab) =>
-        ["classrooms", "assignments"].includes(tab.id)
+        ["classrooms", "assignments"].includes(tab.id),
       );
     }
 
@@ -69,7 +69,7 @@ const MongoStudioPage = () => {
     return availableTabs.filter(
       (tab) =>
         tab.label.toLowerCase().includes(query) ||
-        tab.id.toLowerCase().includes(query)
+        tab.id.toLowerCase().includes(query),
     );
   }, [tabSearchQuery, permissions]);
 
@@ -131,7 +131,7 @@ const MongoStudioPage = () => {
   useEffect(() => {
     if (!tabsScrollRef.current) return;
     const activeButton = tabsScrollRef.current.querySelector(
-      `[data-tab-id="${activeTab}"]`
+      `[data-tab-id="${activeTab}"]`,
     );
     if (activeButton) {
       activeButton.scrollIntoView({
@@ -157,38 +157,34 @@ const MongoStudioPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-6 w-full">
       <Title title="MongoDB Studio" />
 
       {/* Sticky Header */}
-      <div className="sticky top-0 z-20 bg-white -mx-6 -mt-6 px-6 py-6 border-b border-gray-100 shadow-sm mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                <Database className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-black text-gray-800 font-heading">
-                  MongoDB Studio
-                </h1>
-                <p className="text-gray-500 font-medium">
-                  Manage MongoDB collections and data
-                </p>
-              </div>
-            </div>
+      <div className="sticky top-0 z-20 bg-white -mx-4 -mt-2 md:-mx-8 md:-mt-6 px-4 py-3 md:px-8 md:py-6 border-b border-gray-100 shadow-sm mb-4 md:mb-6">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="p-2 md:p-3 bg-primary/10 rounded-xl md:rounded-2xl text-primary">
+            <Database className="w-5 h-5 md:w-6 md:h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-3xl font-black text-gray-800 font-heading">
+              MongoDB Studio
+            </h1>
+            <p className="text-xs md:text-sm text-gray-500 font-medium hidden sm:block">
+              Manage MongoDB collections and data
+            </p>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="bg-white rounded-3xl border border-border/50 shadow-sm">
-        <div className="p-4 border-b border-border/50">
-          <div className="flex items-center justify-between mb-3 gap-4">
-            <h2 className="text-lg font-bold text-gray-800">
+        <div className="p-3 md:p-4 border-b border-border/50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-3">
+            <h2 className="text-base md:text-lg font-bold text-gray-800">
               Collections ({filteredTabs.length})
             </h2>
-            <div className="relative w-64 flex-shrink-0">
+            <div className="relative w-full sm:w-64 flex-shrink-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"

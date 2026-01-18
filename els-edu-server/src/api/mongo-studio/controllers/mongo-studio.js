@@ -58,6 +58,8 @@ module.exports = {
         "classProgress",
         "userAssignments",
         "notifications",
+        "userquizzes",
+        "usersurveys",
       ];
       const isPublicCollection = publicCollections.includes(collection);
 
@@ -84,6 +86,19 @@ module.exports = {
 
       let Model;
       let query = {};
+
+      // Helper to extracting userDocumentId from filters
+      const getUserDocumentIdFilter = () => {
+        // Handle standard Strapi filters format: filters[userDocumentId]
+        if (ctx.query.filters && ctx.query.filters.userDocumentId) {
+          return ctx.query.filters.userDocumentId;
+        }
+        // Handle direct query param if used
+        if (ctx.query.userDocumentId) {
+          return ctx.query.userDocumentId;
+        }
+        return null;
+      };
 
       // Map collection names to models
       switch (collection) {
@@ -145,8 +160,13 @@ module.exports = {
           break;
         case "userquizzes":
           Model = mongoService.models.UserQuiz;
+          const quizUserDocId = getUserDocumentIdFilter();
+          if (quizUserDocId) {
+            query.userDocumentId = quizUserDocId;
+          }
           if (search) {
             query = {
+              ...query,
               $or: [
                 { company: { $regex: search, $options: "i" } },
                 { role: { $regex: search, $options: "i" } },
@@ -157,8 +177,13 @@ module.exports = {
           break;
         case "usersurveys":
           Model = mongoService.models.UserSurvey;
+          const surveyUserDocId = getUserDocumentIdFilter();
+          if (surveyUserDocId) {
+            query.userDocumentId = surveyUserDocId;
+          }
           if (search) {
             query = {
+              ...query,
               $or: [
                 { company: { $regex: search, $options: "i" } },
                 { role: { $regex: search, $options: "i" } },
@@ -203,6 +228,17 @@ module.exports = {
           if (ctx.query.status) {
             query.status = ctx.query.status;
           }
+
+          // Filter out drafts for students
+          if (!["ADMIN", "SUPERADMIN", "TEACHER"].includes(userRole)) {
+            // If user specifically asked for draft, or general query
+            if (query.status === "draft") {
+              query.status = "IMPOSSIBLE_STATUS"; // Block access
+            } else if (!query.status) {
+              query.status = { $ne: "draft" };
+            }
+          }
+
           if (search) {
             query.$or = [
               { title: { $regex: search, $options: "i" } },
@@ -301,6 +337,37 @@ module.exports = {
       ]);
 
       // Process documents for readability (role ObjectId → name, domain ObjectId → name, etc)
+      // AND Inject Progress for Classrooms
+
+      let userProgressMap = {};
+
+      // If fetching classrooms, pre-fetch progress for this user
+      if (
+        collection === "classrooms" &&
+        ctx.query.userDocumentId &&
+        data.length > 0
+      ) {
+        try {
+          // We need progress for these specific classrooms logic?
+          // Or just fetch all progress for this user? Safer to fetch all or filter by classrooms if possible.
+          // We don't have easily accessible list of classroom IDs without iterating.
+          // Let's just fetch all classProgress for this user. It shouldn't be huge per user.
+          // Optimisation: Filter by classroomIds in data.
+          const classroomIds = data.map((d) => d._id);
+
+          const progressDocs = await mongoService.models.ClassProgress.find({
+            userDocumentId: ctx.query.userDocumentId,
+            classroomId: { $in: classroomIds },
+          }).lean();
+
+          progressDocs.forEach((p) => {
+            userProgressMap[p.classroomId.toString()] = p;
+          });
+        } catch (err) {
+          console.error("Error pre-fetching class progress:", err);
+        }
+      }
+
       const processedData = await Promise.all(
         data.map(async (doc) => {
           const processed = doc.toObject ? doc.toObject() : { ...doc };
@@ -310,13 +377,35 @@ module.exports = {
             const computedStatus = computeClassroomStatus(processed);
             processed.status = computedStatus;
             processed._storedStatus = doc.status; // Keep original for debugging
+
+            // Refine status based on user progress (if available)
+            // Logic: "completed" (time-wise) -> "ended" (if not fully watched)
+            if (computedStatus === "completed") {
+              const progress = userProgressMap[doc._id.toString()];
+              const totalContent = doc.contentDocumentIds?.length || 0;
+              const completedContent =
+                progress?.progress?.completedContentIds?.length || 0;
+
+              const isFullyCompleted =
+                totalContent > 0 && completedContent >= totalContent;
+
+              if (!isFullyCompleted) {
+                processed.status = "ended";
+              }
+            }
+
+            // Attach progress summary for frontend convenience
+            if (userProgressMap[doc._id.toString()]) {
+              processed.userProgress =
+                userProgressMap[doc._id.toString()].progress;
+            }
           }
 
           if (collection === "companies" && processed.domain) {
             const mongoose = require("mongoose");
             if (mongoose.Types.ObjectId.isValid(processed.domain)) {
               const domainDoc = await mongoService.models.Domain.findById(
-                processed.domain
+                processed.domain,
               ).lean();
               if (domainDoc) {
                 processed.domain = domainDoc.name;
@@ -329,7 +418,7 @@ module.exports = {
               mongoose.Types.ObjectId.isValid(processed.company)
             ) {
               const companyDoc = await mongoService.models.Company.findById(
-                processed.company
+                processed.company,
               ).lean();
               if (companyDoc) {
                 processed.company = companyDoc.name;
@@ -340,7 +429,7 @@ module.exports = {
               mongoose.Types.ObjectId.isValid(processed.domain)
             ) {
               const domainDoc = await mongoService.models.Domain.findById(
-                processed.domain
+                processed.domain,
               ).lean();
               if (domainDoc) {
                 processed.domain = domainDoc.name;
@@ -350,7 +439,7 @@ module.exports = {
             const mongoose = require("mongoose");
             if (mongoose.Types.ObjectId.isValid(processed.category)) {
               const domainDoc = await mongoService.models.Domain.findById(
-                processed.category
+                processed.category,
               ).lean();
               if (domainDoc) {
                 processed.category = domainDoc.name;
@@ -358,7 +447,7 @@ module.exports = {
             }
           }
           return processed;
-        })
+        }),
       );
 
       ctx.body = {
@@ -373,7 +462,7 @@ module.exports = {
     } catch (error) {
       console.error(
         `[MONGO-STUDIO] Error fetching ${ctx.params.collection}:`,
-        error
+        error,
       );
       ctx.status = 500;
       ctx.body = { error: error.message };
@@ -402,6 +491,8 @@ module.exports = {
         "classProgress",
         "userAssignments",
         "notifications",
+        "userquizzes",
+        "usersurveys",
       ];
       const isPublicCollection = publicCollections.includes(collection);
       const hasPermission =
@@ -478,7 +569,7 @@ module.exports = {
       if (collection === "companies" && item.domain) {
         if (mongoose.Types.ObjectId.isValid(item.domain)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            item.domain
+            item.domain,
           ).lean();
           if (domainDoc) {
             processed.domain = domainDoc.name;
@@ -487,7 +578,7 @@ module.exports = {
       } else if (collection === "roles") {
         if (item.company && mongoose.Types.ObjectId.isValid(item.company)) {
           const companyDoc = await mongoService.models.Company.findById(
-            item.company
+            item.company,
           ).lean();
           if (companyDoc) {
             processed.company = companyDoc.name;
@@ -495,7 +586,7 @@ module.exports = {
         }
         if (item.domain && mongoose.Types.ObjectId.isValid(item.domain)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            item.domain
+            item.domain,
           ).lean();
           if (domainDoc) {
             processed.domain = domainDoc.name;
@@ -504,7 +595,7 @@ module.exports = {
       } else if (collection === "skills" && item.category) {
         if (mongoose.Types.ObjectId.isValid(item.category)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            item.category
+            item.category,
           ).lean();
           if (domainDoc) {
             processed.category = domainDoc.name;
@@ -517,6 +608,39 @@ module.exports = {
         const computedStatus = computeClassroomStatus(processed);
         processed.status = computedStatus;
         processed._storedStatus = item.status; // Keep original for debugging
+
+        // Refine status based on user progress (if available and user is authenticated)
+        if (computedStatus === "completed" && user) {
+          try {
+            const progressDoc = await mongoService.models.ClassProgress.findOne(
+              {
+                userDocumentId: user.documentId,
+                classroomId: processed._id,
+              },
+            ).lean();
+
+            if (progressDoc) {
+              const totalContent = processed.contentDocumentIds?.length || 0;
+              const completedContent =
+                progressDoc.progress?.completedContentIds?.length || 0;
+              const isFullyCompleted =
+                totalContent > 0 && completedContent >= totalContent;
+
+              if (!isFullyCompleted) {
+                processed.status = "ended";
+              }
+              processed.userProgress = progressDoc.progress;
+            } else if (processed.contentDocumentIds?.length > 0) {
+              // No progress record but has content -> implicit "ended"
+              processed.status = "ended";
+            }
+          } catch (err) {
+            console.error(
+              "[MONGO-STUDIO] Error fetching progress for single item:",
+              err,
+            );
+          }
+        }
       }
 
       ctx.body = { data: processed };
@@ -549,6 +673,8 @@ module.exports = {
         "classProgress",
         "userAssignments",
         "notifications",
+        "userquizzes",
+        "usersurveys",
       ];
       const isPublicCollection = publicCollections.includes(collection);
       const hasPermission =
@@ -579,7 +705,7 @@ module.exports = {
       const itemData = ctx.request.body;
       console.log(
         "[MONGO-STUDIO] createItem request body:",
-        JSON.stringify(itemData, null, 2)
+        JSON.stringify(itemData, null, 2),
       );
 
       await mongoService.connect();
@@ -632,7 +758,7 @@ module.exports = {
           ) {
             const mongoose = require("mongoose");
             itemData.classroomId = new mongoose.Types.ObjectId(
-              itemData.classroomId
+              itemData.classroomId,
             );
           }
           break;
@@ -671,7 +797,7 @@ module.exports = {
         const mongoose = require("mongoose");
         if (mongoose.Types.ObjectId.isValid(itemData.domain)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            itemData.domain
+            itemData.domain,
           ).lean();
           if (domainDoc) {
             itemData.domain = domainDoc.name;
@@ -685,7 +811,7 @@ module.exports = {
           mongoose.Types.ObjectId.isValid(itemData.company)
         ) {
           const companyDoc = await mongoService.models.Company.findById(
-            itemData.company
+            itemData.company,
           ).lean();
           if (companyDoc) {
             itemData.company = companyDoc.name;
@@ -696,7 +822,7 @@ module.exports = {
           mongoose.Types.ObjectId.isValid(itemData.domain)
         ) {
           const domainDoc = await mongoService.models.Domain.findById(
-            itemData.domain
+            itemData.domain,
           ).lean();
           if (domainDoc) {
             itemData.domain = domainDoc.name;
@@ -707,7 +833,7 @@ module.exports = {
         const mongoose = require("mongoose");
         if (mongoose.Types.ObjectId.isValid(itemData.category)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            itemData.category
+            itemData.category,
           ).lean();
           if (domainDoc) {
             itemData.category = domainDoc.name;
@@ -735,12 +861,12 @@ module.exports = {
               createdBy: user.documentId,
               userRole: user.user_role || "STUDENT",
               timestamp: new Date().toISOString(),
-            }
+            },
           );
         } catch (ablyError) {
           console.error(
             "[MONGO-STUDIO] Ably publish error (non-blocking):",
-            ablyError
+            ablyError,
           );
         }
       }
@@ -757,7 +883,7 @@ module.exports = {
                 type: "create",
                 classroom: savedObj,
                 timestamp: new Date().toISOString(),
-              }
+              },
             );
           }
         } catch (err) {
@@ -774,14 +900,56 @@ module.exports = {
               `classroom:${orgId}:updates`,
               "classroom-update",
               {
-                type: "update",
+                type: "create",
                 classroom: savedObj,
                 timestamp: new Date().toISOString(),
-              }
+              },
             );
           }
         } catch (err) {
           console.error("[MONGO-STUDIO] Ably publish error:", err);
+        }
+      }
+
+      // Publish Ably notification for assignments
+      if (collection === "userAssignments") {
+        try {
+          const orgId = savedObj.orgDocumentId;
+          if (orgId) {
+            // Notify specific user or whole org?
+            // The service is `subscribeToClassroomUpdates` listening on `classroom:${orgId}:assignments`
+            // and `subscribeToUserNotifications` listening on `notification:${orgId}:${userId}`
+
+            // 1. Notify Classroom (Global/Org Level) usually for teachers/admins
+            await publishToAbly(
+              `classroom:${orgId}:assignments`,
+              "new-assignment",
+              {
+                assignment: savedObj,
+                timestamp: new Date().toISOString(),
+              },
+            );
+
+            // 2. Notify specific user if userDocumentId is present (Individual assignment)
+            if (savedObj.userDocumentId) {
+              await publishToAbly(
+                `notification:${orgId}:${savedObj.userDocumentId}`,
+                "notification",
+                {
+                  title: "New Assignment",
+                  message: `You have been assigned: ${savedObj.title}`,
+                  link: `/assignments/${savedObj.documentId}`,
+                  timestamp: new Date().toISOString(),
+                  isRead: false,
+                },
+              );
+            }
+          }
+        } catch (err) {
+          console.error(
+            "[MONGO-STUDIO] Ably publish error for assignment:",
+            err,
+          );
         }
       }
 
@@ -815,6 +983,8 @@ module.exports = {
         "classProgress",
         "userAssignments",
         "notifications",
+        "userquizzes",
+        "usersurveys",
       ];
       const isPublicCollection = publicCollections.includes(collection);
       const hasPermission =
@@ -889,7 +1059,7 @@ module.exports = {
         const mongoose = require("mongoose");
         if (mongoose.Types.ObjectId.isValid(updateData.domain)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            updateData.domain
+            updateData.domain,
           ).lean();
           if (domainDoc) {
             updateData.domain = domainDoc.name;
@@ -903,7 +1073,7 @@ module.exports = {
           mongoose.Types.ObjectId.isValid(updateData.company)
         ) {
           const companyDoc = await mongoService.models.Company.findById(
-            updateData.company
+            updateData.company,
           ).lean();
           if (companyDoc) {
             updateData.company = companyDoc.name;
@@ -914,7 +1084,7 @@ module.exports = {
           mongoose.Types.ObjectId.isValid(updateData.domain)
         ) {
           const domainDoc = await mongoService.models.Domain.findById(
-            updateData.domain
+            updateData.domain,
           ).lean();
           if (domainDoc) {
             updateData.domain = domainDoc.name;
@@ -925,7 +1095,7 @@ module.exports = {
         const mongoose = require("mongoose");
         if (mongoose.Types.ObjectId.isValid(updateData.category)) {
           const domainDoc = await mongoService.models.Domain.findById(
-            updateData.category
+            updateData.category,
           ).lean();
           if (domainDoc) {
             updateData.category = domainDoc.name;
@@ -936,7 +1106,7 @@ module.exports = {
       const updated = await Model.findByIdAndUpdate(
         id,
         { $set: updateData },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       ).lean();
 
       if (!updated) {
@@ -961,13 +1131,33 @@ module.exports = {
               updatedBy: user.documentId,
               userRole: user.user_role || "STUDENT",
               timestamp: new Date().toISOString(),
-            }
+            },
           );
         } catch (ablyError) {
           console.error(
             "[MONGO-STUDIO] Ably publish error (non-blocking):",
-            ablyError
+            ablyError,
           );
+        }
+      }
+
+      // Publish Ably notification for classrooms
+      if (collection === "classrooms") {
+        try {
+          const orgId = updated.orgDocumentId;
+          if (orgId) {
+            await publishToAbly(
+              `classroom:${orgId}:updates`,
+              "classroom-update",
+              {
+                type: "update",
+                classroom: updated,
+                timestamp: new Date().toISOString(),
+              },
+            );
+          }
+        } catch (err) {
+          console.error("[MONGO-STUDIO] Ably publish error:", err);
         }
       }
 
@@ -1001,6 +1191,8 @@ module.exports = {
         "classProgress",
         "userAssignments",
         "notifications",
+        "userquizzes",
+        "usersurveys",
       ];
       const isPublicCollection = publicCollections.includes(collection);
       const hasPermission =
@@ -1082,12 +1274,12 @@ module.exports = {
               deletedBy: user.documentId,
               userRole: user.user_role || "STUDENT",
               timestamp: new Date().toISOString(),
-            }
+            },
           );
         } catch (ablyError) {
           console.error(
             "[MONGO-STUDIO] Ably publish error (non-blocking):",
-            ablyError
+            ablyError,
           );
         }
       }

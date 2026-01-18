@@ -44,8 +44,33 @@ const SkillQuizPage = () => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [quizStarted, setQuizStarted] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(QUIZ_TIME_LIMIT);
-  const [existingQuiz, setExistingQuiz] = useState(null);
   const [questionStartTimes, setQuestionStartTimes] = useState({});
+  const [checkingExisting, setCheckingExisting] = useState(true);
+
+  // Check for existing skill quiz on mount
+  useEffect(() => {
+    const checkExisting = async () => {
+      if (!identity?.documentId) return;
+      try {
+        const quizzes = await mongoService.getUserQuizzes({
+          userDocumentId: identity.documentId,
+        });
+        const skillQuiz = quizzes.find((q) => q.type === "SKILL" || !q.type);
+
+        if (skillQuiz) {
+          notify("You have already completed the assessment.", {
+            type: "info",
+          });
+          navigate("/analytics", { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking existing quiz:", error);
+      } finally {
+        setCheckingExisting(false);
+      }
+    };
+    checkExisting();
+  }, [identity, navigate, notify]);
 
   // Skill-topic mapping for attributing questions to skills
   const [skillTopicMap, setSkillTopicMap] = useState({});
@@ -54,27 +79,7 @@ const SkillQuizPage = () => {
   const userRole = identity?.user_role || "STUDENT";
   const isAdmin = ["ADMIN", "SUPERADMIN"].includes(userRole);
 
-  // Check for existing quiz
-  useEffect(() => {
-    const checkExistingQuiz = async () => {
-      try {
-        const results = await mongoService.getUserQuizzes({
-          filters: {
-            type: "SKILL",
-            // Sort by most recent
-          },
-          sort: { createdAt: "desc" },
-        });
-
-        if (results?.data?.length > 0 && !isAdmin) {
-          setExistingQuiz(results.data[0]);
-        }
-      } catch (error) {
-        console.error("Error checking existing quiz:", error);
-      }
-    };
-    if (identity) checkExistingQuiz();
-  }, [identity, isAdmin]);
+  // Fetch quiz questions on mount
 
   // Fetch quiz questions on mount
   useEffect(() => {
@@ -86,6 +91,8 @@ const SkillQuizPage = () => {
         navigate("/analytics/survey");
         return;
       }
+
+      if (checkingExisting) return;
 
       setLoading(true);
       try {
@@ -113,11 +120,11 @@ const SkillQuizPage = () => {
         const topicIds = topics.map((t) => t.documentId);
         const questionsData = await analyticsService.getQuizQuestions(
           topicIds,
-          5
+          5,
         );
 
         const shuffled = (questionsData?.questions || []).sort(
-          () => Math.random() - 0.5
+          () => Math.random() - 0.5,
         );
         setQuestions(shuffled);
       } catch (error) {
@@ -172,6 +179,10 @@ const SkillQuizPage = () => {
     }
   }, [quizStarted, showResults]);
 
+  const startQuiz = () => {
+    setQuizStarted(true);
+  };
+
   const currentQuestion = questions[currentIndex];
   const progress =
     questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
@@ -210,7 +221,7 @@ const SkillQuizPage = () => {
         const qId = q.documentId || q.id;
         const selectedId = answers[qId];
         const selectedOption = q.options?.find(
-          (o) => (o.documentId || o.id) === selectedId
+          (o) => (o.documentId || o.id) === selectedId,
         );
         const correctOption = q.options?.find((o) => o.isCorrect);
         const skillName = skillTopicMap[q.topicDocumentId] || "General";
@@ -275,14 +286,17 @@ const SkillQuizPage = () => {
       });
 
       const resultPayload = {
+        userDocumentId: identity?.documentId,
         type: "SKILL",
         surveyId,
         company: surveyData?.company,
         role: surveyData?.role,
         domain: surveyData?.domain,
-        answers: answerData,
-        score: scoreData,
-        summary: { skillResults },
+        questionDetails: answerData,
+        totalQuestions: scoreData.total,
+        totalCorrect: scoreData.correct,
+        overallPercentage: scoreData.percentage,
+        skillResults: skillResults,
       };
 
       const result = await mongoService.createUserQuiz(resultPayload);
@@ -307,7 +321,7 @@ const SkillQuizPage = () => {
       const selectedId = answers[qId];
       if (selectedId) {
         const selectedOption = q.options?.find(
-          (o) => (o.documentId || o.id) === selectedId
+          (o) => (o.documentId || o.id) === selectedId,
         );
         if (selectedOption?.isCorrect) correct++;
       }
@@ -321,37 +335,13 @@ const SkillQuizPage = () => {
   }, [questions, answers]);
 
   // Loading
-  if (loading) {
+  if (loading || checkingExisting) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 flex items-center justify-center z-50">
         <div className="text-center text-white">
           <Brain className="w-16 h-16 mx-auto mb-4 animate-pulse" />
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" />
           <p className="text-lg font-medium">Loading skill quiz...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Already completed (students only)
-  if (existingQuiz && !isAdmin) {
-    return (
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-3xl p-8 max-w-md text-center">
-          <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Quiz Already Completed
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You have already completed the skill assessment quiz. You cannot
-            retake it.
-          </p>
-          <button
-            onClick={() => navigate("/analytics")}
-            className="px-6 py-3 bg-primary-500 text-white rounded-xl font-semibold"
-          >
-            View Your Results
-          </button>
         </div>
       </div>
     );

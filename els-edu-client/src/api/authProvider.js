@@ -59,7 +59,7 @@ const fetchFullUserData = async (token, userId) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -114,7 +114,7 @@ export const authProvider = {
       if (response.status < 200 || response.status >= 300) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error?.message || "Invalid username or password"
+          errorData.error?.message || "Invalid username or password",
         );
       }
       const auth = await response.json();
@@ -159,10 +159,6 @@ export const authProvider = {
     localStorage.removeItem("userDocumentId");
     localStorage.removeItem("activeRoleId");
     localStorage.removeItem("activeRole");
-    // Force redirect to login page with base path (hash routing for React Admin)
-    // Use import.meta.env.BASE_URL for mobile/web compatibility
-    const basePath = import.meta.env.BASE_URL || "./";
-    window.location.href = `${basePath}#/login`;
     return Promise.resolve();
   },
   checkAuth: async () => {

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Notification } from "react-admin";
+import { Notification, useSidebarState } from "react-admin";
 import Menu from "./Menu";
 import MobileBottomNav from "./MobileBottomNav";
 import ScrollToTopButton from "../components/common/ScrollToTopButton";
@@ -10,6 +10,7 @@ import { useMediaQuery } from "@mui/material";
 
 const AppLayout = ({ children }) => {
   const isMobile = useMediaQuery("(max-width:1024px)");
+  const [open] = useSidebarState();
 
   return (
     <div className="flex min-h-screen w-full bg-background relative lg:h-screen">
@@ -18,7 +19,7 @@ const AppLayout = ({ children }) => {
         <header className="fixed top-0 left-0 right-0 z-40 lg:hidden bg-primary pt-safe shadow-md">
           <div className="h-12 flex items-center justify-between px-4">
             <Link to="/" className="flex items-center gap-2 no-underline">
-              <div className="w-8 h-8 rounded-lg bg-white overflow-hidden flex items-center justify-center p-1">
+              <div className="w-8 h-8 rounded-lg bg-white overflow-hidden flex items-center justify-center">
                 <img
                   src={`${import.meta.env.BASE_URL}logo.png`}
                   alt="Logo"
@@ -31,14 +32,18 @@ const AppLayout = ({ children }) => {
             </Link>
 
             {/* Mobile Notification Bell */}
-            <div className="bg-white/10 rounded-xl">
-              <NotificationBell />
+            <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden">
+              <NotificationBell iconSize={18} />
             </div>
           </div>
         </header>
 
         {/* Sidebar Area - Hidden on mobile/tablet, visible on large screens */}
-        <aside className="hidden lg:flex flex-shrink-0 h-screen z-30 border-r border-border bg-card">
+        <aside
+          className={`hidden lg:flex flex-shrink-0 h-screen z-30 border-r border-border bg-card transition-all duration-300 ${
+            open ? "w-64" : "w-20"
+          }`}
+        >
           <Menu />
         </aside>
 

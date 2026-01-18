@@ -122,16 +122,15 @@ export const NAVIGATION_BY_ROLE = {
   SUPERADMIN: [
     "dashboard",
     "all-orgs",
-    "users",
-    "invoices",
     "my-subscriptions",
     "browse-courses",
     "progress",
     "my-studio",
+    "mongo-studio",
     "analytics",
   ],
-  ADMIN: ["dashboard", "manage", "my-studio", "analytics"],
-  TEACHER: ["my-studio"],
+  ADMIN: ["dashboard", "manage", "my-studio", "mongo-studio", "analytics"],
+  TEACHER: ["my-studio", "mongo-studio"],
   STUDENT: [
     "dashboard",
     "my-subscriptions",
@@ -317,7 +316,7 @@ export const isValidGrade = (grade) => {
  * Kept for backward compatibility with old code
  */
 export const CLASS_STANDARDS = GRADES_DISPLAY.filter(
-  (g) => !["Playschool", "LKG", "UKG"].includes(g)
+  (g) => !["Playschool", "LKG", "UKG"].includes(g),
 );
 
 /**

@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { useMediaQuery } from "@mui/material";
 import { cn } from "../../lib/utils";
 
-const NotificationBell = ({ children }) => {
+const NotificationBell = ({ children, iconSize = 24 }) => {
   const { data: identity } = useGetIdentity();
   const notify = useNotify();
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const NotificationBell = ({ children }) => {
     try {
       const data = await classroomService.getNotifications(
         userOrgDocumentId,
-        userDocumentId
+        userDocumentId,
       );
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.isRead).length);
@@ -57,7 +57,7 @@ const NotificationBell = ({ children }) => {
     const unsubscribe = subscribeToUserNotifications(
       userOrgDocumentId,
       userDocumentId,
-      handleNotification
+      handleNotification,
     );
 
     return () => unsubscribe();
@@ -134,7 +134,7 @@ const NotificationBell = ({ children }) => {
 
       // Optimistic update
       setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
@@ -180,13 +180,14 @@ const NotificationBell = ({ children }) => {
           : children || (
               <button
                 type="button"
-                className="relative p-2 rounded-xl hover:bg-gray-100 lg:hover:bg-slate-200/50 transition-colors group"
+                className="relative w-full h-full flex items-center justify-center hover:bg-gray-50 transition-colors group"
               >
-                <Bell className="w-6 h-6 text-gray-600 lg:text-slate-500 group-hover:text-primary transition-colors" />
+                <Bell
+                  size={iconSize}
+                  className="text-gray-600 lg:text-slate-500 group-hover:text-primary transition-colors"
+                />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white lg:border-slate-50">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white" />
                 )}
               </button>
             )}
@@ -204,7 +205,7 @@ const NotificationBell = ({ children }) => {
             <div
               className={cn(
                 "absolute w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200",
-                isMobile ? "slide-in-from-top-2" : "slide-in-from-left-2"
+                isMobile ? "slide-in-from-top-2" : "slide-in-from-left-2",
               )}
               style={{
                 top: coords.top === "auto" ? "auto" : `${coords.top}px`,
@@ -299,7 +300,7 @@ const NotificationBell = ({ children }) => {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

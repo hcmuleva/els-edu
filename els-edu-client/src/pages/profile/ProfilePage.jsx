@@ -6,6 +6,7 @@ import {
   useNotify,
   useAuthProvider,
   usePermissions,
+  useLogout,
 } from "react-admin";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,6 +42,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const authProvider = useAuthProvider();
   const { permissions } = usePermissions();
+  const logout = useLogout();
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -116,7 +118,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      await authProvider.logout();
+      await logout();
     } catch (error) {
       notify("Error logging out", { type: "error" });
     }
@@ -182,13 +184,13 @@ const ProfilePage = () => {
           results.length > 0
             ? Math.round(
                 results.reduce((sum, r) => sum + r.percentage, 0) /
-                  results.length
+                  results.length,
               )
             : 0;
 
         const totalTime = results.reduce(
           (sum, r) => sum + (r.timeTaken || 0),
-          0
+          0,
         );
 
         setStats({
@@ -689,7 +691,7 @@ const ProfilePage = () => {
                             setDropdownDirection(
                               spaceBelow < estimatedDropdownHeight
                                 ? "up"
-                                : "down"
+                                : "down",
                             );
                           }
                           setRoleDropdownOpen(!roleDropdownOpen);

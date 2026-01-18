@@ -73,7 +73,7 @@ const BaseMongoTab = ({
 
     const unsubscribe = subscribeToCustomCourseUpdates((eventName, data) => {
       console.log("[ABLY] Custom course update received:", eventName, data);
-      
+
       if (eventName === "custom-course:created") {
         notify("New custom course created", { type: "info" });
         // Refresh data to show new course
@@ -174,7 +174,7 @@ const BaseMongoTab = ({
 
     // Check if any field uses subjectDocumentIds
     const hasSubjectField = fields.some(
-      (f) => f.key === "subjectDocumentIds" || f.selectorType === "subjects"
+      (f) => f.key === "subjectDocumentIds" || f.selectorType === "subjects",
     );
     if (hasSubjectField && data.length > 0) {
       fetchSubjectNames();
@@ -182,7 +182,7 @@ const BaseMongoTab = ({
 
     // Check if any field uses topicDocumentIds
     const hasTopicField = fields.some(
-      (f) => f.key === "topicDocumentIds" || f.selectorType === "topics"
+      (f) => f.key === "topicDocumentIds" || f.selectorType === "topics",
     );
     if (hasTopicField && data.length > 0) {
       fetchTopicNames();
@@ -190,16 +190,16 @@ const BaseMongoTab = ({
 
     // Fetch relation names for mongoRelation fields
     const relationFields = fields.filter(
-      (f) => f.type === "mongoRelation" || f.type === "relation"
+      (f) => f.type === "mongoRelation" || f.type === "relation",
     );
-    
+
     if (relationFields.length > 0 && data.length > 0) {
       // Fetch all relations in parallel
       const fetchPromises = relationFields.map(async (field) => {
         const collection = field.relationCollection || field.targetCollection;
         const labelField = field.labelField || "name";
         const valueField = field.valueField || "_id";
-        
+
         // Collect all relation IDs from data
         const relationIds = new Set();
         data.forEach((item) => {
@@ -234,7 +234,10 @@ const BaseMongoTab = ({
 
           return { fieldKey: field.key, map };
         } catch (error) {
-          console.error(`Error fetching ${collection} for ${field.key}:`, error);
+          console.error(
+            `Error fetching ${collection} for ${field.key}:`,
+            error,
+          );
           return { fieldKey: field.key, map: {} };
         }
       });
@@ -313,7 +316,11 @@ const BaseMongoTab = ({
 
   const handleEdit = async (item) => {
     // If editing item with subjectDocumentIds, fetch subject details for the selector
-    if (item.subjectDocumentIds && Array.isArray(item.subjectDocumentIds) && item.subjectDocumentIds.length > 0) {
+    if (
+      item.subjectDocumentIds &&
+      Array.isArray(item.subjectDocumentIds) &&
+      item.subjectDocumentIds.length > 0
+    ) {
       try {
         const { data: subjects } = await dataProvider.getList("subjects", {
           pagination: { page: 1, perPage: 1000 },
@@ -332,7 +339,11 @@ const BaseMongoTab = ({
     }
 
     // If editing item with topicDocumentIds, fetch topic details for the selector
-    if (item.topicDocumentIds && Array.isArray(item.topicDocumentIds) && item.topicDocumentIds.length > 0) {
+    if (
+      item.topicDocumentIds &&
+      Array.isArray(item.topicDocumentIds) &&
+      item.topicDocumentIds.length > 0
+    ) {
       try {
         const { data: topics } = await dataProvider.getList("topics", {
           pagination: { page: 1, perPage: 1000 },
@@ -398,11 +409,11 @@ const BaseMongoTab = ({
       const cleanedData = { ...formData };
       delete cleanedData._initialSubjects;
       delete cleanedData._initialTopics;
-      
+
       if (editingItem) {
         await api.put(
           `/mongo-studio/${collection}/${editingItem._id}`,
-          cleanedData
+          cleanedData,
         );
         notify(`${title} updated successfully`, { type: "success" });
         if (onUpdate) onUpdate(editingItem._id, cleanedData);
@@ -417,10 +428,9 @@ const BaseMongoTab = ({
       fetchData();
     } catch (error) {
       console.error(`Error saving ${title}:`, error);
-      notify(
-        error.response?.data?.error || `Error saving ${title}`,
-        { type: "error" }
-      );
+      notify(error.response?.data?.error || `Error saving ${title}`, {
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -458,14 +468,17 @@ const BaseMongoTab = ({
         return (
           <div key={field.key}>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
+              {field.label}{" "}
+              {field.required && <span className="text-red-500">*</span>}
             </label>
             <input
               type="text"
               value={value}
               onChange={(e) => updateFormField(field.key, e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+              placeholder={
+                field.placeholder || `Enter ${field.label.toLowerCase()}`
+              }
               required={field.required}
             />
           </div>
@@ -475,14 +488,17 @@ const BaseMongoTab = ({
         return (
           <div key={field.key}>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
+              {field.label}{" "}
+              {field.required && <span className="text-red-500">*</span>}
             </label>
             <textarea
               value={value}
               onChange={(e) => updateFormField(field.key, e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
               rows={3}
-              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+              placeholder={
+                field.placeholder || `Enter ${field.label.toLowerCase()}`
+              }
               required={field.required}
             />
           </div>
@@ -492,7 +508,8 @@ const BaseMongoTab = ({
         return (
           <div key={field.key}>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
+              {field.label}{" "}
+              {field.required && <span className="text-red-500">*</span>}
             </label>
             <input
               type="number"
@@ -501,7 +518,9 @@ const BaseMongoTab = ({
                 updateFormField(field.key, parseFloat(e.target.value) || 0)
               }
               className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+              placeholder={
+                field.placeholder || `Enter ${field.label.toLowerCase()}`
+              }
               min={field.min}
               max={field.max}
               required={field.required}
@@ -513,7 +532,8 @@ const BaseMongoTab = ({
         return (
           <div key={field.key}>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
+              {field.label}{" "}
+              {field.required && <span className="text-red-500">*</span>}
             </label>
             <select
               value={value}
@@ -537,12 +557,15 @@ const BaseMongoTab = ({
         return (
           <div key={field.key}>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
+              {field.label}{" "}
+              {field.required && <span className="text-red-500">*</span>}
             </label>
             <MongoCollectionSelect
               collection={field.relationCollection || field.targetCollection}
               value={value}
-              onChange={(selectedValue) => updateFormField(field.key, selectedValue)}
+              onChange={(selectedValue) =>
+                updateFormField(field.key, selectedValue)
+              }
               placeholder={`Select ${field.label.toLowerCase()}...`}
               labelField={field.labelField || "name"}
               valueField={field.valueField || "_id"}
@@ -553,27 +576,34 @@ const BaseMongoTab = ({
 
       case "array":
         // Special handling for subjectDocumentIds - use subject selector
-        if (field.key === "subjectDocumentIds" || field.selectorType === "subjects") {
+        if (
+          field.key === "subjectDocumentIds" ||
+          field.selectorType === "subjects"
+        ) {
           const arrayValue = Array.isArray(value) ? value : [];
           // Get initial data from formData if editing
           const initialSubjects = formData._initialSubjects || [];
           return (
             <div key={field.key}>
               <label className="block text-sm font-medium text-foreground mb-1">
-                {field.label} {field.required && <span className="text-red-500">*</span>}
+                {field.label}{" "}
+                {field.required && <span className="text-red-500">*</span>}
               </label>
               <CustomAsyncMultiSelect
                 resource="subjects"
                 optionText="name"
                 value={arrayValue}
-                onChange={(selectedIds) => updateFormField(field.key, selectedIds)}
+                onChange={(selectedIds) =>
+                  updateFormField(field.key, selectedIds)
+                }
                 placeholder="Search and select subjects..."
                 searchable={true}
                 initialData={initialSubjects}
               />
               {arrayValue.length > 0 && (
                 <p className="mt-2 text-xs text-gray-500">
-                  {arrayValue.length} subject{arrayValue.length !== 1 ? "s" : ""} selected
+                  {arrayValue.length} subject
+                  {arrayValue.length !== 1 ? "s" : ""} selected
                 </p>
               )}
             </div>
@@ -581,27 +611,34 @@ const BaseMongoTab = ({
         }
 
         // Special handling for topicDocumentIds - use topic selector
-        if (field.key === "topicDocumentIds" || field.selectorType === "topics") {
+        if (
+          field.key === "topicDocumentIds" ||
+          field.selectorType === "topics"
+        ) {
           const arrayValue = Array.isArray(value) ? value : [];
           // Get initial data from formData if editing
           const initialTopics = formData._initialTopics || [];
           return (
             <div key={field.key}>
               <label className="block text-sm font-medium text-foreground mb-1">
-                {field.label} {field.required && <span className="text-red-500">*</span>}
+                {field.label}{" "}
+                {field.required && <span className="text-red-500">*</span>}
               </label>
               <CustomAsyncMultiSelect
                 resource="topics"
                 optionText="name"
                 value={arrayValue}
-                onChange={(selectedIds) => updateFormField(field.key, selectedIds)}
+                onChange={(selectedIds) =>
+                  updateFormField(field.key, selectedIds)
+                }
                 placeholder="Search and select topics..."
                 searchable={true}
                 initialData={initialTopics}
               />
               {arrayValue.length > 0 && (
                 <p className="mt-2 text-xs text-gray-500">
-                  {arrayValue.length} topic{arrayValue.length !== 1 ? "s" : ""} selected
+                  {arrayValue.length} topic{arrayValue.length !== 1 ? "s" : ""}{" "}
+                  selected
                 </p>
               )}
             </div>
@@ -609,18 +646,26 @@ const BaseMongoTab = ({
         }
 
         // Special handling for requiredSkills - MongoDB skills with levels
-        if (field.key === "requiredSkills" && field.selectorType === "mongoSkills") {
+        if (
+          field.key === "requiredSkills" &&
+          field.selectorType === "mongoSkills"
+        ) {
           const arrayValue = Array.isArray(value) ? value : [];
-          const selectedSkillNames = arrayValue.map((item) => 
-            typeof item === "object" && item !== null ? item.skillName : String(item)
-          ).filter(Boolean);
+          const selectedSkillNames = arrayValue
+            .map((item) =>
+              typeof item === "object" && item !== null
+                ? item.skillName
+                : String(item),
+            )
+            .filter(Boolean);
 
           return (
             <div key={field.key}>
               <label className="block text-sm font-medium text-foreground mb-1">
-                {field.label} {field.required && <span className="text-red-500">*</span>}
+                {field.label}{" "}
+                {field.required && <span className="text-red-500">*</span>}
               </label>
-              
+
               {/* Skill Multi-Select */}
               <div className="mb-4">
                 <MongoCollectionMultiSelect
@@ -630,17 +675,22 @@ const BaseMongoTab = ({
                     // Update the array to match selected skills
                     const currentMap = new Map(
                       arrayValue.map((item) => {
-                        const skillName = typeof item === "object" && item !== null 
-                          ? item.skillName 
-                          : String(item);
+                        const skillName =
+                          typeof item === "object" && item !== null
+                            ? item.skillName
+                            : String(item);
                         return [skillName, item];
-                      })
+                      }),
                     );
 
                     // Create new array with selected skills
                     const newArray = selectedNames.map((skillName) => {
                       const existing = currentMap.get(skillName);
-                      if (existing && typeof existing === "object" && existing !== null) {
+                      if (
+                        existing &&
+                        typeof existing === "object" &&
+                        existing !== null
+                      ) {
                         return existing; // Keep existing level
                       }
                       return { skillName, requiredLevel: 3 }; // Default level
@@ -658,17 +708,24 @@ const BaseMongoTab = ({
               {/* Level inputs for each selected skill */}
               {arrayValue.length > 0 && (
                 <div className="space-y-2 mt-4">
-                  <p className="text-xs font-medium text-gray-600 mb-2">Set required levels:</p>
+                  <p className="text-xs font-medium text-gray-600 mb-2">
+                    Set required levels:
+                  </p>
                   {arrayValue.map((item, idx) => {
-                    const skillName = typeof item === "object" && item !== null 
-                      ? item.skillName 
-                      : String(item);
-                    const level = typeof item === "object" && item !== null 
-                      ? item.requiredLevel || 3 
-                      : 3;
+                    const skillName =
+                      typeof item === "object" && item !== null
+                        ? item.skillName
+                        : String(item);
+                    const level =
+                      typeof item === "object" && item !== null
+                        ? item.requiredLevel || 3
+                        : 3;
 
                     return (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg"
+                      >
                         <span className="flex-1 text-sm font-medium text-gray-700">
                           {skillName}
                         </span>
@@ -691,7 +748,9 @@ const BaseMongoTab = ({
                         />
                         <button
                           onClick={() => {
-                            const newArray = arrayValue.filter((_, i) => i !== idx);
+                            const newArray = arrayValue.filter(
+                              (_, i) => i !== idx,
+                            );
                             updateFormField(field.key, newArray);
                           }}
                           className="px-2 py-1 text-red-600 hover:bg-red-50 rounded-lg"
@@ -709,9 +768,10 @@ const BaseMongoTab = ({
         }
 
         // Check if it's an array of strings or objects
-        const isStringArray = !field.itemFields || field.itemFields.length === 0;
+        const isStringArray =
+          !field.itemFields || field.itemFields.length === 0;
         const arrayValue = Array.isArray(value) ? value : [];
-        
+
         return (
           <div key={field.key}>
             <label className="block text-sm font-medium text-foreground mb-1">
@@ -744,7 +804,10 @@ const BaseMongoTab = ({
                         }
                         onChange={(e) => {
                           const newArray = [...arrayValue];
-                          if (typeof newArray[idx] !== "object" || newArray[idx] === null) {
+                          if (
+                            typeof newArray[idx] !== "object" ||
+                            newArray[idx] === null
+                          ) {
                             newArray[idx] = {};
                           }
                           newArray[idx] = {
@@ -780,7 +843,8 @@ const BaseMongoTab = ({
                   } else {
                     const newItem = {};
                     field.itemFields?.forEach((f) => {
-                      newItem[f.key] = f.type === "number" ? 0 : f.default || "";
+                      newItem[f.key] =
+                        f.type === "number" ? 0 : f.default || "";
                     });
                     updateFormField(field.key, [...arrayValue, newItem]);
                   }
@@ -829,10 +893,10 @@ const BaseMongoTab = ({
         />
       )}
       {/* Filters */}
-      <div className="p-6 pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[200px]">
+      <div className="p-4 md:p-6 md:pt-4 border-b border-border/30 bg-gray-50 rounded-t-3xl">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -843,27 +907,28 @@ const BaseMongoTab = ({
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-border rounded-lg bg-background text-foreground"
                 />
               </div>
             </div>
             <button
               onClick={handleCreate}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
-              Create {title}
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Create {title}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Table Content */}
+      {/* Loading State */}
       {loading ? (
         <div className="flex items-center justify-center h-64 bg-white rounded-b-3xl">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : data.length === 0 ? (
+        /* Empty State */
         <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-6 bg-white rounded-b-3xl">
           <div className="bg-gray-50 p-6 rounded-full mb-4">
             <Search className="w-12 h-12 text-gray-300" />
@@ -874,320 +939,524 @@ const BaseMongoTab = ({
           </p>
         </div>
       ) : (
-        <div className="flex-1 bg-white rounded-b-3xl flex flex-col min-h-0">
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-0">
-              <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-20">
-                <tr>
-                  <th
-                    className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => handleSort("_id")}
-                  >
-                    <div className="flex items-center gap-2">
-                      ID
-                      <SortIcon field="_id" />
-                    </div>
-                  </th>
-                  {fields
-                    .filter((f) => f.showInTable !== false)
-                    .slice(0, 5)
-                    .map((field) => (
-                      <th
-                        key={field.key}
-                        className={`px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider ${
-                          field.sortable !== false
-                            ? "cursor-pointer hover:bg-gray-100 transition-colors"
-                            : ""
-                        }`}
-                        onClick={
-                          field.sortable !== false
-                            ? () => handleSort(field.key)
-                            : undefined
+        <>
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3 px-4 pb-20 bg-white rounded-b-3xl">
+            {data.map((item) => (
+              <div
+                key={item._id}
+                className="bg-gray-50 rounded-lg border border-border shadow-sm p-3 space-y-2.5"
+              >
+                {/* Card Header: ID and Actions */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">
+                        ID
+                      </span>
+                      <div
+                        className="text-[10px] font-mono bg-white px-1 py-0.5 rounded cursor-pointer truncate max-w-[120px] border border-gray-200"
+                        onClick={() =>
+                          copyToClipboard(item._id, `_id-${item._id}`)
                         }
                       >
-                        {field.sortable !== false ? (
-                          <div className="flex items-center gap-2">
-                            {field.label}
-                            <SortIcon field={field.key} />
-                          </div>
-                        ) : (
-                          field.label
-                        )}
-                      </th>
-                    ))}
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider sticky right-0 z-20 bg-gray-50 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)] w-[150px] min-w-[150px]">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30 bg-white">
-                {data.map((item, index) => {
-                  const displayId =
-                    sortOrder === "ASC"
-                      ? (page - 1) * perPage + index + 1
-                      : total - ((page - 1) * perPage + index);
-                  return (
-                    <tr
-                      key={item._id}
-                      className="hover:bg-gray-50/50 transition-colors group"
+                        {item._id?.substring(0, 10)}...
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-gray-400">
+                      {item.createdAt
+                        ? new Date(item.createdAt).toLocaleDateString()
+                        : "-"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    {onView && (
+                      <button
+                        onClick={() => onView(item)}
+                        className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
+                        title="View"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="p-1.5 hover:bg-amber-50 text-amber-600 rounded-md transition-colors"
+                      title="Edit"
                     >
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center gap-3">
-                          <div className="text-sm font-bold text-gray-700">
-                            {displayId}
-                          </div>
-                          <div className="flex items-center gap-2 group/id">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(item._id, `_id-${item._id}`);
-                              }}
-                              className="p-1.5 hover:bg-primary/10 rounded-lg text-gray-500 hover:text-primary transition-colors relative"
-                              title={`Copy MongoDB _id: ${item._id}`}
-                            >
-                              {copiedId === `_id-${item._id}` ? (
-                                <Check className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <Copy className="w-4 h-4 group-hover/id:scale-110 transition-transform" />
-                              )}
-                            </button>
-                            <div 
-                              className="text-xs text-gray-400 font-mono cursor-help px-2 py-1 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 transition-colors" 
-                              title={`MongoDB _id: ${item._id}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(item._id, `_id-${item._id}`);
-                              }}
-                            >
-                              {item._id?.substring(0, 12)}...
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item._id)}
+                      className="p-1.5 hover:bg-red-50 text-red-600 rounded-md transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card Content: First 4 Fields */}
+                <div className="space-y-1.5 pt-2 border-t border-border/50">
+                  {fields
+                    .filter((f) => f.showInTable !== false)
+                    .slice(0, 4)
+                    .map((field) => {
+                      const value = item[field.key];
+                      let displayValue = value;
+
+                      // Reuse display logic from table (simplified)
+                      if (field.type === "array") {
+                        if (
+                          field.key === "subjectDocumentIds" ||
+                          field.selectorType === "subjects"
+                        ) {
+                          displayValue = Array.isArray(value)
+                            ? `${value.length} Subjects`
+                            : "-";
+                        } else if (
+                          field.key === "topicDocumentIds" ||
+                          field.selectorType === "topics"
+                        ) {
+                          displayValue = Array.isArray(value)
+                            ? `${value.length} Topics`
+                            : "-";
+                        } else if (field.key === "requiredSkills") {
+                          displayValue = Array.isArray(value)
+                            ? `${value.length} Skills`
+                            : "-";
+                        } else {
+                          displayValue = Array.isArray(value)
+                            ? `${value.length} items`
+                            : "-";
+                        }
+                      } else if (typeof value === "object" && value !== null) {
+                        displayValue = "{...}";
+                      } else if (
+                        field.type === "mongoRelation" ||
+                        field.type === "relation"
+                      ) {
+                        const relationMap = relationMaps[field.key] || {};
+                        const stringValue = value ? String(value) : "";
+                        displayValue = stringValue
+                          ? relationMap[stringValue] || value
+                          : "-";
+                      }
+
+                      return (
+                        <div
+                          key={field.key}
+                          className="grid grid-cols-3 gap-1.5"
+                        >
+                          <span className="text-[10px] font-medium text-gray-500 truncate">
+                            {field.label}
+                          </span>
+                          <span className="col-span-2 text-xs text-gray-900 truncate">
+                            {String(displayValue || "-")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block flex-1 bg-white rounded-b-3xl flex flex-col min-h-0">
+            <div className="overflow-x-auto">
+              <table className="w-full border-separate border-spacing-0">
+                <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-20">
+                  <tr>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort("_id")}
+                    >
+                      <div className="flex items-center gap-2">
+                        ID
+                        <SortIcon field="_id" />
+                      </div>
+                    </th>
+                    {fields
+                      .filter((f) => f.showInTable !== false)
+                      .slice(0, 5)
+                      .map((field) => (
+                        <th
+                          key={field.key}
+                          className={`px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider ${
+                            field.sortable !== false
+                              ? "cursor-pointer hover:bg-gray-100 transition-colors"
+                              : ""
+                          }`}
+                          onClick={
+                            field.sortable !== false
+                              ? () => handleSort(field.key)
+                              : undefined
+                          }
+                        >
+                          {field.sortable !== false ? (
+                            <div className="flex items-center gap-2">
+                              {field.label}
+                              <SortIcon field={field.key} />
+                            </div>
+                          ) : (
+                            field.label
+                          )}
+                        </th>
+                      ))}
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider sticky right-0 z-20 bg-gray-50 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)] w-[150px] min-w-[150px]">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30 bg-white">
+                  {data.map((item, index) => {
+                    const displayId =
+                      sortOrder === "ASC"
+                        ? (page - 1) * perPage + index + 1
+                        : total - ((page - 1) * perPage + index);
+                    return (
+                      <tr
+                        key={item._id}
+                        className="hover:bg-gray-50/50 transition-colors group"
+                      >
+                        <td className="px-6 py-4 align-middle">
+                          <div className="flex items-center gap-3">
+                            <div className="text-sm font-bold text-gray-700">
+                              {displayId}
+                            </div>
+                            <div className="flex items-center gap-2 group/id">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(item._id, `_id-${item._id}`);
+                                }}
+                                className="p-1.5 hover:bg-primary/10 rounded-lg text-gray-500 hover:text-primary transition-colors relative"
+                                title={`Copy MongoDB _id: ${item._id}`}
+                              >
+                                {copiedId === `_id-${item._id}` ? (
+                                  <Check className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <Copy className="w-4 h-4 group-hover/id:scale-110 transition-transform" />
+                                )}
+                              </button>
+                              <div
+                                className="text-xs text-gray-400 font-mono cursor-help px-2 py-1 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+                                title={`MongoDB _id: ${item._id}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(item._id, `_id-${item._id}`);
+                                }}
+                              >
+                                {item._id?.substring(0, 12)}...
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      {fields
-                        .filter((f) => f.showInTable !== false)
-                        .slice(0, 5)
-                        .map((field) => {
-                          const value = item[field.key];
-                          let displayValue = value;
+                        </td>
+                        {fields
+                          .filter((f) => f.showInTable !== false)
+                          .slice(0, 5)
+                          .map((field) => {
+                            const value = item[field.key];
+                            let displayValue = value;
 
-                          if (field.type === "array") {
-                            // Special handling for requiredSkills - show skills with levels
-                            if (field.key === "requiredSkills" && field.selectorType === "mongoSkills") {
-                              if (Array.isArray(value) && value.length > 0) {
-                                const skillsText = value
-                                  .map((skill) => {
-                                    const skillName = typeof skill === "object" && skill !== null
-                                      ? skill.skillName
-                                      : String(skill);
-                                    const level = typeof skill === "object" && skill !== null
-                                      ? skill.requiredLevel
-                                      : null;
-                                    return level ? `${skillName} (L${level})` : skillName;
-                                  })
-                                  .join(", ");
-                                displayValue = skillsText;
-                              } else {
-                                displayValue = "-";
+                            if (field.type === "array") {
+                              // Special handling for requiredSkills - show skills with levels
+                              if (
+                                field.key === "requiredSkills" &&
+                                field.selectorType === "mongoSkills"
+                              ) {
+                                if (Array.isArray(value) && value.length > 0) {
+                                  const skillsText = value
+                                    .map((skill) => {
+                                      const skillName =
+                                        typeof skill === "object" &&
+                                        skill !== null
+                                          ? skill.skillName
+                                          : String(skill);
+                                      const level =
+                                        typeof skill === "object" &&
+                                        skill !== null
+                                          ? skill.requiredLevel
+                                          : null;
+                                      return level
+                                        ? `${skillName} (L${level})`
+                                        : skillName;
+                                    })
+                                    .join(", ");
+                                  displayValue = skillsText;
+                                } else {
+                                  displayValue = "-";
+                                }
                               }
-                            }
-                            // Special handling for subjectDocumentIds - show subject names as clickable button
-                            else if (field.key === "subjectDocumentIds" || field.selectorType === "subjects") {
-                              if (Array.isArray(value) && value.length > 0) {
-                                // Return clickable button that opens CountListModal
-                                return (
-                                  <td key={field.key} className="px-6 py-4 align-middle">
-                                    <button
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        setLoadingCountItems(true);
-                                        try {
-                                          // Fetch subjects from Strapi by documentIds
-                                          // Use Strapi v5 filter format: filters[documentId][$in]
-                                          const { data: subjects } = await dataProvider.getList("subjects", {
-                                            pagination: { page: 1, perPage: 1000 },
-                                            filter: {
-                                              "filters[documentId][$in]": value,
-                                            },
-                                            meta: {
-                                              populate: [],
-                                            },
-                                          });
-                                          setActiveCountTitle(`Subjects for ${item.name || item._id}`);
-                                          setActiveCountItems(subjects || []);
-                                        } catch (error) {
-                                          console.error("Error fetching subjects:", error);
-                                          notify("Failed to load subjects", { type: "error" });
-                                          // Fallback to documentIds if fetch fails
-                                          setActiveCountItems(
-                                            value.map((id) => ({ documentId: id, name: id }))
-                                          );
-                                        } finally {
-                                          setLoadingCountItems(false);
-                                        }
-                                      }}
-                                      disabled={loadingCountItems}
-                                      className="px-3 py-1 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 text-xs font-bold text-amber-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                              // Special handling for subjectDocumentIds - show subject names as clickable button
+                              else if (
+                                field.key === "subjectDocumentIds" ||
+                                field.selectorType === "subjects"
+                              ) {
+                                if (Array.isArray(value) && value.length > 0) {
+                                  // Return clickable button that opens CountListModal
+                                  return (
+                                    <td
+                                      key={field.key}
+                                      className="px-6 py-4 align-middle"
                                     >
-                                      {loadingCountItems ? (
-                                        <Loader2 className="w-3 h-3 animate-spin inline" />
-                                      ) : (
-                                        `${value.length} Subject${value.length !== 1 ? "s" : ""}`
-                                      )}
-                                    </button>
-                                  </td>
-                                );
-                              } else {
-                                displayValue = "-";
+                                      <button
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          setLoadingCountItems(true);
+                                          try {
+                                            // Fetch subjects from Strapi by documentIds
+                                            // Use Strapi v5 filter format: filters[documentId][$in]
+                                            const { data: subjects } =
+                                              await dataProvider.getList(
+                                                "subjects",
+                                                {
+                                                  pagination: {
+                                                    page: 1,
+                                                    perPage: 1000,
+                                                  },
+                                                  filter: {
+                                                    "filters[documentId][$in]":
+                                                      value,
+                                                  },
+                                                  meta: {
+                                                    populate: [],
+                                                  },
+                                                },
+                                              );
+                                            setActiveCountTitle(
+                                              `Subjects for ${
+                                                item.name || item._id
+                                              }`,
+                                            );
+                                            setActiveCountItems(subjects || []);
+                                          } catch (error) {
+                                            console.error(
+                                              "Error fetching subjects:",
+                                              error,
+                                            );
+                                            notify("Failed to load subjects", {
+                                              type: "error",
+                                            });
+                                            // Fallback to documentIds if fetch fails
+                                            setActiveCountItems(
+                                              value.map((id) => ({
+                                                documentId: id,
+                                                name: id,
+                                              })),
+                                            );
+                                          } finally {
+                                            setLoadingCountItems(false);
+                                          }
+                                        }}
+                                        disabled={loadingCountItems}
+                                        className="px-3 py-1 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 text-xs font-bold text-amber-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {loadingCountItems ? (
+                                          <Loader2 className="w-3 h-3 animate-spin inline" />
+                                        ) : (
+                                          `${value.length} Subject${
+                                            value.length !== 1 ? "s" : ""
+                                          }`
+                                        )}
+                                      </button>
+                                    </td>
+                                  );
+                                } else {
+                                  displayValue = "-";
+                                }
                               }
-                            } 
-                            // Special handling for topicDocumentIds - show topic names as clickable button
-                            else if (field.key === "topicDocumentIds" || field.selectorType === "topics") {
-                              if (Array.isArray(value) && value.length > 0) {
-                                // Return clickable button that opens CountListModal
-                                return (
-                                  <td key={field.key} className="px-6 py-4 align-middle">
-                                    <button
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        setLoadingCountItems(true);
-                                        try {
-                                          // Fetch topics from Strapi by documentIds
-                                          // Use Strapi v5 filter format: filters[documentId][$in]
-                                          const { data: topics } = await dataProvider.getList("topics", {
-                                            pagination: { page: 1, perPage: 1000 },
-                                            filter: {
-                                              "filters[documentId][$in]": value,
-                                            },
-                                            meta: {
-                                              populate: [],
-                                            },
-                                          });
-                                          setActiveCountTitle(`Topics for ${item.name || item._id}`);
-                                          setActiveCountItems(topics || []);
-                                        } catch (error) {
-                                          console.error("Error fetching topics:", error);
-                                          notify("Failed to load topics", { type: "error" });
-                                          // Fallback to documentIds if fetch fails
-                                          setActiveCountItems(
-                                            value.map((id) => ({ documentId: id, name: id }))
-                                          );
-                                        } finally {
-                                          setLoadingCountItems(false);
-                                        }
-                                      }}
-                                      disabled={loadingCountItems}
-                                      className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                              // Special handling for topicDocumentIds - show topic names as clickable button
+                              else if (
+                                field.key === "topicDocumentIds" ||
+                                field.selectorType === "topics"
+                              ) {
+                                if (Array.isArray(value) && value.length > 0) {
+                                  // Return clickable button that opens CountListModal
+                                  return (
+                                    <td
+                                      key={field.key}
+                                      className="px-6 py-4 align-middle"
                                     >
-                                      {loadingCountItems ? (
-                                        <Loader2 className="w-3 h-3 animate-spin inline" />
-                                      ) : (
-                                        `${value.length} Topic${value.length !== 1 ? "s" : ""}`
-                                      )}
-                                    </button>
-                                  </td>
-                                );
+                                      <button
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          setLoadingCountItems(true);
+                                          try {
+                                            // Fetch topics from Strapi by documentIds
+                                            // Use Strapi v5 filter format: filters[documentId][$in]
+                                            const { data: topics } =
+                                              await dataProvider.getList(
+                                                "topics",
+                                                {
+                                                  pagination: {
+                                                    page: 1,
+                                                    perPage: 1000,
+                                                  },
+                                                  filter: {
+                                                    "filters[documentId][$in]":
+                                                      value,
+                                                  },
+                                                  meta: {
+                                                    populate: [],
+                                                  },
+                                                },
+                                              );
+                                            setActiveCountTitle(
+                                              `Topics for ${
+                                                item.name || item._id
+                                              }`,
+                                            );
+                                            setActiveCountItems(topics || []);
+                                          } catch (error) {
+                                            console.error(
+                                              "Error fetching topics:",
+                                              error,
+                                            );
+                                            notify("Failed to load topics", {
+                                              type: "error",
+                                            });
+                                            // Fallback to documentIds if fetch fails
+                                            setActiveCountItems(
+                                              value.map((id) => ({
+                                                documentId: id,
+                                                name: id,
+                                              })),
+                                            );
+                                          } finally {
+                                            setLoadingCountItems(false);
+                                          }
+                                        }}
+                                        disabled={loadingCountItems}
+                                        className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {loadingCountItems ? (
+                                          <Loader2 className="w-3 h-3 animate-spin inline" />
+                                        ) : (
+                                          `${value.length} Topic${
+                                            value.length !== 1 ? "s" : ""
+                                          }`
+                                        )}
+                                      </button>
+                                    </td>
+                                  );
+                                } else {
+                                  displayValue = "-";
+                                }
                               } else {
-                                displayValue = "-";
+                                displayValue = Array.isArray(value)
+                                  ? value.length > 0
+                                    ? `${value.length} item${
+                                        value.length > 1 ? "s" : ""
+                                      }`
+                                    : "-"
+                                  : "-";
                               }
-                            } 
-                            else {
-                              displayValue = Array.isArray(value)
-                                ? value.length > 0
-                                  ? `${value.length} item${value.length > 1 ? "s" : ""}`
-                                  : "-"
+                            } else if (field.type === "date") {
+                              displayValue = value
+                                ? new Date(value).toLocaleDateString()
                                 : "-";
+                            } else if (
+                              field.type === "mongoRelation" ||
+                              field.type === "relation"
+                            ) {
+                              // Display relation name from cache
+                              const relationMap = relationMaps[field.key] || {};
+                              const stringValue = value ? String(value) : "";
+                              displayValue = stringValue
+                                ? relationMap[stringValue] || value
+                                : "-";
+                            } else if (
+                              typeof value === "object" &&
+                              value !== null
+                            ) {
+                              displayValue = JSON.stringify(value).substring(
+                                0,
+                                50,
+                              );
+                            } else if (value === null || value === undefined) {
+                              displayValue = "-";
                             }
-                          } else if (field.type === "date") {
-                            displayValue = value
-                              ? new Date(value).toLocaleDateString()
-                              : "-";
-                          } else if (field.type === "mongoRelation" || field.type === "relation") {
-                            // Display relation name from cache
-                            const relationMap = relationMaps[field.key] || {};
-                            const stringValue = value ? String(value) : "";
-                            displayValue = stringValue ? (relationMap[stringValue] || value) : "-";
-                          } else if (typeof value === "object" && value !== null) {
-                            displayValue = JSON.stringify(value).substring(0, 50);
-                          } else if (value === null || value === undefined) {
-                            displayValue = "-";
-                          }
 
-                          // Default rendering
-                          return (
-                            <td key={field.key} className="px-6 py-4 align-middle">
-                              <div className="max-w-md">
-                                <p
-                                  className="text-sm text-gray-900 truncate"
-                                  title={String(displayValue)}
-                                >
-                                  {String(displayValue)}
-                                </p>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center gap-1 text-xs text-gray-500 font-medium whitespace-nowrap">
-                          {item.createdAt
-                            ? new Date(item.createdAt).toLocaleDateString()
-                            : "-"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-middle sticky right-0 z-10 bg-white group-hover:bg-gray-50 transition-colors shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)]">
-                        <div className="flex items-center justify-center gap-2">
-                          {onView && (
+                            // Default rendering
+                            return (
+                              <td
+                                key={field.key}
+                                className="px-6 py-4 align-middle"
+                              >
+                                <div className="max-w-md">
+                                  <p
+                                    className="text-sm text-gray-900 truncate"
+                                    title={String(displayValue)}
+                                  >
+                                    {String(displayValue)}
+                                  </p>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        <td className="px-6 py-4 align-middle">
+                          <div className="flex items-center gap-1 text-xs text-gray-500 font-medium whitespace-nowrap">
+                            {item.createdAt
+                              ? new Date(item.createdAt).toLocaleDateString()
+                              : "-"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-middle sticky right-0 z-10 bg-white group-hover:bg-gray-50 transition-colors shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.08)]">
+                          <div className="flex items-center justify-center gap-2">
+                            {onView && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onView(item);
+                                }}
+                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors group/btn"
+                                title="View Details"
+                              >
+                                <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                              </button>
+                            )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onView(item);
+                                handleEdit(item);
                               }}
-                              className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors group/btn"
-                              title="View Details"
+                              className="p-2 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors group/btn"
+                              title="Edit"
                             >
-                              <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                              <Edit2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                             </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(item);
-                            }}
-                            className="p-2 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors group/btn"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(item._id);
-                            }}
-                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors group/btn"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item._id);
+                              }}
+                              className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors group/btn"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
-
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="px-6 py-4 border-t border-border flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, total)} of{" "}
-            {total}
+            Showing {(page - 1) * perPage + 1} to{" "}
+            {Math.min(page * perPage, total)} of {total}
           </div>
           <div className="flex gap-2">
             <button
@@ -1210,53 +1479,51 @@ const BaseMongoTab = ({
           </div>
         </div>
       )}
-
       {/* Create/Edit Form Modal */}
       {showForm &&
         createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-border m-4">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <h2 className="text-2xl font-bold text-foreground">
-                {editingItem ? `Edit ${title}` : `Create ${title}`}
-              </h2>
-              <button
-                onClick={handleCancel}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
+            <div className="bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col border border-border">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-white sticky top-0 z-10">
+                <h2 className="text-lg sm:text-2xl font-bold text-foreground">
+                  {editingItem ? `Edit ${title}` : `Create ${title}`}
+                </h2>
+                <button
+                  onClick={handleCancel}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-20 sm:pb-6">
+                {fields.map((field) => renderFormField(field))}
+              </div>
+              <div className="flex items-center justify-end gap-2 p-4 sm:p-6 border-t border-border bg-white sticky bottom-0">
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  {editingItem ? "Update" : "Create"}
+                </button>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {fields.map((field) => renderFormField(field))}
-            </div>
-            <div className="flex items-center justify-end gap-2 p-6 border-t border-border">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                {editingItem ? "Update" : "Create"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
 
 export default BaseMongoTab;
-

@@ -86,7 +86,7 @@ export const QuestionBuilder = ({
   const updateOption = (optionId, field, value) => {
     if (readOnly) return;
     const updatedOptions = (question.options || []).map((opt) =>
-      opt.id === optionId ? { ...opt, [field]: value } : opt
+      opt.id === optionId ? { ...opt, [field]: value } : opt,
     );
     onChange(index, { ...question, options: updatedOptions });
   };
@@ -96,7 +96,7 @@ export const QuestionBuilder = ({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event) => {
@@ -140,12 +140,12 @@ export const QuestionBuilder = ({
   }, [question.questionType, readOnly]);
 
   const needsOptions = ["SC", "MCQ", "Match", "DragDrop"].includes(
-    question.questionType
+    question.questionType,
   );
   const needsYesNo = question.questionType === "TF";
 
   const selectedType = QUESTION_TYPES.find(
-    (t) => t.id === (question.questionType || "SC")
+    (t) => t.id === (question.questionType || "SC"),
   );
 
   return (
@@ -319,6 +319,28 @@ export const QuestionBuilder = ({
           placeholder="Select topics..."
           disabled={readOnly}
           helperText="Optional categorization"
+        />
+      </div>
+
+      {/* Question Level Selector */}
+      <div className="mb-4">
+        <label className="block text-sm font-semibold text-foreground mb-2">
+          Question Level
+        </label>
+        <CustomSelect
+          value={question.level || 1}
+          onChange={(val) =>
+            !readOnly && onChange(index, { ...question, level: parseInt(val) })
+          }
+          options={[
+            { id: 1, name: "Level 1 - Beginner" },
+            { id: 2, name: "Level 2 - Elementary" },
+            { id: 3, name: "Level 3 - Intermediate" },
+            { id: 4, name: "Level 4 - Advanced" },
+            { id: 5, name: "Level 5 - Expert" },
+          ]}
+          placeholder="Select Level"
+          disabled={readOnly}
         />
       </div>
 

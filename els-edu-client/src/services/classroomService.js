@@ -8,17 +8,20 @@ import api from "./api";
 
 const classroomService = {
   /**
-   * Fetch classrooms for an organization
    * @param {string} orgDocumentId
    * @param {string} grade
+   * @param {string} userDocumentId - Optional, for fetching progress-based status
    * @returns {Promise<Array>} List of classrooms
    */
-  getClassrooms: async (orgDocumentId, grade = null) => {
+  getClassrooms: async (orgDocumentId, grade = null, userDocumentId = null) => {
     if (!orgDocumentId) return [];
 
     let params = { orgDocumentId };
     if (grade) {
       params.grade = grade;
+    }
+    if (userDocumentId) {
+      params.userDocumentId = userDocumentId;
     }
 
     try {
@@ -169,7 +172,7 @@ const classroomService = {
         error.response?.data?.error?.includes("duplicate key")
       ) {
         console.log(
-          "[ClassroomService] ClassProgress already exists, fetching it..."
+          "[ClassroomService] ClassProgress already exists, fetching it...",
         );
         try {
           const existingProgress = await api.get(
@@ -179,13 +182,13 @@ const classroomService = {
                 classroomId: data.classroomId,
                 userDocumentId: data.userDocumentId,
               },
-            }
+            },
           );
           return existingProgress.data?.data?.[0] || existingProgress.data;
         } catch (fetchError) {
           console.error(
             "[ClassroomService] Failed to fetch existing progress:",
-            fetchError
+            fetchError,
           );
           throw fetchError;
         }

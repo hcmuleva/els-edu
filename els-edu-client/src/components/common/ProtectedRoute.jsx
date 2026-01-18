@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 /**
  * ProtectedRoute component for guarding routes based on user roles
@@ -15,6 +15,8 @@ export const ProtectedRoute = ({
   allowedRoles = [],
   redirectTo = "/login",
 }) => {
+  const location = useLocation();
+
   // Get current user from localStorage
   let user = null;
   try {
@@ -28,7 +30,24 @@ export const ProtectedRoute = ({
     return <Navigate to={redirectTo} replace />;
   }
 
-  // 2. Check if user's role is in the allowed roles (Authorization)
+  // 2. Check Role Selection Requirements
+  // Skip check if we are already on the role selection page
+  if (location.pathname !== "/role-selection") {
+    // 1. If no control_type (Legacy User), force setup
+    if (!user.control_type) {
+      return <Navigate to="/role-selection" replace />;
+    }
+
+    // 2. If PARENT control type but no session role selected, force selection
+    if (
+      user.control_type === "PARENT" &&
+      !localStorage.getItem("current_role")
+    ) {
+      return <Navigate to="/role-selection" replace />;
+    }
+  }
+
+  // 3. Check if user's role is in the allowed roles (Authorization)
   // If allowedRoles is empty, it means any authenticated user is allowed
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.user_role)) {
     // If authenticated but wrong role, send to unauthorized page

@@ -80,7 +80,7 @@ const QuizPlayer = () => {
           const questionIds = replayParam.split(",").filter(Boolean);
           quizQuestions = quizQuestions.filter(
             (q) =>
-              questionIds.includes(q.id) || questionIds.includes(q.documentId)
+              questionIds.includes(q.id) || questionIds.includes(q.documentId),
           );
         }
         setQuestions(quizQuestions);
@@ -136,7 +136,7 @@ const QuizPlayer = () => {
     const prevQuestionId = getQuestionId(prevQuestion);
     if (prevQuestionId && questionStartTimes[prevQuestionId]) {
       const timeSpent = Math.floor(
-        (now - questionStartTimes[prevQuestionId]) / 1000
+        (now - questionStartTimes[prevQuestionId]) / 1000,
       );
       setQuestionTimings((prev) => ({
         ...prev,
@@ -216,7 +216,7 @@ const QuizPlayer = () => {
     const currentQuestionId = getQuestionId(currentQuestion);
     if (currentQuestionId && questionStartTimes[currentQuestionId]) {
       const timeSpent = Math.floor(
-        (now - questionStartTimes[currentQuestionId]) / 1000
+        (now - questionStartTimes[currentQuestionId]) / 1000,
       );
       setQuestionTimings((prev) => ({
         ...prev,
@@ -251,41 +251,32 @@ const QuizPlayer = () => {
       }));
 
       const quizResultData = {
-        type: type || "QUIZ", // "CLASSROOM", "COURSE", or generic "QUIZ"
-        userDocumentId: identity.documentId || identity.id, // Ensure user ID is passed
+        type: type === "CLASSROOM" || classroomId ? "CLASS" : "COURSE",
+        userDocumentId: identity.documentId || identity.id,
         quizId: quiz.documentId,
         quizTitle: quiz.title,
-        classroomId: classroomId, // From location state
+        classroomId: classroomId,
 
-        // Mongo specific fields
-        score: {
-          correct: score.correct,
-          total: score.total,
-          percentage: score.percentage,
-          marks: score.marks,
-          totalMarks: score.totalMarks,
-        },
+        // Flattened Score Fields
+        totalQuestions: score.total,
+        totalCorrect: score.correct,
+        overallPercentage: score.percentage,
 
-        // Detailed analysis
-        answers: questionAnalysis.map((q) => ({
+        // Detailed analysis mapped to questionDetails
+        questionDetails: questionAnalysis.map((q) => ({
           questionId: q.questionId,
           questionText: q.questionText,
-          selectedOption: q.selectedAnswer,
+          selectedAnswer: Array.isArray(q.selectedAnswer)
+            ? q.selectedAnswer.join(", ")
+            : q.selectedAnswer?.toString(),
+          correctAnswer: Array.isArray(q.correctAnswer)
+            ? q.correctAnswer.join(", ")
+            : q.correctAnswer?.toString(),
           isCorrect: q.isCorrect,
           timeSpent: q.timeSpent,
         })),
 
-        summary: {
-          correct: score.correct,
-          wrong: score.wrong,
-          skipped: score.notAttempted,
-          timeTaken: totalTimeTaken,
-          passed: score.percentage >= (quiz.passingScore || 70),
-        },
-
-        metadata: {
-          subject: quiz.subject?.name,
-        },
+        skillResults: [], // Empty for Course/Class quizzes
       };
 
       await mongoService.createUserQuiz(quizResultData);
@@ -338,10 +329,10 @@ const QuizPlayer = () => {
 
           // Check if set of selected IDs matches set of correct IDs exactly
           const hasAllCorrect = correctOptionIds.every((id) =>
-            selectedArray.includes(id)
+            selectedArray.includes(id),
           );
           const hasNoExtra = selectedArray.every((id) =>
-            correctOptionIds.includes(id)
+            correctOptionIds.includes(id),
           );
 
           isCorrect = hasAllCorrect && hasNoExtra;

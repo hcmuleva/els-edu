@@ -4,6 +4,7 @@ import {
   useGetIdentity,
   useNotify,
   useAuthProvider,
+  useLogout,
   useSidebarState,
 } from "react-admin";
 import {
@@ -128,7 +129,7 @@ const PortalDropdown = ({
             <div
               className={cn(
                 "absolute bg-popover text-popover-foreground rounded-xl shadow-xl border border-border overflow-hidden animate-in fade-in zoom-in-95",
-                width
+                width,
               )}
               style={{
                 top: coords.top === "auto" ? "auto" : `${coords.top}px`,
@@ -141,7 +142,7 @@ const PortalDropdown = ({
               <div className="p-1 space-y-1">{children}</div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );
@@ -165,7 +166,7 @@ const DropdownItem = ({
       variant === "destructive"
         ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
         : "text-foreground/80 hover:text-foreground hover:bg-muted",
-      className
+      className,
     )}
   >
     {Icon && <Icon size={16} />}
@@ -194,7 +195,7 @@ const CustomMenuItem = ({
             "transition-colors duration-200 flex items-center justify-center",
             isSelected
               ? "text-primary"
-              : "text-muted-foreground group-hover:text-primary"
+              : "text-muted-foreground group-hover:text-primary",
           )}
         >
           {leftIcon}
@@ -209,7 +210,7 @@ const CustomMenuItem = ({
         // Collapsed: fixed square 40px (w-10), centered, no padding
         !isOpen &&
           "mx-auto w-10 h-10 my-1 rounded-xl p-0 flex justify-center items-center",
-        className
+        className,
       )}
       sx={{
         minHeight: isOpen ? "44px" : "40px", // Match height class
@@ -289,7 +290,7 @@ const SubMenu = ({ label, icon: Icon, children, isOpen }) => {
         onClick={() => setExpanded(!expanded)}
         className={cn(
           "flex items-center px-3 py-2.5 rounded-xl cursor-pointer transition-colors group",
-          "hover:bg-primary/5 text-muted-foreground hover:text-primary"
+          "hover:bg-primary/5 text-muted-foreground hover:text-primary",
         )}
       >
         <div className="min-w-[32px] flex justify-center mr-2">
@@ -304,7 +305,7 @@ const SubMenu = ({ label, icon: Icon, children, isOpen }) => {
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
-          expanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+          expanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0",
         )}
       >
         <div className="pl-2 border-l-2 border-border/50 ml-4 space-y-1">
@@ -333,13 +334,14 @@ const AppMenu = (props) => {
   const { data: identity, isLoading } = useGetIdentity();
   const notify = useNotify();
   const authProvider = useAuthProvider();
+  const logout = useLogout();
   const [open, setOpen] = useSidebarState();
 
   // Use role-based navigation hook
   const { canAccess, getManageRoute, userRole } = useRoleNavigation();
 
   const isTeacherOrAdmin = ["TEACHER", "ADMIN", "SUPERADMIN"].includes(
-    permissions
+    permissions,
   );
 
   if (isLoading) return null;
@@ -408,7 +410,7 @@ const AppMenu = (props) => {
 
   const handleLogout = async () => {
     try {
-      await authProvider.logout();
+      await logout();
       // No notification needed - redirect happens immediately
     } catch (error) {
       notify("Error logging out", { type: "error" });
@@ -421,14 +423,14 @@ const AppMenu = (props) => {
     <div
       className={cn(
         "h-full flex flex-col bg-card/50 backdrop-blur-xl border-r border-border transition-all duration-300 relative",
-        open ? "w-64" : "w-20"
+        open ? "w-64" : "w-20",
       )}
     >
       {/* Branding Header */}
       <div
         className={cn(
           "h-16 flex items-center mb-2 transition-all duration-300 shrink-0 overflow-hidden",
-          open ? "px-6 justify-start" : "justify-center px-0"
+          open ? "px-6 justify-start" : "justify-center px-0",
         )}
       >
         {/* Branding */}
@@ -436,7 +438,7 @@ const AppMenu = (props) => {
           to="/"
           className={cn(
             "flex items-center transition-all duration-300 no-underline",
-            open ? "gap-3" : "gap-0"
+            open ? "gap-3" : "gap-0",
           )}
         >
           {/* Standardized sized logo container: w-10 h-10 to match menu items */}
@@ -451,7 +453,7 @@ const AppMenu = (props) => {
           <div
             className={cn(
               "transition-all duration-300 overflow-hidden",
-              open ? "w-auto opacity-100" : "w-0 opacity-0"
+              open ? "w-auto opacity-100" : "w-0 opacity-0",
             )}
           >
             <span className="text-xl font-heading font-bold text-foreground tracking-tight whitespace-nowrap">
@@ -614,7 +616,7 @@ const AppMenu = (props) => {
       <div
         className={cn(
           "pt-2 pb-1 border-t border-border/50 bg-secondary/5 flex transition-all duration-300",
-          open ? "justify-start" : "justify-center"
+          open ? "justify-start" : "justify-center",
         )}
       >
         <button
@@ -624,14 +626,14 @@ const AppMenu = (props) => {
             "border border-transparent",
             open
               ? "mx-3 flex-1 px-3 py-2 my-1 min-h-[44px]"
-              : "mx-auto w-10 h-10 justify-center items-center p-0"
+              : "mx-auto w-10 h-10 justify-center items-center p-0",
           )}
           title={open ? "Minimize Sidebar" : "Expand Sidebar"}
         >
           <div
             className={cn(
               "flex items-center justify-center shrink-0",
-              open ? "w-5" : "w-full h-full"
+              open ? "w-5" : "w-full h-full",
             )}
           >
             {open ? <ChevronLeft size={20} /> : <MenuIcon size={20} />}
@@ -644,7 +646,7 @@ const AppMenu = (props) => {
       <div
         className={cn(
           "pb-2 pt-1 transition-all duration-300",
-          open ? "flex justify-start" : "flex justify-center"
+          open ? "flex justify-start" : "flex justify-center",
         )}
       >
         <NotificationBell>
@@ -655,13 +657,13 @@ const AppMenu = (props) => {
                 "border border-transparent group transition-colors",
                 open
                   ? "mx-3 flex-1 px-3 py-2 my-1 min-h-[44px]"
-                  : "mx-auto w-10 h-10 justify-center items-center p-0"
+                  : "mx-auto w-10 h-10 justify-center items-center p-0",
               )}
             >
               <div
                 className={cn(
                   "relative flex items-center justify-center shrink-0",
-                  open ? "w-5" : "w-full h-full"
+                  open ? "w-5" : "w-full h-full",
                 )}
               >
                 <BellIcon size={20} />
@@ -671,7 +673,7 @@ const AppMenu = (props) => {
                       "absolute bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm",
                       open
                         ? "-top-1.5 -right-1.5 w-4 h-4"
-                        : "top-1.5 right-1.5 w-4 h-4"
+                        : "top-1.5 right-1.5 w-4 h-4",
                     )}
                   >
                     {unreadCount > 9 ? "9+" : unreadCount}
@@ -690,13 +692,13 @@ const AppMenu = (props) => {
       <div
         className={cn(
           "border-t border-border/50 bg-card/30 transition-all duration-300",
-          open ? "p-4" : "p-3"
+          open ? "p-4" : "p-3",
         )}
       >
         <div
           className={cn(
             "flex items-center transition-all duration-300",
-            open ? "gap-3" : "justify-center"
+            open ? "gap-3" : "justify-center",
           )}
         >
           <div className="flex-1 min-w-0">
@@ -706,7 +708,7 @@ const AppMenu = (props) => {
                   className={cn(
                     "flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer group",
                     "hover:bg-secondary/20",
-                    !open && "justify-center p-0"
+                    !open && "justify-center p-0",
                   )}
                 >
                   <div className="relative shrink-0">
@@ -727,7 +729,7 @@ const AppMenu = (props) => {
                   <div
                     className={cn(
                       "flex-1 min-w-0 text-left transition-all duration-300 overflow-hidden",
-                      open ? "w-auto opacity-100" : "w-0 opacity-0 hidden"
+                      open ? "w-auto opacity-100" : "w-0 opacity-0 hidden",
                     )}
                   >
                     <h4 className="text-sm font-bold text-foreground truncate leading-none mb-0.5">

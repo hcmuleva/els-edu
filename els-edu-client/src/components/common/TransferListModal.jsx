@@ -84,7 +84,7 @@ export const TransferListModal = ({
       // In server-side mode, availableItems are just the current page.
       // We find items in availableItems matching selection.
       const toMove = availableItems.filter((item) =>
-        selected.has(item.documentId || item.id)
+        selected.has(item.documentId || item.id),
       );
       setLocalAssigned([...localAssigned, ...toMove]);
       // We do NOT remove from availableItems strictly in UI because it's server generated,
@@ -100,13 +100,13 @@ export const TransferListModal = ({
       // Actually, let's keep it simple: Just add to assigned. The user can see they are in assigned.
     } else {
       const toMove = localAvailable.filter((item) =>
-        selected.has(item.documentId || item.id)
+        selected.has(item.documentId || item.id),
       );
       setLocalAssigned([...localAssigned, ...toMove]);
       setLocalAvailable(
         localAvailable.filter(
-          (item) => !selected.has(item.documentId || item.id)
-        )
+          (item) => !selected.has(item.documentId || item.id),
+        ),
       );
     }
     setSelected(new Set());
@@ -114,7 +114,7 @@ export const TransferListModal = ({
 
   const moveToAvailable = () => {
     const toMove = localAssigned.filter((item) =>
-      selected.has(item.documentId || item.id)
+      selected.has(item.documentId || item.id),
     );
     // If serverSide, we don't necessarily add them back to "localAvailable" array for display
     // because that array is controlled by props.
@@ -122,7 +122,7 @@ export const TransferListModal = ({
     // They should theoretically reappear in 'available' if we searched for them?
     // For now, just removing from assigned is enough.
     setLocalAssigned(
-      localAssigned.filter((item) => !selected.has(item.documentId || item.id))
+      localAssigned.filter((item) => !selected.has(item.documentId || item.id)),
     );
     // If not serverSide, push back to available
     if (!serverSide) {
@@ -137,32 +137,32 @@ export const TransferListModal = ({
         const isAssigned = localAssigned.some(
           (assigned) =>
             (assigned.documentId || assigned.id) ===
-            (item.documentId || item.id)
+            (item.documentId || item.id),
         );
         return !isAssigned;
       })
     : localAvailable.filter((item) =>
         (item[itemLabel] || item.name || "")
           .toLowerCase()
-          .includes(availableSearch.toLowerCase())
+          .includes(availableSearch.toLowerCase()),
       );
 
   const filteredAssigned = localAssigned.filter((item) =>
     (item[itemLabel] || item.name || "")
       .toLowerCase()
-      .includes(assignedSearch.toLowerCase())
+      .includes(assignedSearch.toLowerCase()),
   );
 
   const paginatedAvailable = serverSide
     ? filteredAvailable
     : filteredAvailable.slice(
         (availablePage - 1) * pageSize,
-        availablePage * pageSize
+        availablePage * pageSize,
       );
 
   const paginatedAssigned = filteredAssigned.slice(
     (assignedPage - 1) * pageSize,
-    assignedPage * pageSize
+    assignedPage * pageSize,
   );
 
   const availableTotalPages = serverSide
@@ -173,7 +173,7 @@ export const TransferListModal = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
@@ -226,7 +226,7 @@ export const TransferListModal = ({
                       "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                       selected.has(item.documentId || item.id)
                         ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-gray-50 border border-transparent"
+                        : "hover:bg-gray-50 border border-transparent",
                     )}
                   >
                     <div className="font-medium text-gray-800">
@@ -254,7 +254,7 @@ export const TransferListModal = ({
                     <button
                       onClick={() =>
                         handleAvailablePageChange(
-                          Math.max(1, availablePage - 1)
+                          Math.max(1, availablePage - 1),
                         )
                       }
                       disabled={availablePage === 1}
@@ -265,7 +265,7 @@ export const TransferListModal = ({
                     <button
                       onClick={() =>
                         handleAvailablePageChange(
-                          Math.min(availableTotalPages, availablePage + 1)
+                          Math.min(availableTotalPages, availablePage + 1),
                         )
                       }
                       disabled={availablePage >= availableTotalPages}
@@ -284,7 +284,7 @@ export const TransferListModal = ({
                 onClick={moveToAssigned}
                 disabled={
                   ![...selected].some((id) =>
-                    localAvailable.find((i) => (i.documentId || i.id) === id)
+                    localAvailable.find((i) => (i.documentId || i.id) === id),
                   )
                 }
                 className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary disabled:opacity-40 transition-all rotate-90 md:rotate-0"
@@ -296,7 +296,7 @@ export const TransferListModal = ({
                 onClick={moveToAvailable}
                 disabled={
                   ![...selected].some((id) =>
-                    localAssigned.find((i) => (i.documentId || i.id) === id)
+                    localAssigned.find((i) => (i.documentId || i.id) === id),
                   )
                 }
                 className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary disabled:opacity-40 transition-all rotate-90 md:rotate-0"
@@ -335,7 +335,7 @@ export const TransferListModal = ({
                       "px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors",
                       selected.has(item.documentId || item.id)
                         ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-gray-50 border border-transparent"
+                        : "hover:bg-gray-50 border border-transparent",
                     )}
                   >
                     <div className="font-medium text-gray-800">
@@ -370,7 +370,7 @@ export const TransferListModal = ({
                     <button
                       onClick={() =>
                         setAssignedPage((p) =>
-                          Math.min(assignedTotalPages, p + 1)
+                          Math.min(assignedTotalPages, p + 1),
                         )
                       }
                       disabled={assignedPage >= assignedTotalPages}
@@ -404,7 +404,7 @@ export const TransferListModal = ({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

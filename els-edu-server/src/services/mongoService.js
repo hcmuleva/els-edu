@@ -18,7 +18,7 @@ const skillSchema = new mongoose.Schema(
     subjectDocumentIds: [{ type: String }], // Many-to-many: skill can have multiple subjects
     description: { type: String, default: "" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const companySchema = new mongoose.Schema(
@@ -27,7 +27,7 @@ const companySchema = new mongoose.Schema(
     domain: { type: String, required: true },
     logo: { type: String, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const domainSchema = new mongoose.Schema(
@@ -35,7 +35,7 @@ const domainSchema = new mongoose.Schema(
     name: { type: String, required: true, unique: true },
     description: { type: String, default: "" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const roleSchema = new mongoose.Schema(
@@ -50,7 +50,7 @@ const roleSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const userSurveySchema = new mongoose.Schema(
@@ -68,13 +68,18 @@ const userSurveySchema = new mongoose.Schema(
     ],
     completedAt: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // User Quiz Results - Skill Assessment
 const userQuizSchema = new mongoose.Schema(
   {
     userDocumentId: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ["SKILL", "COURSE", "CLASS"],
+      default: "SKILL",
+    },
     surveyId: { type: mongoose.Schema.Types.ObjectId, ref: "UserSurvey" },
     company: { type: String },
     role: { type: String },
@@ -105,7 +110,7 @@ const userQuizSchema = new mongoose.Schema(
     overallPercentage: { type: Number, default: 0 },
     completedAt: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Custom User Course Schema - Courses stored in MongoDB
@@ -161,7 +166,7 @@ const userCourseSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: "userCustomCourses", // Use the existing collection name
-  }
+  },
 );
 
 // Create compound index for efficient queries
@@ -198,7 +203,7 @@ const classroomSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: "classrooms",
-  }
+  },
 );
 
 // Indexes for org isolation and performance
@@ -229,14 +234,14 @@ const classProgressSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: "classProgress",
-  }
+  },
 );
 
 // Indexes for progress tracking
 classProgressSchema.index({ orgDocumentId: 1, userDocumentId: 1 });
 classProgressSchema.index(
   { userDocumentId: 1, classroomId: 1 },
-  { unique: true }
+  { unique: true },
 );
 classProgressSchema.index({ orgDocumentId: 1, classroomId: 1 });
 
@@ -279,7 +284,7 @@ const userAssignmentSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: "userAssignments",
-  }
+  },
 );
 
 // Indexes for user assignments
@@ -323,7 +328,7 @@ const notificationSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: "notifications",
-  }
+  },
 );
 
 // Indexes for notifications
@@ -378,7 +383,8 @@ async function dropOldCourseIdIndex() {
     // Check if courseId index exists
     const courseIdIndex = indexes.find(
       (idx) =>
-        idx.name === "courseId_1" || (idx.key && idx.key.courseId !== undefined)
+        idx.name === "courseId_1" ||
+        (idx.key && idx.key.courseId !== undefined),
     );
 
     if (courseIdIndex) {
@@ -434,7 +440,7 @@ async function dropIncorrectClassProgressIndex() {
 
         if (badIndex) {
           console.log(
-            `🔧 Dropping incorrect index classroomId_1 from ${name}...`
+            `🔧 Dropping incorrect index classroomId_1 from ${name}...`,
           );
           await collection.dropIndex("classroomId_1");
           console.log(`✅ Dropped incorrect index from ${name}`);
@@ -473,7 +479,7 @@ async function getCompanies() {
         }
       }
       return company;
-    })
+    }),
   );
 }
 
@@ -541,7 +547,7 @@ async function getRoles(filters = {}) {
         }
       }
       return role;
-    })
+    }),
   );
 }
 
@@ -641,7 +647,7 @@ async function seedData(data) {
       await Role.findOneAndUpdate(
         { name: role.name, company: role.company },
         role,
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
     }
   }
@@ -671,17 +677,21 @@ async function saveQuizResult(quizData) {
 /**
  * Get user quiz results
  */
-async function getUserQuizzes(userDocumentId) {
+async function getUserQuizzes(userDocumentId, filters = {}) {
   await connect();
-  return UserQuiz.find({ userDocumentId }).sort({ createdAt: -1 }).lean();
+  const query = { userDocumentId };
+  if (filters.type) query.type = filters.type;
+  return UserQuiz.find(query).sort({ createdAt: -1 }).lean();
 }
 
 /**
  * Get latest quiz for user
  */
-async function getLatestQuiz(userDocumentId) {
+async function getLatestQuiz(userDocumentId, type = "SKILL") {
   await connect();
-  return UserQuiz.findOne({ userDocumentId }).sort({ createdAt: -1 }).lean();
+  return UserQuiz.findOne({ userDocumentId, type })
+    .sort({ createdAt: -1 })
+    .lean();
 }
 
 /**

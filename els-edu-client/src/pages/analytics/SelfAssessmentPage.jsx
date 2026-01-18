@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import * as analyticsService from "../../services/analyticsService";
+import mongoService from "../../services/mongoService";
 
 const STEPS = ["Company", "Role", "Select Skills", "Rate Skills", "Complete"];
 
@@ -71,7 +72,9 @@ const SelfAssessmentPage = () => {
   const notify = useNotify();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [skillsLoading, setSkillsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Data
@@ -86,11 +89,38 @@ const SelfAssessmentPage = () => {
   const [selectedSkills, setSelectedSkills] = useState([]); // Skills user knows
   const [skillRatings, setSkillRatings] = useState({});
   const [result, setResult] = useState(null);
+  const [checkingExisting, setCheckingExisting] = useState(true);
+
+  // Check if user already took the assessment
+  useEffect(() => {
+    const checkExisting = async () => {
+      if (!identity?.documentId) return;
+      try {
+        const quizzes = await mongoService.getUserQuizzes({
+          userDocumentId: identity.documentId,
+        });
+        const skillQuiz = quizzes.find((q) => q.type === "SKILL" || !q.type);
+
+        if (skillQuiz) {
+          notify(
+            "You have already completed the assessment. Redirecting to results...",
+            { type: "info" },
+          );
+          navigate("/analytics", { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking existing quiz:", error);
+      } finally {
+        setCheckingExisting(false);
+      }
+    };
+    checkExisting();
+  }, [identity, navigate, notify]);
 
   // Fetch companies on mount
   useEffect(() => {
     const fetchCompanies = async () => {
-      setLoading(true);
+      setCompaniesLoading(true);
       try {
         const data = await analyticsService.getCompanies();
         setCompanies(data);
@@ -98,7 +128,7 @@ const SelfAssessmentPage = () => {
         console.error("Error fetching companies:", error);
         notify("Failed to load companies", { type: "error" });
       } finally {
-        setLoading(false);
+        setCompaniesLoading(false);
       }
     };
     fetchCompanies();
@@ -108,7 +138,7 @@ const SelfAssessmentPage = () => {
   useEffect(() => {
     const fetchRoles = async () => {
       if (!selectedCompany) return;
-      setLoading(true);
+      setRolesLoading(true);
       try {
         const data = await analyticsService.getRoles({
           company: selectedCompany,
@@ -120,7 +150,7 @@ const SelfAssessmentPage = () => {
       } catch (error) {
         console.error("Error fetching roles:", error);
       } finally {
-        setLoading(false);
+        setRolesLoading(false);
       }
     };
     fetchRoles();
@@ -130,11 +160,11 @@ const SelfAssessmentPage = () => {
   useEffect(() => {
     const fetchSkills = async () => {
       if (!selectedRole || !selectedCompany) return;
-      setLoading(true);
+      setSkillsLoading(true);
       try {
         const data = await analyticsService.getSkills(
           selectedRole,
-          selectedCompany
+          selectedCompany,
         );
         setAllSkills(data);
         // Reset selections when role changes
@@ -143,7 +173,7 @@ const SelfAssessmentPage = () => {
       } catch (error) {
         console.error("Error fetching skills:", error);
       } finally {
-        setLoading(false);
+        setSkillsLoading(false);
       }
     };
     fetchSkills();
@@ -206,6 +236,14 @@ const SelfAssessmentPage = () => {
     return allSkills;
   }, [allSkills, selectedRole]);
 
+  if (checkingExisting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+    );
+  }
+
   const canProceed = () => {
     switch (currentStep) {
       case 0:
@@ -245,7 +283,7 @@ const SelfAssessmentPage = () => {
             <p className="text-gray-600 text-sm mb-6">
               Choose a company you'd like to work for
             </p>
-            {loading ? (
+            {companiesLoading ? (
               <LoadingSkeleton count={4} />
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
@@ -302,7 +340,7 @@ const SelfAssessmentPage = () => {
             <p className="text-gray-600 text-sm mb-6">
               Choose your target role at {selectedCompany}
             </p>
-            {loading ? (
+            {rolesLoading ? (
               <LoadingSkeleton count={4} />
             ) : roles.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
@@ -363,7 +401,7 @@ const SelfAssessmentPage = () => {
               Select the skills you have experience with. Required level for the
               role is shown.
             </p>
-            {loading ? (
+            {skillsLoading ? (
               <LoadingSkeleton count={5} />
             ) : (
               <div className="space-y-2">
@@ -572,12 +610,12 @@ const SelfAssessmentPage = () => {
       </div>
 
       {/* Progress */}
-      <div className="max-w-3xl mx-auto px-4 md:px-8 mb-6">
+      <div className="max-w-3xl mx-auto mb-6">
         <ProgressBar current={currentStep} total={STEPS.length - 1} />
       </div>
 
       {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 md:px-8">
+      <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-8 min-h-[400px]">
           {renderStepContent()}
 

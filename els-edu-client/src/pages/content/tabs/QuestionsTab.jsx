@@ -620,7 +620,7 @@ export const QuestionsTab = () => {
                       <td className="px-6 py-4 align-middle text-center">
                         <span
                           className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getTypeColor(
-                            item.questionType
+                            item.questionType,
                           )}`}
                         >
                           {item.questionType}
@@ -629,15 +629,15 @@ export const QuestionsTab = () => {
                       <td className="px-6 py-4 align-middle text-center">
                         <span
                           className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getDifficultyColor(
-                            item.difficulty
+                            item.difficulty,
                           )}`}
                         >
                           {item.difficulty?.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
-                        <span className="text-sm font-bold text-gray-700">
-                          {item.level || "-"}
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200">
+                          Level {item.level || 1}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle">
@@ -649,11 +649,15 @@ export const QuestionsTab = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveCountTitle(`Subjects for Question #${displayId}`);
+                            setActiveCountTitle(
+                              `Subjects for Question #${displayId}`,
+                            );
                             setActiveCountItems(item.subjects || []);
                           }}
                           className="px-3 py-1 bg-gray-50 hover:bg-gray-100 rounded-lg border border-border/50 text-xs font-bold text-gray-600 transition-all active:scale-95"
-                          disabled={!item.subjects || item.subjects.length === 0}
+                          disabled={
+                            !item.subjects || item.subjects.length === 0
+                          }
                         >
                           {item.subjects?.length || 0} Subjects
                         </button>
@@ -662,7 +666,9 @@ export const QuestionsTab = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveCountTitle(`Topics for Question #${displayId}`);
+                            setActiveCountTitle(
+                              `Topics for Question #${displayId}`,
+                            );
                             setActiveCountItems(item.topics || []);
                           }}
                           className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-600 transition-all active:scale-95"
@@ -703,7 +709,7 @@ export const QuestionsTab = () => {
                               e.stopPropagation();
                               if (
                                 window.confirm(
-                                  "Are you sure you want to delete this question?"
+                                  "Are you sure you want to delete this question?",
                                 )
                               ) {
                                 deleteOne("questions", { id: itemId });

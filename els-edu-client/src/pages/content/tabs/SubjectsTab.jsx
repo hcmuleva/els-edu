@@ -262,7 +262,7 @@ export const SubjectsTab = () => {
       gradeFilter,
       levelFilter,
       courseFilter,
-    ]
+    ],
   );
 
   const {
@@ -584,8 +584,8 @@ export const SubjectsTab = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
-                        <span className="text-xs font-bold text-gray-700">
-                          {getLevelLabel(item.level)}
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200">
+                          Level {item.level || 1}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-center">
