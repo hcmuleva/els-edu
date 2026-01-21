@@ -80,6 +80,22 @@ const userQuizSchema = new mongoose.Schema(
       enum: ["SKILL", "COURSE", "CLASS"],
       default: "SKILL",
     },
+    // Context: Where was this quiz taken?
+    context: {
+      type: {
+        type: String,
+        enum: [
+          "COURSE",
+          "CLASSROOM",
+          "SKILL_ASSESSMENT",
+          "DIRECT",
+          "ASSIGNMENT",
+        ],
+        default: "DIRECT",
+      },
+      id: { type: String }, // Document ID of the Context Source (Classroom, Course, etc.)
+      label: { type: String }, // Human readable label e.g., "Math Class 101"
+    },
     surveyId: { type: mongoose.Schema.Types.ObjectId, ref: "UserSurvey" },
     company: { type: String },
     role: { type: String },

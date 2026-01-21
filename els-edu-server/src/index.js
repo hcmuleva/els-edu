@@ -48,12 +48,12 @@ module.exports = {
       for (const role of roles) {
         const existingPermissions = role.permissions.map((p) => p.action);
         const newPermissions = offerPermissions.filter(
-          (action) => !existingPermissions.includes(action)
+          (action) => !existingPermissions.includes(action),
         );
 
         if (newPermissions.length > 0) {
           console.log(
-            `ℹ️  [PERMISSIONS] Granting Offer permissions to ${role.type} role...`
+            `ℹ️  [PERMISSIONS] Granting Offer permissions to ${role.type} role...`,
           );
 
           // Create permissions
@@ -68,7 +68,7 @@ module.exports = {
               });
           }
           console.log(
-            `✅ [PERMISSIONS] Granted ${newPermissions.length} permissions to ${role.type}`
+            `✅ [PERMISSIONS] Granted ${newPermissions.length} permissions to ${role.type}`,
           );
         }
       }

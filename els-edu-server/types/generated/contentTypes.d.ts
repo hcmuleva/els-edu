@@ -2542,6 +2542,10 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::calander-activity.calander-activity'
     >;
+    children: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::users-permissions.user'
+    >;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     control_type: Schema.Attribute.Enumeration<['PARENT', 'STUDENT']>;
@@ -2602,6 +2606,10 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.Private;
     mobile_number: Schema.Attribute.BigInteger;
     org: Schema.Attribute.Relation<'manyToOne', 'api::org.org'>;
+    parent: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
     parental_lock_code: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 4;

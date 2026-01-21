@@ -15,7 +15,7 @@ import {
   Check,
   X,
 } from "lucide-react";
-import * as analyticsService from "../../services/analyticsService";
+import analyticsService from "../../services/analyticsService";
 import mongoService from "../../services/mongoService";
 
 const STEPS = ["Company", "Role", "Select Skills", "Rate Skills", "Complete"];
@@ -96,9 +96,21 @@ const SelfAssessmentPage = () => {
     const checkExisting = async () => {
       if (!identity?.documentId) return;
       try {
-        const quizzes = await mongoService.getUserQuizzes({
+        let quizzes = await mongoService.getUserQuizzes({
           userDocumentId: identity.documentId,
         });
+
+        // Robustly handle response structure (Array vs wrapped Object)
+        if (!Array.isArray(quizzes)) {
+          if (Array.isArray(quizzes.results)) {
+            quizzes = quizzes.results;
+          } else if (Array.isArray(quizzes.data)) {
+            quizzes = quizzes.data;
+          } else {
+            quizzes = [];
+          }
+        }
+
         const skillQuiz = quizzes.find((q) => q.type === "SKILL" || !q.type);
 
         if (skillQuiz) {

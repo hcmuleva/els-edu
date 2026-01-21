@@ -55,6 +55,7 @@ const SkillQuizPage = () => {
         const quizzes = await mongoService.getUserQuizzes({
           userDocumentId: identity.documentId,
         });
+        
         const skillQuiz = quizzes.find((q) => q.type === "SKILL" || !q.type);
 
         if (skillQuiz) {

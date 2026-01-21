@@ -70,7 +70,6 @@ export const CourseCreate = () => {
         visibility: formData.visibility,
         creator: identity?.id,
         publisher: identity?.id,
-        organization: identity?.org?.id,
       };
 
       if (hasFile) {

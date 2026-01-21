@@ -1,132 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Title, useGetIdentity, useDataProvider } from "react-admin";
 import { useNavigate } from "react-router-dom";
-import {
-  BookOpen,
-  Trophy,
-  Sparkles,
-  ArrowRight,
-  GraduationCap,
-  Target,
-  X,
-  CheckCircle2,
-  Zap,
-  User,
-  Edit3,
-} from "lucide-react";
+import { BookOpen, Trophy, Sparkles, GraduationCap, Zap } from "lucide-react";
 import ClassroomDashboardSection from "../../components/dashboard/ClassroomDashboardSection";
-import mongoService from "../../services/mongoService";
+import TeacherDashboardSection from "../../components/dashboard/TeacherDashboardSection";
+import ParentDashboardSection from "../../components/dashboard/ParentDashboardSection";
+import StudentDashboardSection from "../../components/dashboard/StudentDashboardSection";
 import { useRoleNavigation } from "../../hooks/useRoleNavigation";
 
 const Dashboard = () => {
   const { identity, isLoading: identityLoading } = useGetIdentity();
-  const dataProvider = useDataProvider();
   const navigate = useNavigate();
-  const { canAccess } = useRoleNavigation();
+  const { canAccess, userRole: currentRole } = useRoleNavigation();
 
   // Check if user can browse courses (only for default org users)
   const canBrowseCourses = canAccess("browse-courses");
 
-  const [showTour, setShowTour] = useState(false);
-  const [stats, setStats] = useState({
-    totalSubscriptions: 0,
-    totalQuizAttempts: 0,
-    averageScore: 0,
-    passedQuizzes: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [hasSkillQuiz, setHasSkillQuiz] = useState(false);
-  const [checkingQuiz, setCheckingQuiz] = useState(true);
-
-  // Check if user has seen the tour
-  useEffect(() => {
-    const hasSeenTour = localStorage.getItem("hasSeenDashboardTour");
-    if (!hasSeenTour && identity) {
-      setShowTour(true);
-    }
-  }, [identity, navigate]);
-
-  // Fetch stats
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!identity?.id) return;
-
-      try {
-        setLoading(true);
-
-        // Fetch subscriptions
-        const { data: subs } = await dataProvider.getList("usersubscriptions", {
-          filter: { user: identity.id },
-          pagination: { page: 1, perPage: 1000 },
-        });
-
-        // Fetch quiz results
-        const { data: results } = await dataProvider.getList("quiz-results", {
-          filter: { user: identity.id },
-          pagination: { page: 1, perPage: 1000 },
-        });
-
-        const averageScore =
-          results.length > 0
-            ? Math.round(
-                results.reduce((sum, r) => sum + r.percentage, 0) /
-                  results.length,
-              )
-            : 0;
-
-        const passed = results.filter((r) => r.isPassed).length;
-
-        setStats({
-          totalSubscriptions: subs.length || 0,
-          totalQuizAttempts: results.length || 0,
-          averageScore,
-          passedQuizzes: passed,
-        });
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-    fetchStats();
-  }, [identity, dataProvider]);
-
-  // Check for existing skill quiz
-  useEffect(() => {
-    const checkQuiz = async () => {
-      if (!identity?.documentId) return;
-      try {
-        const quizzes = await mongoService.getUserQuizzes({
-          userDocumentId: identity.documentId,
-        });
-
-        // Check for SKILL type or untyped (backward compatibility)
-        const skillQuiz = quizzes.find((q) => q.type === "SKILL" || !q.type);
-
-        if (skillQuiz) {
-          setHasSkillQuiz(true);
-        }
-      } catch (error) {
-        console.error("Error checking quizzes:", error);
-      } finally {
-        setCheckingQuiz(false);
-      }
-    };
-
-    if (identity) {
-      checkQuiz();
-    }
-  }, [identity]);
-
-  const handleDismissTour = () => {
-    localStorage.setItem("hasSeenDashboardTour", "true");
-    setShowTour(false);
-  };
-
-  if (identityLoading || loading) {
+  if (identityLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 flex items-center justify-center">
         <div className="text-center">
@@ -139,11 +29,45 @@ const Dashboard = () => {
     );
   }
 
-  const isNewUser =
-    stats.totalSubscriptions === 0 && stats.totalQuizAttempts === 0;
-  const isProfileIncomplete =
-    !identity?.fullName || !identity?.email || !identity?.age;
+  // --- Role Based Rendering ---
 
+  // 1. Teacher View
+  if (currentRole === "TEACHER" || currentRole === "ADMIN") {
+    return (
+      <div className="min-h-screen bg-gray-50/50 pb-20 md:pb-8 overflow-x-hidden">
+        <Title title="Teacher Dashboard" />
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Teacher Dashboard
+            </h1>
+            <p className="text-gray-500">Manage your classes and students</p>
+          </div>
+          <TeacherDashboardSection />
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Parent View
+  if (currentRole === "PARENT") {
+    return (
+      <div className="min-h-screen bg-gray-50/50 pb-20 md:pb-8 overflow-x-hidden">
+        <Title title="Parent Dashboard" />
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Parent Dashboard
+            </h1>
+            <p className="text-gray-500">Track your child's progress</p>
+          </div>
+          <ParentDashboardSection />
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Student View (Default)
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-20 md:pb-0 overflow-x-hidden">
       <Title title="Dashboard" />
@@ -160,7 +84,7 @@ const Dashboard = () => {
                 Welcome back, {identity?.fullName || identity?.username}! 👋
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Here's your learning progress at a glance
+                Keep learning and growing every day!
               </p>
             </div>
           </div>
@@ -168,280 +92,14 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto py-4 md:py-8 space-y-6">
-        {/* Tour Guide Modal */}
-        {showTour &&
-          createPortal(
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-              <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto hide-scrollbar">
-                <button
-                  onClick={handleDismissTour}
-                  className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors shrink-0"
-                >
-                  <X className="w-4 h-4 text-gray-600" />
-                </button>
+      <div className="max-w-6xl mx-auto py-4 md:py-8 space-y-8">
+        {/* Student Analytics & Stats */}
+        <StudentDashboardSection identity={identity} />
 
-                <div className="text-center mb-6 mt-2">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200">
-                    <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    Welcome, Learner! 🎉
-                  </h2>
-                  <p className="text-sm md:text-base text-gray-600">
-                    Let's get you started in just 3 simple steps
-                  </p>
-                </div>
-
-                <div className="space-y-3 md:space-y-4">
-                  {[
-                    // Only show Browse Courses step if user can access it
-                    ...(canBrowseCourses
-                      ? [
-                          {
-                            step: 1,
-                            icon: BookOpen,
-                            title: "Browse Courses",
-                            description:
-                              "Explore our wide range of courses tailored for you",
-                            action: "/browse-courses",
-                            color: "from-blue-500 to-cyan-500",
-                          },
-                        ]
-                      : []),
-                    {
-                      step: canBrowseCourses ? 2 : 1,
-                      icon: CheckCircle2,
-                      title: "Enroll in Courses",
-                      description: "Subscribe to any course that interests you",
-                      action: "/my-subscriptions",
-                      color: "from-emerald-500 to-teal-500",
-                    },
-                    {
-                      step: canBrowseCourses ? 3 : 2,
-                      icon: Zap,
-                      title: "Start Learning",
-                      description:
-                        "Access subjects, topics, and quizzes to begin your journey",
-                      action: "/my-subscriptions",
-                      color: "from-violet-500 to-purple-500",
-                    },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <div
-                        key={item.step}
-                        className="flex items-start gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all cursor-pointer bg-gray-50/50"
-                        onClick={() => {
-                          handleDismissTour();
-                          navigate(item.action);
-                        }}
-                      >
-                        <div
-                          className={`w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-md`}
-                        >
-                          <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                              STEP {item.step}
-                            </span>
-                          </div>
-                          <h3 className="text-sm md:text-base font-bold text-gray-900 mb-0.5 truncate">
-                            {item.title}
-                          </h3>
-                          <p className="text-xs md:text-sm text-gray-600 leading-relaxed line-clamp-2">
-                            {item.description}
-                          </p>
-                        </div>
-                        <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0 self-center" />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={handleDismissTour}
-                  className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl font-semibold hover:from-primary-600 hover:to-violet-600 transition-all shadow-md active:scale-95"
-                >
-                  Got it, Let's Start!
-                </button>
-              </div>
-            </div>,
-            document.body,
-          )}
-        {/* Getting Started Card - Mobile Optimized */}
-        {isNewUser && !showTour && (
-          <div className="bg-gradient-to-br from-primary-500 to-violet-600 rounded-3xl p-6 md:p-8 text-white shadow-xl md:shadow-2xl shadow-primary-200/50">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-                <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-white" />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-xl md:text-2xl font-bold mb-2">
-                  Ready to Start Learning?
-                </h3>
-                <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
-                  Discover amazing courses, enroll, and begin your educational
-                  journey today!
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {canBrowseCourses && (
-                    <button
-                      onClick={() => navigate("/browse-courses")}
-                      className="w-full sm:w-auto px-5 py-3 bg-white text-primary-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      Browse Courses
-                    </button>
-                  )}
-                  <button
-                    onClick={() => navigate("/my-subscriptions")}
-                    className="w-full sm:w-auto px-5 py-3 bg-white/10 backdrop-blur text-white border border-white/30 rounded-xl font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <GraduationCap className="w-4 h-4" />
-                    My Subscriptions
-                  </button>
-                  <button
-                    onClick={() => setShowTour(true)}
-                    className="w-full sm:w-auto px-5 py-3 bg-white/10 backdrop-blur text-white border border-white/30 rounded-xl font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    Show Guide
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Profile Setup Card */}
-        {isProfileIncomplete && (
-          <div className="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-orange-200/50">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-                <User className="w-8 h-8 md:w-10 md:h-10 text-white" />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-xl md:text-2xl font-bold mb-2">
-                  Complete Your Profile
-                </h3>
-                <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
-                  Add your details to personalize your learning experience and
-                  unlock all features!
-                </p>
-                <button
-                  onClick={() => navigate("/profile")}
-                  className="w-full md:w-auto px-6 py-3 bg-white text-orange-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  Complete Profile
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Self-Assessment CTA Card */}
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-indigo-200/50">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-              <Target className="w-8 h-8 md:w-10 md:h-10 text-white" />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-xl md:text-2xl font-bold mb-2">
-                Skill Assessment
-              </h3>
-              <p className="text-white/90 text-sm md:text-base mb-6 leading-relaxed">
-                {hasSkillQuiz
-                  ? "View your detailed skill analysis and learning path."
-                  : "Discover your skill gaps and get personalized learning recommendations based on your dream job!"}
-              </p>
-              <button
-                onClick={() =>
-                  navigate(hasSkillQuiz ? "/analytics" : "/analytics/survey")
-                }
-                className="w-full md:w-auto px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
-              >
-                {hasSkillQuiz ? "View Analysis" : "Start Assessment"}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-        {/* Classroom Section - Live Classes, Upcoming, Assignments */}
+        {/* Existing Classroom Dashboard Section */}
         <ClassroomDashboardSection />
-        {/* Stats Grid - 2x2 on mobile with cleaner styling */}
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 md:hidden">
-            Overview
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {/* Subscriptions */}
-            <button
-              onClick={() => navigate("/my-subscriptions")}
-              className="bg-gradient-to-br from-blue-50/50 to-white rounded-3xl md:rounded-xl p-3 md:p-5 border border-blue-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95 backdrop-blur-sm"
-            >
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-blue-100/50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
-                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
-              </div>
-              <p className="text-xl md:text-2xl font-black text-gray-900 mb-0.5 md:mb-1">
-                {stats.totalSubscriptions}
-              </p>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">
-                Courses
-              </p>
-            </button>
 
-            {/* Quiz Attempts */}
-            <button
-              onClick={() => navigate("/progress")}
-              className="bg-gradient-to-br from-violet-50/50 to-white rounded-3xl md:rounded-xl p-3 md:p-5 border border-violet-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95 backdrop-blur-sm"
-            >
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-violet-100/50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
-                <Trophy className="w-5 h-5 md:w-6 md:h-6 text-violet-600" />
-              </div>
-              <p className="text-xl md:text-2xl font-black text-gray-900 mb-0.5 md:mb-1">
-                {stats.totalQuizAttempts}
-              </p>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">
-                Quizzes
-              </p>
-            </button>
-
-            {/* Average Score */}
-            <button
-              onClick={() => navigate("/progress")}
-              className="bg-gradient-to-br from-emerald-50/50 to-white rounded-3xl md:rounded-xl p-3 md:p-5 border border-emerald-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95 backdrop-blur-sm"
-            >
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-emerald-100/50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
-                <Target className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
-              </div>
-              <p className="text-xl md:text-2xl font-black text-emerald-600 mb-0.5 md:mb-1">
-                {stats.averageScore}%
-              </p>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">
-                Avg Score
-              </p>
-            </button>
-
-            {/* Passed */}
-            <button
-              onClick={() => navigate("/progress")}
-              className="bg-gradient-to-br from-orange-50/50 to-white rounded-3xl md:rounded-xl p-3 md:p-5 border border-orange-100/50 shadow-sm md:border-gray-100 hover:shadow-md transition-all text-center group active:scale-95 backdrop-blur-sm"
-            >
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full md:rounded-xl bg-orange-100/50 flex items-center justify-center mx-auto mb-2 md:mb-3 group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-orange-600" />
-              </div>
-              <p className="text-xl md:text-2xl font-black text-gray-900 mb-0.5 md:mb-1">
-                {stats.passedQuizzes}
-              </p>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">
-                Passed
-              </p>
-            </button>
-          </div>
-        </div>
-        {/* Quick Actions - Horizontal Scroll on Mobile */}
+        {/* Quick Actions */}
         <div>
           <div className="flex items-center justify-between mb-3 px-1 md:px-0">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -511,16 +169,6 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
-        {/* Show Tour Again Button */}
-        {!isNewUser && !showTour && (
-          <button
-            onClick={() => setShowTour(true)}
-            className="w-full md:w-auto px-5 py-3 md:py-2.5 bg-gray-50 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition-all border border-gray-200 flex items-center justify-center gap-2 mx-auto"
-          >
-            <Sparkles className="w-4 h-4" />
-            Show Guide
-          </button>
-        )}
       </div>
     </div>
   );

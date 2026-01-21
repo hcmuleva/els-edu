@@ -1,163 +1,170 @@
-/**
- * Analytics API Service
- * Handles all analytics-related API calls
- */
+import axios from "axios";
 
-// Use the same base URL as other services
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:1337/api";
 
-/**
- * Get auth headers
- */
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
+const getHeaders = () => {
+  const token = localStorage.getItem("token") || localStorage.getItem("jwt"); // Fallback check
+  if (!token) return {};
   return {
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
   };
-}
+};
 
-/**
- * Get all companies
- */
-export async function getCompanies() {
-  const response = await fetch(`${API_URL}/analytics/companies`, {
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  return result.data || [];
-}
+const analyticsService = {
+  getStudentDashboard: async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/analytics/dashboard/student`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching student dashboard:", error);
+      throw error;
+    }
+  },
 
-/**
- * Get all domains
- */
-export async function getDomains() {
-  const response = await fetch(`${API_URL}/analytics/domains`, {
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  return result.data || [];
-}
+  getTeacherDashboard: async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/analytics/dashboard/teacher`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching teacher dashboard:", error);
+      throw error;
+    }
+  },
 
-/**
- * Get roles by company and/or domain
- */
-export async function getRoles(filters = {}) {
-  const params = new URLSearchParams();
-  if (filters.company) params.append("company", filters.company);
-  if (filters.domain) params.append("domain", filters.domain);
+  getParentDashboard: async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/analytics/dashboard/parent`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching parent dashboard:", error);
+      throw error;
+    }
+  },
 
-  const response = await fetch(`${API_URL}/analytics/roles?${params}`, {
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  return result.data || [];
-}
+  linkChild: async (childDocumentId) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/analytics/dashboard/parent/link-child`,
+        { childDocumentId },
+        { headers: getHeaders() },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error linking child:", error);
+      throw error;
+    }
+  },
 
-/**
- * Get skills for a role
- */
-export async function getSkills(role, company) {
-  const params = new URLSearchParams();
-  if (role) params.append("role", role);
-  if (company) params.append("company", company);
+  getSurveyResults: async (params = {}) => {
+    try {
+      // Serialize params if needed, or pass as query params
+      const queryString = new URLSearchParams(params).toString();
+      const response = await axios.get(
+        `${API_URL}/analytics/survey-results?${queryString}`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching survey results:", error);
+      throw error;
+    }
+  },
 
-  const response = await fetch(`${API_URL}/analytics/skills?${params}`, {
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  return result.data || [];
-}
+  getQuizResults: async (params = {}) => {
+    try {
+      const queryString = new URLSearchParams(params).toString();
+      const response = await axios.get(
+        `${API_URL}/analytics/quiz-results?${queryString}`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.warn("Error fetching analytics quiz results:", error);
+      return { quizzes: [] };
+    }
+  },
 
-/**
- * Submit survey
- */
-export async function submitSurvey(surveyData) {
-  const response = await fetch(`${API_URL}/analytics/survey`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(surveyData),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to submit survey");
-  return result.data;
-}
+  // --- Methods for SelfAssessmentPage ---
 
-/**
- * Get survey results
- */
-export async function getSurveyResults() {
-  const response = await fetch(`${API_URL}/analytics/survey-results`, {
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  return result.data;
-}
+  getCompanies: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/analytics/companies`, {
+        headers: getHeaders(),
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      return [];
+    }
+  },
 
-/**
- * Seed data (admin only)
- */
-export async function seedData() {
-  const response = await fetch(`${API_URL}/analytics/seed`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to seed data");
-  return result.data;
-}
+  getRoles: async (params = {}) => {
+    try {
+      const queryString = new URLSearchParams(params).toString();
+      const response = await axios.get(
+        `${API_URL}/analytics/roles?${queryString}`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      return [];
+    }
+  },
 
-/**
- * Get quiz topics for skills
- */
-export async function getQuizTopics(skills) {
-  const skillsParam = Array.isArray(skills) ? skills.join(",") : skills;
-  const response = await fetch(
-    `${API_URL}/analytics/quiz/topics?skills=${encodeURIComponent(
-      skillsParam
-    )}`,
-    { headers: getAuthHeaders() }
-  );
-  const result = await response.json();
-  return result.data;
-}
+  getSkills: async (role, company) => {
+    try {
+      const params = new URLSearchParams({ role, company }).toString();
+      const response = await axios.get(
+        `${API_URL}/analytics/skills?${params}`,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+      return [];
+    }
+  },
 
-/**
- * Get quiz questions for topics
- */
-export async function getQuizQuestions(topicIds, perTopic = 5) {
-  const topicsParam = Array.isArray(topicIds) ? topicIds.join(",") : topicIds;
-  const response = await fetch(
-    `${API_URL}/analytics/quiz/questions?topicIds=${encodeURIComponent(
-      topicsParam
-    )}&perTopic=${perTopic}`,
-    { headers: getAuthHeaders() }
-  );
-  const result = await response.json();
-  return result.data;
-}
+  submitSurvey: async (surveyData) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/analytics/submit-survey`,
+        surveyData,
+        {
+          headers: getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error submitting survey:", error);
+      throw error;
+    }
+  },
+};
 
-/**
- * Submit quiz results
- */
-export async function submitQuizResult(quizData) {
-  const response = await fetch(`${API_URL}/analytics/quiz/submit`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(quizData),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || "Failed to submit quiz");
-  return result.data;
-}
-
-/**
- * Get quiz results
- */
-export async function getQuizResults() {
-  const response = await fetch(`${API_URL}/analytics/quiz/results`, {
-    headers: getAuthHeaders(),
-  });
-  const result = await response.json();
-  return result.data;
-}
+export default analyticsService;

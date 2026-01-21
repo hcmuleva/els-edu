@@ -42,7 +42,7 @@ export const TopicCreate = () => {
         description: formData.description || null,
         icon: formData.icon || null,
         subjects: formData.subjects.map((s) => s.documentId || s.id || s),
-        topic_level: topic.topic_level || 1,
+        topic_level: formData.topic_level || 1,
         creator: identity?.id,
       };
 
@@ -64,7 +64,7 @@ export const TopicCreate = () => {
       <Title title="Create Topic" />
 
       {/* Header */}
-      <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-10">
+      <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
