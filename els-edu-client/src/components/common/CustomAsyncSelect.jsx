@@ -40,17 +40,44 @@ export const CustomAsyncSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const perPage = 100;
+
+  // Debounce search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   // Fetch Data and merge with initialData if provided
-  // Re-fetch when filter changes
+  // Re-fetch when filter changes or search query changes
   useEffect(() => {
     const fetchOptions = async () => {
       setLoading(true);
+      setCurrentPage(1);
       try {
-        const { data } = await dataProvider.getList(resource, {
-          pagination: { page: 1, perPage: 100 },
+        // Prepare filter: merge prop filters with search query
+        const searchFilter = debouncedSearchQuery
+          ? { [optionText]: debouncedSearchQuery }
+          : {};
+        const apiFilter = { ...filter, ...searchFilter };
+
+        const { data, total } = await dataProvider.getList(resource, {
+          pagination: { page: 1, perPage },
           sort: { field: optionText, order: "ASC" },
-          filter: filter || {},
+          filter: apiFilter,
         });
 
         // Merge initialData with fetched options if it exists and isn't already in the list
@@ -63,6 +90,7 @@ export const CustomAsyncSelect = ({
         }
 
         setOptions(mergedOptions);
+        setHasMore(mergedOptions.length < total);
       } catch (error) {
         console.error(`Error fetching ${resource}:`, error);
         // Even on error, show initialData if available
@@ -71,20 +99,65 @@ export const CustomAsyncSelect = ({
         } else {
           setOptions([]);
         }
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOptions();
-  }, [dataProvider, resource, optionText, JSON.stringify(filter)]);
+  }, [
+    dataProvider,
+    resource,
+    optionText,
+    JSON.stringify(filter),
+    debouncedSearchQuery,
+  ]);
+
+  // Load more function for infinite scroll
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    try {
+      const searchFilter = debouncedSearchQuery
+        ? { [optionText]: debouncedSearchQuery }
+        : {};
+      const apiFilter = { ...filter, ...searchFilter };
+
+      const nextPage = currentPage + 1;
+      const { data, total } = await dataProvider.getList(resource, {
+        pagination: { page: nextPage, perPage },
+        sort: { field: optionText, order: "ASC" },
+        filter: apiFilter,
+      });
+
+      setOptions((prev) => [...prev, ...data]);
+      setCurrentPage(nextPage);
+      setHasMore(options.length + data.length < total);
+    } catch (error) {
+      console.error(`Error loading more ${resource}:`, error);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Scroll handler for infinite scroll
+  const handleScroll = (e) => {
+    const bottom =
+      e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 50;
+    if (bottom && hasMore && !loadingMore) {
+      loadMore();
+    }
+  };
 
   // Handle initialData changes - merge with existing options when initialData arrives
   useEffect(() => {
     if (initialData && initialData.id && !loading) {
       setOptions((prevOptions) => {
         const existsInData = prevOptions.some(
-          (opt) => opt.id === initialData.id
+          (opt) => opt.id === initialData.id,
         );
         if (!existsInData) {
           return [initialData, ...prevOptions];
@@ -112,12 +185,8 @@ export const CustomAsyncSelect = ({
     }
   }, [isOpen, searchable]);
 
-  const filteredOptions =
-    searchable && searchQuery
-      ? options.filter((opt) =>
-          opt[optionText]?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : options;
+  // Filtered options are now the server response since filtering happens server-side
+  const filteredOptions = options;
 
   // Use loose equality (==) to handle type mismatches (string vs number)
   // Also fallback to initialData if value matches but isn't in options yet
@@ -221,10 +290,21 @@ export const CustomAsyncSelect = ({
 
           {/* Options List - Max height ~6 items (6 * 40px = 240px) */}
           <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
             className="overflow-y-auto p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ maxHeight: "240px" }}
           >
-            {filteredOptions.length > 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-500">
+                    Loading options...
+                  </span>
+                </div>
+              </div>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button
                   key={option.id}
@@ -248,6 +328,12 @@ export const CustomAsyncSelect = ({
             ) : (
               <div className="p-4 text-center text-sm text-gray-500">
                 {searchQuery ? "No results found" : "No options available"}
+              </div>
+            )}
+            {loadingMore && (
+              <div className="flex items-center justify-center gap-2 p-3 border-t border-gray-100">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-500">Loading more...</span>
               </div>
             )}
           </div>

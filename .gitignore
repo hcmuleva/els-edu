@@ -139,4 +139,4 @@ els-utils/
 # Scripts & Docs
 ############################
 scripts/
-*.md
+# *.md

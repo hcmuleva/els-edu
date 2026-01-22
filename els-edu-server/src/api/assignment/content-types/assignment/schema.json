@@ -20,7 +20,12 @@
     "instructions": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
     "creator": {
       "type": "relation",
@@ -31,7 +36,10 @@
     "type": {
       "type": "enumeration",
       "default": "HOMEWORK",
-      "enum": ["PROJECT", "HOMEWORK"]
+      "enum": [
+        "PROJECT",
+        "HOMEWORK"
+      ]
     },
     "youtube_url": {
       "type": "string"
@@ -39,7 +47,12 @@
     "guide_media": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
     "org": {
       "type": "relation",

@@ -34,7 +34,7 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
-import * as analyticsService from "../../services/analyticsService";
+import analyticsService from "../../services/analyticsService";
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {

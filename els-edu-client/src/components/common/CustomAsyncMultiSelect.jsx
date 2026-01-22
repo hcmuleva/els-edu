@@ -39,31 +39,58 @@ export const CustomAsyncMultiSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   // Ensure value is always an array
   const selectedIds = Array.isArray(value) ? value : [];
 
-  // Fetch Data
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const perPage = 100;
+
+  // Debounce search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  // Fetch Data - initial load
   useEffect(() => {
     const fetchOptions = async () => {
       setLoading(true);
+      setCurrentPage(1);
       try {
-        const { data } = await dataProvider.getList(resource, {
-          pagination: { page: 1, perPage: 100 },
+        // Prepare filter: merge prop filters with search query
+        const searchFilter = debouncedSearchQuery
+          ? { [optionText]: debouncedSearchQuery }
+          : {};
+        const apiFilter = { ...filter, ...searchFilter };
+
+        const { data, total } = await dataProvider.getList(resource, {
+          pagination: { page: 1, perPage },
           sort: { field: optionText, order: "ASC" },
-          filter: filter || {},
+          filter: apiFilter,
         });
 
         // Merge initialData with fetched options
         let mergedOptions = data;
         if (initialData && initialData.length > 0) {
           const existingIds = new Set(
-            data.map((opt) => opt.documentId || opt.id)
+            data.map((opt) => opt.documentId || opt.id),
           );
           const missingInitial = initialData.filter(
             (item) =>
               (item.documentId || item.id) &&
-              !existingIds.has(item.documentId || item.id)
+              !existingIds.has(item.documentId || item.id),
           );
           if (missingInitial.length > 0) {
             mergedOptions = [...missingInitial, ...data];
@@ -71,6 +98,7 @@ export const CustomAsyncMultiSelect = ({
         }
 
         setOptions(mergedOptions);
+        setHasMore(mergedOptions.length < total);
       } catch (error) {
         console.error(`Error fetching ${resource}:`, error);
         if (initialData && initialData.length > 0) {
@@ -78,25 +106,70 @@ export const CustomAsyncMultiSelect = ({
         } else {
           setOptions([]);
         }
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOptions();
-  }, [dataProvider, resource, optionText, JSON.stringify(filter)]);
+  }, [
+    dataProvider,
+    resource,
+    optionText,
+    JSON.stringify(filter),
+    debouncedSearchQuery,
+  ]);
+
+  // Load more function for infinite scroll
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    try {
+      const searchFilter = debouncedSearchQuery
+        ? { [optionText]: debouncedSearchQuery }
+        : {};
+      const apiFilter = { ...filter, ...searchFilter };
+
+      const nextPage = currentPage + 1;
+      const { data, total } = await dataProvider.getList(resource, {
+        pagination: { page: nextPage, perPage },
+        sort: { field: optionText, order: "ASC" },
+        filter: apiFilter,
+      });
+
+      setOptions((prev) => [...prev, ...data]);
+      setCurrentPage(nextPage);
+      setHasMore(options.length + data.length < total);
+    } catch (error) {
+      console.error(`Error loading more ${resource}:`, error);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Scroll handler for infinite scroll
+  const handleScroll = (e) => {
+    const bottom =
+      e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 50;
+    if (bottom && hasMore && !loadingMore) {
+      loadMore();
+    }
+  };
 
   // Handle initialData changes
   useEffect(() => {
     if (initialData && initialData.length > 0 && !loading) {
       setOptions((prevOptions) => {
         const existingIds = new Set(
-          prevOptions.map((opt) => opt.documentId || opt.id)
+          prevOptions.map((opt) => opt.documentId || opt.id),
         );
         const missingInitial = initialData.filter(
           (item) =>
             (item.documentId || item.id) &&
-            !existingIds.has(item.documentId || item.id)
+            !existingIds.has(item.documentId || item.id),
         );
         if (missingInitial.length > 0) {
           return [...missingInitial, ...prevOptions];
@@ -124,15 +197,17 @@ export const CustomAsyncMultiSelect = ({
     }
   }, [isOpen, searchable]);
 
-  const filteredOptions =
-    searchable && searchQuery
-      ? options.filter((opt) =>
-          opt[optionText]?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : options;
+  // Filtered options are now just the options (since filtering happens on server)
+  // unless we want to keep client-side filtering for the currently loaded batch to feel snappy
+  // but server-side is safer for "infinite" lists.
+  // We can trust `options` to be relevant to `debouncedSearchQuery`, but there might be a lag.
+  // To avoid showing irrelevant results while waiting for debounce/fetch, we could also client-filter
+  // providing the user hasn't typed something completely new yet.
+  // For simplicity and correctness with "limit 100", we should rely on the server response matching the query.
+  const filteredOptions = options;
 
   const selectedOptions = options.filter((opt) =>
-    selectedIds.some((id) => id == opt.documentId || id == opt.id)
+    selectedIds.some((id) => id == opt.documentId || id == opt.id),
   );
 
   const handleToggle = (option) => {
@@ -250,10 +325,21 @@ export const CustomAsyncMultiSelect = ({
 
           {/* Options List */}
           <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
             className="overflow-y-auto p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ maxHeight: "240px" }}
           >
-            {filteredOptions.length > 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-500">
+                    Loading topics...
+                  </span>
+                </div>
+              </div>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const optionId = option.documentId || option.id;
                 const isSelected = selectedIds.some((id) => id == optionId);
@@ -279,6 +365,12 @@ export const CustomAsyncMultiSelect = ({
             ) : (
               <div className="p-4 text-center text-sm text-gray-500">
                 {searchQuery ? "No results found" : "No options available"}
+              </div>
+            )}
+            {loadingMore && (
+              <div className="flex items-center justify-center gap-2 p-3 border-t border-gray-100">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-500">Loading more...</span>
               </div>
             )}
           </div>

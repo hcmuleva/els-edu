@@ -12,7 +12,8 @@ const mongoService = {
 
   createClassroom: async (data) => {
     const response = await api.post("/mongo-studio/classrooms", data);
-    return response.data;`  `
+    return response.data;
+    `  `;
   },
 
   updateClassroom: async (id, data) => {
@@ -155,7 +156,7 @@ const mongoService = {
   getUserCustomCourses: async (params = {}) => {
     const queryString = qs.stringify(params, { encode: false });
     const response = await api.get(
-      `/mongo-studio/userCustomCourses?${queryString}`
+      `/mongo-studio/userCustomCourses?${queryString}`,
     );
     return response.data;
   },
@@ -168,7 +169,7 @@ const mongoService = {
   updateUserCustomCourse: async (id, data) => {
     const response = await api.put(
       `/mongo-studio/userCustomCourses/${id}`,
-      data
+      data,
     );
     return response.data;
   },

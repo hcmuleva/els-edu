@@ -130,7 +130,7 @@ export const NAVIGATION_BY_ROLE = {
     "analytics",
   ],
   ADMIN: ["dashboard", "manage", "my-studio", "mongo-studio", "analytics"],
-  TEACHER: ["my-studio", "mongo-studio"],
+  TEACHER: ["dashboard", "my-studio", "mongo-studio"],
   STUDENT: [
     "dashboard",
     "my-subscriptions",

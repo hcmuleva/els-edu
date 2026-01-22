@@ -94,12 +94,12 @@ export const QuestionCreate = () => {
       for (const question of questions) {
         if (["SC", "MCQ"].includes(question.questionType)) {
           const hasCorrectAnswer = question.options?.some(
-            (opt) => opt.isCorrect
+            (opt) => opt.isCorrect,
           );
           if (!hasCorrectAnswer) {
             notify(
               "Please select at least one correct answer for all questions",
-              { type: "warning" }
+              { type: "warning" },
             );
             return;
           }
@@ -127,7 +127,7 @@ export const QuestionCreate = () => {
         questions.length > 1
           ? `${questions.length} questions saved successfully!`
           : "Question saved successfully!",
-        { type: "success" }
+        { type: "success" },
       );
 
       // Redirect to My Studio
@@ -145,7 +145,7 @@ export const QuestionCreate = () => {
       <Title title="Create Question" />
 
       {/* Header */}
-      <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-10">
+      <div className="bg-white border-b border-border/50 px-6 py-4 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button

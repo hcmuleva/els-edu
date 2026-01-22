@@ -22,6 +22,7 @@ import {
   Filter,
   ClipboardList,
   HelpCircle,
+  Upload,
 } from "lucide-react";
 import {
   DndContext,
@@ -43,6 +44,7 @@ import mongoService from "../../../services/mongoService";
 import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
 import { useClass } from "../../../contexts/ClassContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { uploadFile } from "../../../services/user";
 
 // Helper functions for datetime-local conversion
 // datetime-local input expects: YYYY-MM-DDTHH:mm in LOCAL timezone
@@ -135,6 +137,27 @@ const ClassroomsTab = () => {
     thumbnail: "",
   });
 
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setCoverFile(null);
+    setCoverPreview(null);
+    setFormData((prev) => ({ ...prev, thumbnail: "" }));
+  };
+
   const [activeTab, setActiveTab] = useState("content"); // content | assignment | quiz
   const [modalAssignments, setModalAssignments] = useState([]);
   const [modalAssignmentSearch, setModalAssignmentSearch] = useState("");
@@ -142,7 +165,7 @@ const ClassroomsTab = () => {
   const [assignmentTotal, setAssignmentTotal] = useState(0);
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [selectedAssignmentDetails, setSelectedAssignmentDetails] = useState(
-    []
+    [],
   );
 
   const [modalQuizzes, setModalQuizzes] = useState([]);
@@ -157,7 +180,7 @@ const ClassroomsTab = () => {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event) => {
@@ -170,7 +193,7 @@ const ClassroomsTab = () => {
       const newOrder = arrayMove(
         formData.contentDocumentIds,
         oldIndex,
-        newIndex
+        newIndex,
       );
 
       setFormData((prev) => ({
@@ -357,10 +380,10 @@ const ClassroomsTab = () => {
           }/contents?filters[documentId][$eq]=${id}&fields[0]=title&fields[1]=documentId&fields[2]=type&fields[3]=json_description`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         )
           .then((r) => r.json())
-          .then((d) => d.data?.[0])
+          .then((d) => d.data?.[0]),
       );
 
       const results = await Promise.all(promises);
@@ -393,7 +416,7 @@ const ClassroomsTab = () => {
       result = result.filter(
         (c) =>
           c.title?.toLowerCase().includes(q) ||
-          c.description?.toLowerCase().includes(q)
+          c.description?.toLowerCase().includes(q),
       );
     }
 
@@ -429,7 +452,7 @@ const ClassroomsTab = () => {
       .map(
         (id) =>
           selectedAssignmentDetails?.find((a) => a.documentId === id) ||
-          modalAssignments?.find((a) => a.documentId === id)
+          modalAssignments?.find((a) => a.documentId === id),
       )
       .filter(Boolean);
   }, [
@@ -443,7 +466,7 @@ const ClassroomsTab = () => {
       .map(
         (id) =>
           selectedQuizDetails?.find((q) => q.documentId === id) ||
-          modalQuizzes?.find((q) => q.documentId === id)
+          modalQuizzes?.find((q) => q.documentId === id),
       )
       .filter(Boolean);
   }, [formData.quizIds, selectedQuizDetails, modalQuizzes]);
@@ -479,6 +502,8 @@ const ClassroomsTab = () => {
     setQuizPage(1);
     setSelectedQuizDetails([]);
     setActiveTab("content");
+    setCoverPreview(null);
+    setCoverFile(null);
   };
 
   // Open form for create
@@ -527,6 +552,10 @@ const ClassroomsTab = () => {
       // For brevity, skipping specialized pre-fetch for assignments unless needed
     }
 
+    if (item.thumbnail) {
+      setCoverPreview(item.thumbnail);
+    }
+
     setShowForm(true);
   };
 
@@ -559,6 +588,25 @@ const ClassroomsTab = () => {
         contentDocumentIds: formData.contentDocumentIds,
         assignmentDocumentIds: formData.assignmentDocumentIds,
       };
+
+      if (coverFile) {
+        const uploadData = new FormData();
+        uploadData.append("files", coverFile);
+        const uploadRes = await uploadFile(uploadData);
+        if (uploadRes && uploadRes[0]) {
+          // Strapi returns an array of files with the S3 URL
+          // If using S3 provider, the url will be the full S3 URL
+          // If local, it's a relative path - prepend base URL
+          let fileUrl = uploadRes[0].url;
+          if (fileUrl && !fileUrl.startsWith("http")) {
+            const apiUrl =
+              import.meta.env.VITE_API_URL || "http://localhost:1337";
+            const baseUrl = new URL(apiUrl).origin;
+            fileUrl = `${baseUrl}${fileUrl}`;
+          }
+          payload.thumbnail = fileUrl;
+        }
+      }
 
       if (editingItem) {
         // Use _id or documentId
@@ -640,12 +688,12 @@ const ClassroomsTab = () => {
         // If unselecting, remove from ID list but keep in details cache to avoid refetching if re-selected immediately
         // (optional optimization, but removing for now to keep strict sync)
         setSelectedContentDetails((curr) =>
-          curr.filter((c) => c.documentId !== docId)
+          curr.filter((c) => c.documentId !== docId),
         );
         return {
           ...prev,
           contentDocumentIds: prev.contentDocumentIds.filter(
-            (id) => id !== docId
+            (id) => id !== docId,
           ),
         };
       }
@@ -658,7 +706,7 @@ const ClassroomsTab = () => {
       contentDocumentIds: prev.contentDocumentIds.filter((id) => id !== docId),
     }));
     setSelectedContentDetails((curr) =>
-      curr.filter((c) => c.documentId !== docId)
+      curr.filter((c) => c.documentId !== docId),
     );
   };
 
@@ -675,12 +723,12 @@ const ClassroomsTab = () => {
         };
       } else {
         setSelectedAssignmentDetails((curr) =>
-          curr.filter((a) => a.documentId !== docId)
+          curr.filter((a) => a.documentId !== docId),
         );
         return {
           ...prev,
           assignmentDocumentIds: prev.assignmentDocumentIds.filter(
-            (id) => id !== docId
+            (id) => id !== docId,
           ),
         };
       }
@@ -701,7 +749,7 @@ const ClassroomsTab = () => {
         };
       } else {
         setSelectedQuizDetails((curr) =>
-          curr.filter((q) => q.documentId !== docId)
+          curr.filter((q) => q.documentId !== docId),
         );
         return {
           ...prev,
@@ -782,79 +830,89 @@ const ClassroomsTab = () => {
           {filteredClassrooms.map((classroom) => (
             <div
               key={classroom._id}
-              className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all"
+              className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all"
             >
-              <div className="flex items-start justify-between mb-3">
-                {getStatusBadge(classroom.status)}
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleEdit(classroom)}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <Pencil className="w-4 h-4 text-gray-500" />
-                  </button>
-                  <button
-                    onClick={() => confirmDelete(classroom)}
-                    className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+              {/* Cover Photo */}
+              {classroom.thumbnail && (
+                <div className="aspect-video bg-gray-50 overflow-hidden">
+                  <img
+                    src={classroom.thumbnail}
+                    alt={classroom.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </div>
-              <h3
-                className="font-bold text-gray-800 mb-1 cursor-pointer hover:text-primary"
-                onClick={() => handleEdit(classroom)}
-              >
-                {classroom.title}
-              </h3>
-              <p className="text-sm text-gray-500 truncate mb-3">
-                {classroom.description}
-              </p>
+              )}
 
-              <div className="flex gap-3 text-xs text-gray-500 mb-2">
-                <div className="flex items-center gap-1">
-                  <FileText className="w-3 h-3" />
-                  <span>
-                    {classroom.contentDocumentIds?.length || 0} Contents
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  {getStatusBadge(classroom.status)}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleEdit(classroom)}
+                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <Pencil className="w-4 h-4 text-gray-500" />
+                    </button>
+                    <button
+                      onClick={() => confirmDelete(classroom)}
+                      className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+                <h3
+                  className="font-bold text-gray-800 mb-1 cursor-pointer hover:text-primary"
+                  onClick={() => handleEdit(classroom)}
+                >
+                  {classroom.title}
+                </h3>
+                <p className="text-sm text-gray-500 truncate mb-3"></p>
+                <div className="flex gap-3 text-xs text-gray-500 mb-2">
+                  <div className="flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    <span>
+                      {classroom.contentDocumentIds?.length || 0} Contents
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <ClipboardList className="w-3 h-3" />
+                    <span>
+                      {classroom.assignmentDocumentIds?.length || 0} Assignments
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <HelpCircle className="w-3 h-3" />
+                    <span>{classroom.quizIds?.length || 0} Quizzes</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {classroom.classTypes?.slice(0, 4).map((type) => (
+                    <span
+                      key={type}
+                      className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full"
+                    >
+                      {type}
+                    </span>
+                  ))}
+                  {classroom.classTypes?.length > 4 && (
+                    <span className="text-xs text-gray-400">
+                      +{classroom.classTypes.length - 4} more
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {classroom.endDate
+                      ? new Date(classroom.endDate).toLocaleDateString()
+                      : "No date"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    {classroom.contentDocumentIds?.length || 0} lectures
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <ClipboardList className="w-3 h-3" />
-                  <span>
-                    {classroom.assignmentDocumentIds?.length || 0} Assignments
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <HelpCircle className="w-3 h-3" />
-                  <span>{classroom.quizIds?.length || 0} Quizzes</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {classroom.classTypes?.slice(0, 4).map((type) => (
-                  <span
-                    key={type}
-                    className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full"
-                  >
-                    {type}
-                  </span>
-                ))}
-                {classroom.classTypes?.length > 4 && (
-                  <span className="text-xs text-gray-400">
-                    +{classroom.classTypes.length - 4} more
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-xs text-gray-400">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {classroom.endDate
-                    ? new Date(classroom.endDate).toLocaleDateString()
-                    : "No date"}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  {classroom.contentDocumentIds?.length || 0} lectures
-                </span>
               </div>
             </div>
           ))}
@@ -898,6 +956,44 @@ const ClassroomsTab = () => {
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
                         placeholder="Class title"
                       />
+                    </div>
+
+                    {/* Cover Photo */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Cover Photo
+                      </label>
+                      {coverPreview ? (
+                        <div className="relative">
+                          <img
+                            src={coverPreview}
+                            alt="Cover preview"
+                            className="w-full h-48 object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary/50 hover:bg-gray-50 transition-all">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                            <p className="mb-1 text-sm font-medium text-gray-600">
+                              Click to upload cover
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                      )}
                     </div>
 
                     {/* Description */}
@@ -1237,11 +1333,11 @@ const ClassroomsTab = () => {
                               const isSelected =
                                 activeTab === "content"
                                   ? formData.contentDocumentIds.includes(
-                                      item.documentId
+                                      item.documentId,
                                     )
                                   : activeTab === "assignment"
                                   ? formData.assignmentDocumentIds.includes(
-                                      item.documentId
+                                      item.documentId,
                                     )
                                   : formData.quizIds?.includes(item.documentId);
 
@@ -1287,7 +1383,7 @@ const ClassroomsTab = () => {
                                     <p className="text-xs text-gray-500 line-clamp-2">
                                       {activeTab === "content"
                                         ? extractTextFromBlocks(
-                                            item.json_description
+                                            item.json_description,
                                           ) || item.description
                                         : item.description}
                                     </p>
@@ -1367,7 +1463,7 @@ const ClassroomsTab = () => {
                               >
                                 <SortableContext
                                   items={selectedContents.map(
-                                    (c) => c.documentId
+                                    (c) => c.documentId,
                                   )}
                                   strategy={verticalListSortingStrategy}
                                 >
@@ -1379,7 +1475,7 @@ const ClassroomsTab = () => {
                                           ...content,
                                           description:
                                             extractTextFromBlocks(
-                                              content.json_description
+                                              content.json_description,
                                             ) || content.description,
                                         }}
                                         onRemove={removeContent}
@@ -1481,7 +1577,7 @@ const ClassroomsTab = () => {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
       {/* Delete Confirmation Modal */}

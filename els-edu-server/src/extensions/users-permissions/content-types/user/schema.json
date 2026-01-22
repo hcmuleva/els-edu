@@ -92,11 +92,18 @@
     },
     "gender": {
       "type": "enumeration",
-      "enum": ["MALE", "FEMALE"]
+      "enum": [
+        "MALE",
+        "FEMALE"
+      ]
     },
     "user_experience_level": {
       "type": "enumeration",
-      "enum": ["SCHOOL", "COLLEGE", "PROFESSIONAL"]
+      "enum": [
+        "SCHOOL",
+        "COLLEGE",
+        "PROFESSIONAL"
+      ]
     },
     "user_role": {
       "type": "enumeration",
@@ -112,7 +119,12 @@
     "profile_picture": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": ["images", "files", "videos", "audios"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     },
     "org": {
       "type": "relation",
@@ -122,7 +134,12 @@
     },
     "user_status": {
       "type": "enumeration",
-      "enum": ["PENDING", "APPROVED", "REJECTED", "BLOCKED"]
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "BLOCKED"
+      ]
     },
     "calander_activities": {
       "type": "relation",
@@ -237,7 +254,10 @@
     },
     "control_type": {
       "type": "enumeration",
-      "enum": ["PARENT", "STUDENT"]
+      "enum": [
+        "PARENT",
+        "STUDENT"
+      ]
     },
     "parental_lock_code": {
       "type": "string",
@@ -249,6 +269,18 @@
       "relation": "oneToMany",
       "target": "api::assignment.assignment",
       "mappedBy": "creator"
+    },
+    "children": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "parent"
+    },
+    "parent": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "children"
     }
   }
 }

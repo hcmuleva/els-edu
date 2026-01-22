@@ -787,7 +787,7 @@ module.exports = {
         ctx.body = { error: "Collection not found" };
         return;
       }
-
+      
       // Remove _id if present (let MongoDB generate it)
       delete itemData._id;
 
