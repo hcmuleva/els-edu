@@ -198,6 +198,15 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
+      {/* Analytics - Skill Quiz (new flow) */}
+      <Route
+        path="/analytics/skill-quiz"
+        element={
+          <ProtectedRoute>
+            <SkillQuizPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* MongoDB Studio - only ADMIN, SUPERADMIN, and TEACHER */}
       <Route

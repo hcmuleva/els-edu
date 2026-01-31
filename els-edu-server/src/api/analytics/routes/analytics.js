@@ -117,7 +117,7 @@ module.exports = {
     // Quiz - Get quiz results (requires auth)
     {
       method: "GET",
-      path: "/analytics/quiz/results",
+      path: "/analytics/quiz-results",
       handler: "analytics.getQuizResults",
       config: {
         policies: [],
@@ -140,6 +140,39 @@ module.exports = {
       method: "POST",
       path: "/analytics/skills/link-topics",
       handler: "analytics.linkTopicsToSkill",
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+    // Get academic subjects for school surveys (public)
+    {
+      method: "GET",
+      path: "/analytics/subjects",
+      handler: "analytics.getAcademicSubjects",
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+    // Get learning path skills for college surveys (public)
+    {
+      method: "GET",
+      path: "/analytics/learning-skills",
+      handler: "analytics.getLearningPathSkills",
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+    // Seed survey data (subjects and learning path skills)
+    {
+      method: "POST",
+      path: "/analytics/seed-survey-data",
+      handler: "analytics.seedSurveyData",
       config: {
         auth: false,
         policies: [],

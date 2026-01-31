@@ -98,7 +98,7 @@ const ClassroomDashboardSection = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mt-4 space-y-4">
       {/* Live Classes Banner */}
       {liveClasses.length > 0 && (
         <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl p-5 md:p-6 text-white shadow-xl shadow-red-200/50">

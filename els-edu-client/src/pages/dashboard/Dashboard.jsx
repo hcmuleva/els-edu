@@ -72,36 +72,37 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-b from-primary-50/30 via-white to-violet-50/20 pb-20 md:pb-0 overflow-x-hidden">
       <Title title="Dashboard" />
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 pt-safe -mx-4 -mt-2 md:-mx-8 md:-mt-6 mb-4">
-        <div className="max-w-6xl mx-auto px-4 py-4 md:px-8 md:py-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg shadow-primary-200 shrink-0">
-              <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
-                Welcome back, {identity?.fullName || identity?.username}! 👋
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Keep learning and growing every day!
-              </p>
+      {/* Full-Width Header */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 w-full">
+        <div className="w-full px-4 py-4 md:px-8 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center shadow-lg shadow-primary-200 shrink-0">
+                <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                  Welcome back, {identity?.fullName || identity?.username}! 👋
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Keep learning and growing every day!
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto py-4 md:py-8 space-y-8">
-        {/* Student Analytics & Stats */}
-        <StudentDashboardSection identity={identity} />
-
-        {/* Existing Classroom Dashboard Section */}
-        <ClassroomDashboardSection />
+      <div className="w-full py-4 md:py-8">
+        {/* Student Analytics & Stats with Classroom Section integrated */}
+        <StudentDashboardSection identity={identity}>
+          <ClassroomDashboardSection />
+        </StudentDashboardSection>
 
         {/* Quick Actions */}
-        <div>
-          <div className="flex items-center justify-between mb-3 px-1 md:px-0">
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Zap className="w-5 h-5 text-primary-500" />
               Quick Actions

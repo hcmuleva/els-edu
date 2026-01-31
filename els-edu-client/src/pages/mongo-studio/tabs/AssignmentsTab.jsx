@@ -44,6 +44,10 @@ const AssignmentsTab = () => {
   const isSuperAdmin = permissions === "SUPERADMIN";
   const userOrgDocumentId = identity?.org?.documentId;
 
+  // Bulk Selection State
+  const [selectedAssignmentIds, setSelectedAssignmentIds] = useState([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+
   // Form state
   const [formData, setFormData] = useState({
     title: "",
@@ -106,7 +110,7 @@ const AssignmentsTab = () => {
       result = result.filter(
         (a) =>
           a.title?.toLowerCase().includes(q) ||
-          a.description?.toLowerCase().includes(q)
+          a.description?.toLowerCase().includes(q),
       );
     }
 
@@ -251,6 +255,46 @@ const AssignmentsTab = () => {
     }
   };
 
+  // Bulk Selection Handlers
+  const toggleSelection = (id) => {
+    setSelectedAssignmentIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const selectAll = () => {
+    if (selectedAssignmentIds.length === filteredAssignments.length) {
+      setSelectedAssignmentIds([]);
+    } else {
+      setSelectedAssignmentIds(filteredAssignments.map((a) => a.documentId));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAssignmentIds.length === 0) return;
+
+    try {
+      setIsDeleting(true);
+      await Promise.all(
+        selectedAssignmentIds.map((id) => mongoService.deleteAssignment(id)),
+      );
+      notify(
+        `Successfully deleted ${selectedAssignmentIds.length} assignments`,
+        {
+          type: "success",
+        },
+      );
+      fetchAssignments();
+      setSelectedAssignmentIds([]);
+      setBulkDeleteModalOpen(false);
+    } catch (err) {
+      console.error("Error bulk deleting assignments:", err);
+      notify("Failed to delete some assignments", { type: "error" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Toggle class standard
   const toggleClassStandard = (std) => {
     setFormData((prev) => ({
@@ -298,6 +342,40 @@ const AssignmentsTab = () => {
         />
       </div>
 
+      {/* Bulk Actions Header - Sticky when items selected */}
+      {(selectedAssignmentIds.length > 0 || assignments.length > 0) && (
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b pb-4 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={
+                  filteredAssignments.length > 0 &&
+                  selectedAssignmentIds.length === filteredAssignments.length
+                }
+                onChange={selectAll}
+                className="w-5 h-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 transition-all"
+              />
+              <span className="font-medium text-gray-700">
+                {selectedAssignmentIds.length > 0
+                  ? `${selectedAssignmentIds.length} Selected`
+                  : "Select All"}
+              </span>
+            </label>
+          </div>
+
+          {selectedAssignmentIds.length > 0 && (
+            <button
+              onClick={() => setBulkDeleteModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors animate-in fade-in slide-in-from-right-4"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Selected ({selectedAssignmentIds.length})
+            </button>
+          )}
+        </div>
+      )}
+
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -310,76 +388,100 @@ const AssignmentsTab = () => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAssignments.map((assignment) => (
-            <div
-              key={assignment.documentId}
-              className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-bold text-white ${
-                    assignment.type === "PROJECT"
-                      ? "bg-purple-500"
-                      : "bg-blue-500"
-                  }`}
+          {filteredAssignments.map((assignment) => {
+            const isSelected = selectedAssignmentIds.includes(
+              assignment.documentId,
+            );
+            return (
+              <div
+                key={assignment.documentId}
+                className={`group relative bg-white border rounded-xl p-4 hover:shadow-md transition-all ${
+                  isSelected
+                    ? "ring-2 ring-orange-500 border-transparent"
+                    : "border-gray-100"
+                }`}
+              >
+                {/* Selection Checkbox */}
+                <div className="absolute top-4 left-4 z-10">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleSelection(assignment.documentId);
+                    }}
+                    className={`w-5 h-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 shadow-sm transition-all bg-white`}
+                  />
+                </div>
+
+                <div className="flex items-start justify-between mb-3 pl-8">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-bold text-white ${
+                      assignment.type === "PROJECT"
+                        ? "bg-purple-500"
+                        : "bg-blue-500"
+                    }`}
+                  >
+                    {assignment.type}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleEdit(assignment)}
+                      className="p-1.5 hover:bg-gray-100 rounded-lg"
+                    >
+                      <Pencil className="w-4 h-4 text-gray-500" />
+                    </button>
+                    <button
+                      onClick={() => confirmDelete(assignment)}
+                      className="p-1.5 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+                <h3
+                  className="font-bold text-gray-800 mb-1 cursor-pointer hover:text-orange-600"
+                  onClick={() =>
+                    navigate(
+                      `/mongo-studio/assignments/${assignment.documentId}`,
+                    )
+                  }
                 >
-                  {assignment.type}
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleEdit(assignment)}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg"
-                  >
-                    <Pencil className="w-4 h-4 text-gray-500" />
-                  </button>
-                  <button
-                    onClick={() => confirmDelete(assignment)}
-                    className="p-1.5 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+                  {assignment.title}
+                </h3>
+                <p className="text-sm text-gray-500 truncate mb-2">
+                  {assignment.description}
+                </p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {assignment.classStandards?.slice(0, 4).map((std) => (
+                    <span
+                      key={std}
+                      className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full"
+                    >
+                      {std.replace("Standard_", "")}
+                    </span>
+                  ))}
+                  {assignment.classStandards?.length > 4 && (
+                    <span className="text-xs text-gray-400">
+                      +{assignment.classStandards.length - 4}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  {assignment.dueDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(assignment.dueDate).toLocaleDateString()}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    Max: {assignment.maxScore}
+                  </span>
                 </div>
               </div>
-              <h3
-                className="font-bold text-gray-800 mb-1 cursor-pointer hover:text-orange-600"
-                onClick={() =>
-                  navigate(`/mongo-studio/assignments/${assignment.documentId}`)
-                }
-              >
-                {assignment.title}
-              </h3>
-              <p className="text-sm text-gray-500 truncate mb-2">
-                {assignment.description}
-              </p>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {assignment.classStandards?.slice(0, 4).map((std) => (
-                  <span
-                    key={std}
-                    className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full"
-                  >
-                    {std.replace("Standard_", "")}
-                  </span>
-                ))}
-                {assignment.classStandards?.length > 4 && (
-                  <span className="text-xs text-gray-400">
-                    +{assignment.classStandards.length - 4}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-xs text-gray-400">
-                {assignment.dueDate && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(assignment.dueDate).toLocaleDateString()}
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  Max: {assignment.maxScore}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -566,7 +668,7 @@ const AssignmentsTab = () => {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
       {/* Delete Confirmation Modal */}
@@ -580,6 +682,16 @@ const AssignmentsTab = () => {
         title="Delete Assignment"
         message="Are you sure you want to delete this assignment? This action cannot be undone."
         itemName={itemToDelete?.title}
+        isDeleting={isDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={() => setBulkDeleteModalOpen(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedAssignmentIds.length} Assignments`}
+        message={`Are you sure you want to delete these ${selectedAssignmentIds.length} assignments? This action cannot be undone.`}
         isDeleting={isDeleting}
       />
     </div>

@@ -67,7 +67,7 @@ module.exports = {
         // Get role's required skills
         const roleData = await mongoService.getRoleByNameAndCompany(
           role,
-          company
+          company,
         );
         if (roleData && roleData.requiredSkills) {
           const skillNames = roleData.requiredSkills.map((s) => s.skillName);
@@ -76,7 +76,7 @@ module.exports = {
           // Merge with required levels
           const enrichedSkills = skills.map((skill) => {
             const req = roleData.requiredSkills.find(
-              (r) => r.skillName === skill.name
+              (r) => r.skillName === skill.name,
             );
             return {
               ...skill,
@@ -134,6 +134,17 @@ module.exports = {
       };
 
       const survey = await mongoService.saveSurvey(surveyData);
+
+      // Update user's is_survey_completed flag
+      await strapi.entityService.update(
+        "plugin::users-permissions.user",
+        user.id,
+        {
+          data: {
+            is_survey_completed: true,
+          },
+        },
+      );
 
       // Get skill-topic mappings for recommendations
       const skillNames = surveyData.skills.map((s) => s.skillName);
@@ -254,7 +265,7 @@ module.exports = {
         ...new Set(
           skillsWithTopics
             .filter((s) => s.topicDocumentIds && s.topicDocumentIds.length > 0)
-            .flatMap((s) => s.topicDocumentIds)
+            .flatMap((s) => s.topicDocumentIds),
         ),
       ];
 
@@ -275,7 +286,7 @@ module.exports = {
         rawTopics.reduce((acc, topic) => {
           if (!acc[topic.documentId]) acc[topic.documentId] = topic;
           return acc;
-        }, {})
+        }, {}),
       );
 
       ctx.body = {
@@ -292,11 +303,11 @@ module.exports = {
 
   /**
    * Get random questions for quiz
-   * GET /api/analytics/quiz/questions?topicIds=abc,def&perTopic=5
+   * GET /api/analytics/quiz/questions?topicIds=abc,def&perTopic=5&level=3
    */
   async getQuizQuestions(ctx) {
     try {
-      const { topicIds, perTopic = 5 } = ctx.query;
+      const { topicIds, perTopic = 5, level } = ctx.query;
       if (!topicIds) {
         ctx.status = 400;
         ctx.body = { error: "topicIds parameter required" };
@@ -308,13 +319,17 @@ module.exports = {
         ...new Set(topicIds.split(",").map((s) => s.trim())),
       ];
       const questionsPerTopic = parseInt(perTopic, 10) || 5;
+      const targetLevel = level ? parseInt(level, 10) : null;
       const allQuestions = [];
 
       for (const topicDocId of topicDocIds) {
-        // Fetch random questions for this topic using Strapi v5 documents API
         try {
-          console.log(`Fetching questions for topic: ${topicDocId}`);
-          const questions = await strapi
+          console.log(
+            `Fetching questions for topic: ${topicDocId}, level: ${targetLevel || "any"}`,
+          );
+
+          // Fetch ALL questions for this topic (not limited by level initially)
+          const allTopicQuestions = await strapi
             .documents("api::question.question")
             .findMany({
               filters: {
@@ -325,36 +340,49 @@ module.exports = {
                 },
               },
               populate: ["topics"],
-              limit: questionsPerTopic * 3,
+              limit: 100, // Get all available questions
             });
 
-          console.log(
-            `Found ${questions?.length || 0} questions for topic ${topicDocId}`
-          );
-
-          if (!questions || questions.length === 0) {
-            // Fallback debug: check if any questions exist at all
-            const anyQ = await strapi
-              .documents("api::question.question")
-              .findMany({ limit: 1 });
-            console.log("Debug - Any questions in DB?", anyQ?.length);
+          if (!allTopicQuestions || allTopicQuestions.length === 0) {
+            console.log(`No questions found for topic ${topicDocId}`);
             continue;
           }
 
-          // Shuffle and take required amount
-          const shuffled = questions.sort(() => Math.random() - 0.5);
-          const selected = shuffled.slice(0, questionsPerTopic);
+          let selectedQuestions = [];
+
+          // If level specified, prioritize by proximity to target level
+          if (targetLevel) {
+            // Sort by distance from target level
+            const sorted = allTopicQuestions.sort((a, b) => {
+              const levelA = a.level || 3; // Default to level 3 if not set
+              const levelB = b.level || 3;
+              const distA = Math.abs(levelA - targetLevel);
+              const distB = Math.abs(levelB - targetLevel);
+              return distA - distB;
+            });
+            selectedQuestions = sorted.slice(0, questionsPerTopic);
+            console.log(
+              `Found ${allTopicQuestions.length} total, selected ${selectedQuestions.length} closest to level ${targetLevel}`,
+            );
+          } else {
+            // No level preference, just shuffle and take required amount
+            const shuffled = allTopicQuestions.sort(() => Math.random() - 0.5);
+            selectedQuestions = shuffled.slice(0, questionsPerTopic);
+            console.log(
+              `Found ${allTopicQuestions.length} total, selected ${selectedQuestions.length} random`,
+            );
+          }
 
           allQuestions.push(
-            ...selected.map((q) => ({
+            ...selectedQuestions.map((q) => ({
               ...q,
               topicDocumentId: topicDocId,
-            }))
+            })),
           );
         } catch (err) {
           console.error(
             `Error fetching questions for topic ${topicDocId}:`,
-            err
+            err,
           );
         }
       }
@@ -408,11 +436,11 @@ module.exports = {
         if (
           answer.topicDocumentId &&
           !skillMap[answer.skillName].topicDocumentIds.includes(
-            answer.topicDocumentId
+            answer.topicDocumentId,
           )
         ) {
           skillMap[answer.skillName].topicDocumentIds.push(
-            answer.topicDocumentId
+            answer.topicDocumentId,
           );
         }
       }
@@ -422,7 +450,7 @@ module.exports = {
         const percentage =
           skill.questionsAttempted > 0
             ? Math.round(
-                (skill.correctAnswers / skill.questionsAttempted) * 100
+                (skill.correctAnswers / skill.questionsAttempted) * 100,
               )
             : 0;
         return {
@@ -473,7 +501,7 @@ module.exports = {
 
   /**
    * Get user's quiz results
-   * GET /api/analytics/quiz/results
+   * GET /api/analytics/quiz-results
    */
   async getQuizResults(ctx) {
     try {
@@ -484,8 +512,72 @@ module.exports = {
         return;
       }
 
-      const quizzes = await mongoService.getUserQuizzes(user.documentId);
-      ctx.body = { data: { quizzes } };
+      // Use mongoService method to fetch quizzes
+      // Note: getUserQuizzes returns all matching quizzes sorted by date
+      const allQuizzes = await mongoService.getUserQuizzes(user.documentId, {
+        type: "SKILL",
+      });
+
+      // Limit to latest 10
+      const quizzes = allQuizzes.slice(0, 10);
+
+      // Populate question details from Strapi
+      for (const quiz of quizzes) {
+        if (quiz.questionDetails && quiz.questionDetails.length > 0) {
+          for (const detail of quiz.questionDetails) {
+            try {
+              // Fetch full question from Strapi
+              const question = await strapi
+                .documents("api::question.question")
+                .findOne({
+                  documentId: detail.questionId,
+                });
+
+              if (question) {
+                detail.questionText = question.questionText;
+                detail.options = question.options;
+
+                // Map answer IDs to text
+                if (detail.selectedAnswer) {
+                  const selectedOpt = question.options?.find(
+                    (o) =>
+                      String(o.id) === String(detail.selectedAnswer) ||
+                      o.documentId === detail.selectedAnswer,
+                  );
+                  // The field in JSON is 'option', not 'text'
+                  detail.selectedAnswerText = selectedOpt
+                    ? selectedOpt.option
+                    : "Unknown";
+                }
+
+                if (detail.correctAnswer) {
+                  const correctOpt = question.options?.find(
+                    (o) =>
+                      String(o.id) === String(detail.correctAnswer) ||
+                      o.documentId === detail.correctAnswer,
+                  );
+                  detail.correctAnswerText = correctOpt
+                    ? correctOpt.option
+                    : "Unknown";
+                }
+              } else {
+                console.warn(`Question not found: ${detail.questionId}`);
+              }
+            } catch (err) {
+              console.error(
+                `Error populating question ${detail.questionId}:`,
+                err,
+              );
+            }
+          }
+        }
+      }
+
+      ctx.body = {
+        data: {
+          quizzes,
+        },
+      };
     } catch (error) {
       ctx.status = 500;
       ctx.body = { error: error.message };
@@ -495,11 +587,12 @@ module.exports = {
   /**
    * Link topics to a skill
    * POST /api/analytics/skills/link-topics
-   * Body: { skillName: "Python", topicDocumentIds: ["abc", "def"] }
+   * Body: { skillName: "Python", topicDocumentIds: ["abc"], subjectDocumentIds: ["xyz"] }
    */
   async linkTopicsToSkill(ctx) {
     try {
-      const { skillName, topicDocumentIds } = ctx.request.body;
+      const { skillName, topicDocumentIds, subjectDocumentIds } =
+        ctx.request.body;
 
       if (!skillName || !topicDocumentIds) {
         ctx.status = 400;
@@ -508,10 +601,17 @@ module.exports = {
       }
 
       await mongoService.connect();
+
+      // Build update object
+      const updateData = { topicDocumentIds: topicDocumentIds };
+      if (subjectDocumentIds) {
+        updateData.subjectDocumentIds = subjectDocumentIds;
+      }
+
       const result = await mongoService.models.Skill.findOneAndUpdate(
         { name: skillName },
-        { $set: { topicDocumentIds: topicDocumentIds } },
-        { new: true }
+        { $set: updateData },
+        { new: true },
       );
 
       if (!result) {
@@ -522,7 +622,7 @@ module.exports = {
 
       ctx.body = {
         data: {
-          message: `Linked ${topicDocumentIds.length} topics to ${skillName}`,
+          message: `Linked ${topicDocumentIds.length} topics${subjectDocumentIds ? " and " + subjectDocumentIds.length + " subjects" : ""} to ${skillName}`,
           skill: result,
         },
       };
@@ -636,19 +736,19 @@ module.exports = {
         (name) => ({
           name,
           domain: jobRoles.find((j) => j.company === name).domain,
-        })
+        }),
       );
 
       const domains = [...new Set(jobRoles.map((j) => j.domain))].map(
         (name) => ({
           name,
           description: `${name} sector`,
-        })
+        }),
       );
 
       const allSkills = new Set();
       jobRoles.forEach((jr) =>
-        jr.skills.forEach((s) => allSkills.add(s.skill))
+        jr.skills.forEach((s) => allSkills.add(s.skill)),
       );
       const skills = [...allSkills].map((name) => ({
         name,
@@ -678,6 +778,80 @@ module.exports = {
             skills: skills.length,
             roles: roles.length,
           },
+        },
+      };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { error: error.message };
+    }
+  },
+
+  /**
+   * Get academic subjects for school surveys
+   * GET /api/analytics/subjects?categories=academic,non-academic&search=math&page=1&limit=20
+   */
+  async getAcademicSubjects(ctx) {
+    try {
+      const { categories, category, search, page, limit } = ctx.query;
+
+      const filters = {};
+      if (categories) {
+        filters.categories = categories.split(",").map((c) => c.trim());
+      } else if (category) {
+        filters.category = category;
+      }
+      if (search) filters.search = search;
+      if (page) filters.page = parseInt(page, 10);
+      if (limit) filters.limit = parseInt(limit, 10);
+
+      const result = await mongoService.getAcademicSubjects(filters);
+      ctx.body = result;
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { error: error.message };
+    }
+  },
+
+  /**
+   * Get learning path skills for college surveys
+   * GET /api/analytics/learning-skills?learningPaths=development,devops&search=react&page=1&limit=20
+   */
+  async getLearningPathSkills(ctx) {
+    try {
+      const { learningPaths, learningPath, search, page, limit } = ctx.query;
+
+      const filters = {};
+      if (learningPaths) {
+        filters.learningPaths = learningPaths.split(",").map((lp) => lp.trim());
+      } else if (learningPath) {
+        filters.learningPath = learningPath;
+      }
+      if (search) filters.search = search;
+      if (page) filters.page = parseInt(page, 10);
+      if (limit) filters.limit = parseInt(limit, 10);
+
+      const result = await mongoService.getLearningPathSkills(filters);
+      ctx.body = result;
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = { error: error.message };
+    }
+  },
+
+  /**
+   * Seed academic subjects and learning path skills
+   * POST /api/analytics/seed-survey-data
+   */
+  async seedSurveyData(ctx) {
+    try {
+      const subjectsResult = await mongoService.seedAcademicSubjects();
+      const skillsResult = await mongoService.seedLearningPathSkills();
+
+      ctx.body = {
+        data: {
+          message: "Survey data seeded successfully",
+          subjects: subjectsResult,
+          skills: skillsResult,
         },
       };
     } catch (error) {

@@ -15,13 +15,40 @@ const UserSurveysTab = () => {
       type: "select",
       required: true,
       options: [
-        { value: "company", label: "Company" },
-        { value: "self", label: "Self" },
+        { value: "school", label: "School" },
+        { value: "college", label: "College" },
+        { value: "professional", label: "Professional" },
+        { value: "company", label: "Company (Legacy)" },
+        { value: "self", label: "Self (Legacy)" },
+      ],
+    },
+    {
+      key: "academicCategories",
+      label: "Academic Categories (School)",
+      type: "array",
+      itemFields: [
+        {
+          key: "category",
+          label: "Category",
+          type: "string",
+        },
+      ],
+    },
+    {
+      key: "learningPaths",
+      label: "Learning Paths (College)",
+      type: "array",
+      itemFields: [
+        {
+          key: "path",
+          label: "Path",
+          type: "string",
+        },
       ],
     },
     {
       key: "company",
-      label: "Company",
+      label: "Company (Professional)",
       type: "string",
     },
     {
@@ -35,6 +62,28 @@ const UserSurveysTab = () => {
       type: "string",
     },
     {
+      key: "subjects",
+      label: "Subjects (School)",
+      type: "array",
+      itemFields: [
+        {
+          key: "subjectName",
+          label: "Subject Name",
+          type: "string",
+        },
+        {
+          key: "category",
+          label: "Category",
+          type: "string",
+        },
+        {
+          key: "selfRating",
+          label: "Self Rating (1-5)",
+          type: "number",
+        },
+      ],
+    },
+    {
       key: "skills",
       label: "Skills",
       type: "array",
@@ -42,6 +91,11 @@ const UserSurveysTab = () => {
         {
           key: "skillName",
           label: "Skill Name",
+          type: "string",
+        },
+        {
+          key: "learningPath",
+          label: "Learning Path",
           type: "string",
         },
         {
@@ -64,6 +118,3 @@ const UserSurveysTab = () => {
 };
 
 export default UserSurveysTab;
-
-
-

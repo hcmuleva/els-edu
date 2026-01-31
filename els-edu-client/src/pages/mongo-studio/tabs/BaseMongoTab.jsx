@@ -22,6 +22,7 @@ import { CustomAsyncMultiSelect } from "../../../components/common/CustomAsyncMu
 import MongoCollectionSelect from "../../../components/common/MongoCollectionSelect";
 import MongoCollectionMultiSelect from "../../../components/common/MongoCollectionMultiSelect";
 import CountListModal from "../../../components/studio/CountListModal";
+import DeleteConfirmationModal from "../../../components/common/DeleteConfirmationModal";
 import { subscribeToCustomCourseUpdates } from "../../../services/ably";
 
 /**
@@ -61,9 +62,53 @@ const BaseMongoTab = ({
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const perPage = 20;
 
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+
   useEffect(() => {
     fetchData();
+    // Clear selection on page change or sort
+    setSelectedIds([]);
   }, [page, searchQuery, sortField, sortOrder]);
+
+  const toggleSelection = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const selectAll = () => {
+    if (selectedIds.length === data.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(data.map((item) => item._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      setSaving(true);
+      await Promise.all(
+        selectedIds.map((id) =>
+          api.delete(`/mongo-studio/${collection}/${id}`),
+        ),
+      );
+      notify(`Successfully deleted ${selectedIds.length} items`, {
+        type: "success",
+      });
+      fetchData();
+      setSelectedIds([]);
+      setBulkDeleteModalOpen(false);
+    } catch (error) {
+      console.error(`Error bulk deleting ${title}:`, error);
+      notify(`Error deleting items`, { type: "error" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Subscribe to real-time updates for custom courses
   useEffect(() => {
@@ -923,6 +968,37 @@ const BaseMongoTab = ({
       </div>
 
       {/* Loading State */}
+      {/* Bulk Actions Header - Sticky when items selected */}
+      {(selectedIds.length > 0 || data.length > 0) && (
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b pb-4 mb-4 flex items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={data.length > 0 && selectedIds.length === data.length}
+                onChange={selectAll}
+                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary transition-all"
+              />
+              <span className="font-medium text-gray-700">
+                {selectedIds.length > 0
+                  ? `${selectedIds.length} Selected`
+                  : "Select All"}
+              </span>
+            </label>
+          </div>
+
+          {selectedIds.length > 0 && (
+            <button
+              onClick={() => setBulkDeleteModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors animate-in fade-in slide-in-from-right-4"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Selected ({selectedIds.length})
+            </button>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center h-64 bg-white rounded-b-3xl">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -942,124 +1018,146 @@ const BaseMongoTab = ({
         <>
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3 px-4 pb-20 bg-white rounded-b-3xl">
-            {data.map((item) => (
-              <div
-                key={item._id}
-                className="bg-gray-50 rounded-lg border border-border shadow-sm p-3 space-y-2.5"
-              >
-                {/* Card Header: ID and Actions */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-[10px] font-bold text-gray-500 uppercase">
-                        ID
-                      </span>
-                      <div
-                        className="text-[10px] font-mono bg-white px-1 py-0.5 rounded cursor-pointer truncate max-w-[120px] border border-gray-200"
-                        onClick={() =>
-                          copyToClipboard(item._id, `_id-${item._id}`)
-                        }
-                      >
-                        {item._id?.substring(0, 10)}...
+            {data.map((item) => {
+              const isSelected = selectedIds.includes(item._id);
+              return (
+                <div
+                  key={item._id}
+                  className={`group bg-gray-50 rounded-lg border shadow-sm p-3 space-y-2.5 transition-all relative ${
+                    isSelected
+                      ? "ring-2 ring-primary border-transparent bg-primary/5"
+                      : "border-border"
+                  }`}
+                >
+                  {/* Selection Checkbox (Absolute) */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleSelection(item._id);
+                      }}
+                      className={`w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary shadow-sm transition-all bg-white`}
+                    />
+                  </div>
+                  {/* Card Header: ID and Actions */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">
+                          ID
+                        </span>
+                        <div
+                          className="text-[10px] font-mono bg-white px-1 py-0.5 rounded cursor-pointer truncate max-w-[120px] border border-gray-200"
+                          onClick={() =>
+                            copyToClipboard(item._id, `_id-${item._id}`)
+                          }
+                        >
+                          {item._id?.substring(0, 10)}...
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleDateString()
+                          : "-"}
                       </div>
                     </div>
-                    <div className="text-[10px] text-gray-400">
-                      {item.createdAt
-                        ? new Date(item.createdAt).toLocaleDateString()
-                        : "-"}
+                    <div className="flex items-center gap-0.5">
+                      {onView && (
+                        <button
+                          onClick={() => onView(item)}
+                          className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
+                          title="View"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="p-1.5 hover:bg-amber-50 text-amber-600 rounded-md transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        className="p-1.5 hover:bg-red-50 text-red-600 rounded-md transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-0.5">
-                    {onView && (
-                      <button
-                        onClick={() => onView(item)}
-                        className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
-                        title="View"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleEdit(item)}
-                      className="p-1.5 hover:bg-amber-50 text-amber-600 rounded-md transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item._id)}
-                      className="p-1.5 hover:bg-red-50 text-red-600 rounded-md transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
 
-                {/* Card Content: First 4 Fields */}
-                <div className="space-y-1.5 pt-2 border-t border-border/50">
-                  {fields
-                    .filter((f) => f.showInTable !== false)
-                    .slice(0, 4)
-                    .map((field) => {
-                      const value = item[field.key];
-                      let displayValue = value;
+                  {/* Card Content: First 4 Fields */}
+                  <div className="space-y-1.5 pt-2 border-t border-border/50">
+                    {fields
+                      .filter((f) => f.showInTable !== false)
+                      .slice(0, 4)
+                      .map((field) => {
+                        const value = item[field.key];
+                        let displayValue = value;
 
-                      // Reuse display logic from table (simplified)
-                      if (field.type === "array") {
-                        if (
-                          field.key === "subjectDocumentIds" ||
-                          field.selectorType === "subjects"
-                        ) {
-                          displayValue = Array.isArray(value)
-                            ? `${value.length} Subjects`
-                            : "-";
+                        // Reuse display logic from table (simplified)
+                        if (field.type === "array") {
+                          if (
+                            field.key === "subjectDocumentIds" ||
+                            field.selectorType === "subjects"
+                          ) {
+                            displayValue = Array.isArray(value)
+                              ? `${value.length} Subjects`
+                              : "-";
+                          } else if (
+                            field.key === "topicDocumentIds" ||
+                            field.selectorType === "topics"
+                          ) {
+                            displayValue = Array.isArray(value)
+                              ? `${value.length} Topics`
+                              : "-";
+                          } else if (field.key === "requiredSkills") {
+                            displayValue = Array.isArray(value)
+                              ? `${value.length} Skills`
+                              : "-";
+                          } else {
+                            displayValue = Array.isArray(value)
+                              ? `${value.length} items`
+                              : "-";
+                          }
                         } else if (
-                          field.key === "topicDocumentIds" ||
-                          field.selectorType === "topics"
+                          typeof value === "object" &&
+                          value !== null
                         ) {
-                          displayValue = Array.isArray(value)
-                            ? `${value.length} Topics`
-                            : "-";
-                        } else if (field.key === "requiredSkills") {
-                          displayValue = Array.isArray(value)
-                            ? `${value.length} Skills`
-                            : "-";
-                        } else {
-                          displayValue = Array.isArray(value)
-                            ? `${value.length} items`
+                          displayValue = "{...}";
+                        } else if (
+                          field.type === "mongoRelation" ||
+                          field.type === "relation"
+                        ) {
+                          const relationMap = relationMaps[field.key] || {};
+                          const stringValue = value ? String(value) : "";
+                          displayValue = stringValue
+                            ? relationMap[stringValue] || value
                             : "-";
                         }
-                      } else if (typeof value === "object" && value !== null) {
-                        displayValue = "{...}";
-                      } else if (
-                        field.type === "mongoRelation" ||
-                        field.type === "relation"
-                      ) {
-                        const relationMap = relationMaps[field.key] || {};
-                        const stringValue = value ? String(value) : "";
-                        displayValue = stringValue
-                          ? relationMap[stringValue] || value
-                          : "-";
-                      }
 
-                      return (
-                        <div
-                          key={field.key}
-                          className="grid grid-cols-3 gap-1.5"
-                        >
-                          <span className="text-[10px] font-medium text-gray-500 truncate">
-                            {field.label}
-                          </span>
-                          <span className="col-span-2 text-xs text-gray-900 truncate">
-                            {String(displayValue || "-")}
-                          </span>
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div
+                            key={field.key}
+                            className="grid grid-cols-3 gap-1.5"
+                          >
+                            <span className="text-[10px] font-medium text-gray-500 truncate">
+                              {field.label}
+                            </span>
+                            <span className="col-span-2 text-xs text-gray-900 truncate">
+                              {String(displayValue || "-")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Desktop Table View */}
@@ -1068,6 +1166,16 @@ const BaseMongoTab = ({
               <table className="w-full border-separate border-spacing-0">
                 <thead className="bg-gray-50 border-b border-border/50 sticky top-0 z-20">
                   <tr>
+                    <th className="px-6 py-4 w-12 text-center sticky left-0 z-30 bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={
+                          data.length > 0 && selectedIds.length === data.length
+                        }
+                        onChange={selectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </th>
                     <th
                       className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("_id")}
@@ -1118,11 +1226,28 @@ const BaseMongoTab = ({
                       sortOrder === "ASC"
                         ? (page - 1) * perPage + index + 1
                         : total - ((page - 1) * perPage + index);
+
+                    const isSelected = selectedIds.includes(item._id);
+
                     return (
                       <tr
                         key={item._id}
-                        className="hover:bg-gray-50/50 transition-colors group"
+                        onClick={() => toggleSelection(item._id)}
+                        className={`transition-colors group cursor-pointer ${
+                          isSelected ? "bg-primary/5" : "hover:bg-gray-50/50"
+                        }`}
                       >
+                        <td
+                          className="px-6 py-4 align-middle sticky left-0 z-10 bg-inherit w-12 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelection(item._id)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                        </td>
                         <td className="px-6 py-4 align-middle">
                           <div className="flex items-center gap-3">
                             <div className="text-sm font-bold text-gray-700">
@@ -1522,6 +1647,16 @@ const BaseMongoTab = ({
           </div>,
           document.body,
         )}
+
+      {/* Bulk Delete Modal */}
+      <DeleteConfirmationModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={() => setBulkDeleteModalOpen(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete Items`}
+        message={`Are you sure you want to delete these ${selectedIds.length} items? This action cannot be undone.`}
+        isDeleting={saving}
+      />
     </div>
   );
 };

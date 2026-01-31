@@ -2597,6 +2597,8 @@ export interface PluginUsersPermissionsUser
       ]
     >;
     home_address: Schema.Attribute.Relation<'oneToOne', 'api::address.address'>;
+    is_survey_completed: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     last_name: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

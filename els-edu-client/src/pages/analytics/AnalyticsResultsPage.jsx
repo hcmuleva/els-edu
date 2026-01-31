@@ -135,6 +135,15 @@ const AnalyticsResultsPage = () => {
     });
   }, [latestSurvey, latestRecommendations, latestQuiz]);
 
+  // Process data for Radar Chart to avoid "straight line" issue with 2 points
+  const radarChartData = useMemo(() => {
+    if (radarData.length === 2) {
+      // Duplicate to create a closed shape (quadrilateral) instead of a line
+      return [...radarData, ...radarData];
+    }
+    return radarData;
+  }, [radarData]);
+
   // Stats calculation
   const stats = useMemo(() => {
     if (!latestSurvey?.skills || !latestRecommendations?.skills) return null;
@@ -621,21 +630,31 @@ const AnalyticsResultsPage = () => {
                   Recommended Topics
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {latestRecommendations.topics.slice(0, 8).map((topic) => (
-                    <div
-                      key={topic.documentId}
-                      className="p-3 bg-gray-50 rounded-xl border border-gray-200"
-                    >
-                      <h4 className="font-medium text-gray-900 text-sm">
-                        {topic.name}
-                      </h4>
-                      {topic.topic_level && (
-                        <span className="text-xs text-gray-500">
-                          Level {topic.topic_level}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  {/* Deduplicate topics by documentId */}
+                  {Array.from(
+                    new Map(
+                      latestRecommendations.topics.map((t) => [
+                        t.documentId,
+                        t,
+                      ]),
+                    ).values(),
+                  )
+                    .slice(0, 8)
+                    .map((topic) => (
+                      <div
+                        key={topic.documentId}
+                        className="p-3 bg-gray-50 rounded-xl border border-gray-200"
+                      >
+                        <h4 className="font-medium text-gray-900 text-sm">
+                          {topic.name}
+                        </h4>
+                        {topic.topic_level && (
+                          <span className="text-xs text-gray-500">
+                            Level {topic.topic_level}
+                          </span>
+                        )}
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
@@ -701,7 +720,13 @@ const AnalyticsResultsPage = () => {
                 </div>
 
                 <div className="h-[350px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                  {console.log("RadarData:", radarData)}
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                    minHeight={300}
+                    minWidth={0}
+                  >
                     <RadarChart
                       cx="50%"
                       cy="50%"
@@ -778,7 +803,12 @@ const AnalyticsResultsPage = () => {
                   </p>
                 </div>
                 <div className="h-[350px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                    minHeight={300}
+                    minWidth={0}
+                  >
                     <BarChart
                       data={radarData}
                       layout="vertical"
@@ -820,11 +850,20 @@ const AnalyticsResultsPage = () => {
                         content={<CustomTooltip />}
                         cursor={{ fill: "#f9fafb", opacity: 0.5 }}
                       />
+                      <Legend />
+                      <Bar
+                        dataKey="required"
+                        name="Target"
+                        fill="#e5e7eb"
+                        radius={[0, 6, 6, 0]}
+                        barSize={12}
+                      />
                       <Bar
                         dataKey="selfRating"
                         fill="url(#barGradient)" // Use gradient
                         radius={[0, 6, 6, 0]}
                         name="Your Rating"
+                        barSize={12}
                         background={{ fill: "#f9fafb", radius: [0, 6, 6, 0] }}
                       />
                     </BarChart>

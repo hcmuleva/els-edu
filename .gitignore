@@ -134,9 +134,12 @@ android/
 migration_scripts/
 ELS_Analytic_skill_recommendation-main/
 els-utils/
+ELS_Analytic_skill_recommendation-main/
+skills_migration/
 
 ############################
 # Scripts & Docs
 ############################
 scripts/
-# *.md
+*.md
+*.mp4

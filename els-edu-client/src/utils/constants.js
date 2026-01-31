@@ -181,6 +181,10 @@ export const GRADES_DISPLAY = [
   "10th",
   "11th",
   "12th",
+  "Diploma",
+  "Graduation",
+  "Postgraduation",
+  "PhD",
 ];
 
 /**
@@ -203,6 +207,10 @@ export const GRADES_BACKEND = [
   "TENTH",
   "ELEVENTH",
   "TWELFTH",
+  "DIPLOMA",
+  "GRADUATION",
+  "POSTGRADUATION",
+  "PHD",
 ];
 
 /**
@@ -224,6 +232,10 @@ const GRADE_DISPLAY_TO_BACKEND_MAP = {
   "10th": "TENTH",
   "11th": "ELEVENTH",
   "12th": "TWELFTH",
+  Diploma: "DIPLOMA",
+  Graduation: "GRADUATION",
+  Postgraduation: "POSTGRADUATION",
+  PhD: "PHD",
 };
 
 /**
@@ -245,6 +257,138 @@ const GRADE_BACKEND_TO_DISPLAY_MAP = {
   TENTH: "10th",
   ELEVENTH: "11th",
   TWELFTH: "12th",
+  DIPLOMA: "Diploma",
+  GRADUATION: "Graduation",
+  POSTGRADUATION: "Postgraduation",
+  PHD: "PhD",
+};
+
+// ============================================
+// Survey System Constants
+// ============================================
+
+/**
+ * Survey types for the self-assessment system
+ */
+export const SURVEY_TYPES = [
+  {
+    id: "school",
+    name: "School",
+    description: "For students in school (K-12)",
+  },
+  {
+    id: "college",
+    name: "College",
+    description: "For college/university students",
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    description: "For working professionals",
+  },
+];
+
+/**
+ * Academic categories for school surveys
+ */
+export const ACADEMIC_CATEGORIES = [
+  {
+    id: "academic",
+    name: "Academic",
+    icon: "BookOpen",
+    description: "Math, Science, Languages, etc.",
+  },
+  {
+    id: "non-academic",
+    name: "Non-Academic",
+    icon: "Palette",
+    description: "Arts, Sports, Music, etc.",
+  },
+];
+
+/**
+ * Learning paths for college surveys
+ */
+export const LEARNING_PATHS = [
+  {
+    id: "development",
+    name: "Development",
+    icon: "Code",
+    description: "Web, Mobile, Backend Development",
+  },
+  {
+    id: "devops",
+    name: "DevOps & Cloud",
+    icon: "Cloud",
+    description: "CI/CD, AWS, Azure, Kubernetes",
+  },
+  {
+    id: "data-science",
+    name: "Data Science & Analytics",
+    icon: "BarChart3",
+    description: "ML, AI, Data Analysis",
+  },
+  {
+    id: "testing",
+    name: "Testing & QA",
+    icon: "Bug",
+    description: "Manual, Automation Testing",
+  },
+  {
+    id: "design",
+    name: "UI/UX Design",
+    icon: "Palette",
+    description: "User Interface & Experience Design",
+  },
+  {
+    id: "cybersecurity",
+    name: "Cybersecurity",
+    icon: "Shield",
+    description: "Security, Ethical Hacking",
+  },
+];
+
+/**
+ * School grades (for determining survey type)
+ */
+export const SCHOOL_GRADES = [
+  "PLAYSCHOOL",
+  "LKG",
+  "UKG",
+  "FIRST",
+  "SECOND",
+  "THIRD",
+  "FOURTH",
+  "FIFTH",
+  "SIXTH",
+  "SEVENTH",
+  "EIGHTH",
+  "NINTH",
+  "TENTH",
+  "ELEVENTH",
+  "TWELFTH",
+];
+
+/**
+ * College grades
+ */
+export const COLLEGE_GRADES = ["GRADUATION", "POSTGRADUATION"];
+
+/**
+ * Professional grades
+ */
+export const PROFESSIONAL_GRADES = ["DIPLOMA", "PHD"];
+
+/**
+ * Determine survey type based on user's grade
+ * @param {string} grade - User's grade in backend format
+ * @returns {string} Survey type: "school", "college", or "professional"
+ */
+export const getSurveyTypeByGrade = (grade) => {
+  if (!grade) return "school";
+  if (SCHOOL_GRADES.includes(grade)) return "school";
+  if (COLLEGE_GRADES.includes(grade)) return "college";
+  return "professional";
 };
 
 // ============================================

@@ -53,16 +53,84 @@ const roleSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Academic Subject Schema - For School surveys
+const academicSubjectSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    category: {
+      type: String,
+      enum: ["academic", "non-academic"],
+      required: true,
+    },
+    icon: { type: String, default: "BookOpen" },
+    description: { type: String, default: "" },
+    gradeRange: {
+      min: { type: String, default: "PLAYSCHOOL" }, // Minimum grade level
+      max: { type: String, default: "TWELFTH" }, // Maximum grade level
+    },
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
+
+// Learning Path Skill Schema - For College surveys
+const learningPathSkillSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    learningPath: {
+      type: String,
+      enum: [
+        "development",
+        "devops",
+        "data-science",
+        "testing",
+        "design",
+        "cybersecurity",
+        "other",
+      ],
+      required: true,
+    },
+    icon: { type: String, default: "Code" },
+    description: { type: String, default: "" },
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
+
 const userSurveySchema = new mongoose.Schema(
   {
     userDocumentId: { type: String, required: true }, // Strapi v5 documentId
-    surveyType: { type: String, enum: ["company", "self"], required: true },
+    surveyType: {
+      type: String,
+      enum: ["company", "self", "school", "college", "professional"],
+      required: true,
+    },
+
+    // School-specific fields
+    academicCategories: [{ type: String }], // ["academic", "non-academic"]
+    subjects: [
+      {
+        subjectId: { type: String },
+        subjectName: { type: String },
+        category: { type: String }, // "academic" or "non-academic"
+        selfRating: { type: Number, min: 1, max: 5 },
+      },
+    ],
+
+    // College-specific fields
+    learningPaths: [{ type: String }], // ["development", "devops", "data-science", etc.]
+
+    // Professional/Company fields (existing)
     company: { type: String },
     domain: { type: String },
     role: { type: String },
+
+    // Skills (used by college and professional)
     skills: [
       {
+        skillId: { type: String },
         skillName: { type: String, required: true },
+        learningPath: { type: String }, // For college flow
         selfRating: { type: Number, min: 1, max: 5, required: true },
       },
     ],
@@ -362,6 +430,12 @@ const Company =
   mongoose.models.Company || mongoose.model("Company", companySchema);
 const Domain = mongoose.models.Domain || mongoose.model("Domain", domainSchema);
 const Role = mongoose.models.Role || mongoose.model("Role", roleSchema);
+const AcademicSubject =
+  mongoose.models.AcademicSubject ||
+  mongoose.model("AcademicSubject", academicSubjectSchema);
+const LearningPathSkill =
+  mongoose.models.LearningPathSkill ||
+  mongoose.model("LearningPathSkill", learningPathSkillSchema);
 const UserSurvey =
   mongoose.models.UserSurvey || mongoose.model("UserSurvey", userSurveySchema);
 const UserQuiz =
@@ -622,6 +696,249 @@ async function getUserSurveys(userDocumentId) {
 }
 
 /**
+ * Get academic subjects by category and grade
+ * @param {Object} filters - { category, grade, search }
+ */
+async function getAcademicSubjects(filters = {}) {
+  await connect();
+  const query = { isActive: true };
+
+  if (filters.category) {
+    query.category = filters.category;
+  }
+
+  if (filters.categories && Array.isArray(filters.categories)) {
+    query.category = { $in: filters.categories };
+  }
+
+  if (filters.search) {
+    query.name = { $regex: filters.search, $options: "i" };
+  }
+
+  // Pagination
+  const page = filters.page || 1;
+  const limit = filters.limit || 50;
+  const skip = (page - 1) * limit;
+
+  const subjects = await AcademicSubject.find(query)
+    .sort({ category: 1, name: 1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await AcademicSubject.countDocuments(query);
+
+  return {
+    data: subjects,
+    pagination: {
+      page,
+      limit,
+      total,
+      hasMore: skip + subjects.length < total,
+    },
+  };
+}
+
+/**
+ * Get learning path skills by path
+ * @param {Object} filters - { learningPath, search }
+ */
+async function getLearningPathSkills(filters = {}) {
+  await connect();
+  const query = { isActive: true };
+
+  if (filters.learningPath) {
+    query.learningPath = filters.learningPath;
+  }
+
+  if (filters.learningPaths && Array.isArray(filters.learningPaths)) {
+    query.learningPath = { $in: filters.learningPaths };
+  }
+
+  if (filters.search) {
+    query.name = { $regex: filters.search, $options: "i" };
+  }
+
+  // Pagination
+  const page = filters.page || 1;
+  const limit = filters.limit || 50;
+  const skip = (page - 1) * limit;
+
+  const skills = await LearningPathSkill.find(query)
+    .sort({ learningPath: 1, name: 1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await LearningPathSkill.countDocuments(query);
+
+  return {
+    data: skills,
+    pagination: {
+      page,
+      limit,
+      total,
+      hasMore: skip + skills.length < total,
+    },
+  };
+}
+
+/**
+ * Seed academic subjects (one-time setup)
+ */
+async function seedAcademicSubjects() {
+  await connect();
+
+  const subjects = [
+    // Academic subjects
+    { name: "Mathematics", category: "academic", icon: "Calculator" },
+    { name: "Science", category: "academic", icon: "Beaker" },
+    { name: "English", category: "academic", icon: "BookOpen" },
+    { name: "Hindi", category: "academic", icon: "BookOpen" },
+    { name: "Social Studies", category: "academic", icon: "Globe" },
+    { name: "Physics", category: "academic", icon: "Atom" },
+    { name: "Chemistry", category: "academic", icon: "FlaskConical" },
+    { name: "Biology", category: "academic", icon: "Leaf" },
+    { name: "Computer Science", category: "academic", icon: "Monitor" },
+    { name: "Economics", category: "academic", icon: "TrendingUp" },
+    { name: "History", category: "academic", icon: "Clock" },
+    { name: "Geography", category: "academic", icon: "Map" },
+    { name: "Political Science", category: "academic", icon: "Landmark" },
+    { name: "Environmental Science", category: "academic", icon: "Trees" },
+
+    // Non-academic subjects
+    { name: "Art & Drawing", category: "non-academic", icon: "Palette" },
+    { name: "Music", category: "non-academic", icon: "Music" },
+    { name: "Dance", category: "non-academic", icon: "HeartPulse" },
+    { name: "Sports", category: "non-academic", icon: "Trophy" },
+    { name: "Drama & Theatre", category: "non-academic", icon: "Theater" },
+    { name: "Craft & DIY", category: "non-academic", icon: "Scissors" },
+    { name: "Cooking", category: "non-academic", icon: "ChefHat" },
+    { name: "Gardening", category: "non-academic", icon: "Flower2" },
+    { name: "Photography", category: "non-academic", icon: "Camera" },
+    { name: "Public Speaking", category: "non-academic", icon: "Mic" },
+    { name: "Chess", category: "non-academic", icon: "Crown" },
+    { name: "Yoga & Meditation", category: "non-academic", icon: "Sparkles" },
+  ];
+
+  for (const subject of subjects) {
+    await AcademicSubject.findOneAndUpdate({ name: subject.name }, subject, {
+      upsert: true,
+      new: true,
+    });
+  }
+
+  return { success: true, count: subjects.length };
+}
+
+/**
+ * Seed learning path skills (one-time setup)
+ */
+async function seedLearningPathSkills() {
+  await connect();
+
+  const skills = [
+    // Development
+    { name: "JavaScript", learningPath: "development", icon: "Code" },
+    { name: "TypeScript", learningPath: "development", icon: "Code" },
+    { name: "React", learningPath: "development", icon: "Code" },
+    { name: "Node.js", learningPath: "development", icon: "Server" },
+    { name: "Python", learningPath: "development", icon: "Code" },
+    { name: "Java", learningPath: "development", icon: "Code" },
+    { name: "SQL", learningPath: "development", icon: "Database" },
+    { name: "MongoDB", learningPath: "development", icon: "Database" },
+    { name: "Git", learningPath: "development", icon: "GitBranch" },
+    { name: "HTML/CSS", learningPath: "development", icon: "Layout" },
+    { name: "Vue.js", learningPath: "development", icon: "Code" },
+    { name: "Angular", learningPath: "development", icon: "Code" },
+    { name: "Flutter", learningPath: "development", icon: "Smartphone" },
+    { name: "React Native", learningPath: "development", icon: "Smartphone" },
+
+    // DevOps
+    { name: "Docker", learningPath: "devops", icon: "Container" },
+    { name: "Kubernetes", learningPath: "devops", icon: "Cloud" },
+    { name: "AWS", learningPath: "devops", icon: "Cloud" },
+    { name: "Azure", learningPath: "devops", icon: "Cloud" },
+    { name: "GCP", learningPath: "devops", icon: "Cloud" },
+    { name: "Jenkins", learningPath: "devops", icon: "Cog" },
+    { name: "Terraform", learningPath: "devops", icon: "Blocks" },
+    { name: "Linux", learningPath: "devops", icon: "Terminal" },
+    { name: "CI/CD", learningPath: "devops", icon: "RefreshCw" },
+    { name: "Ansible", learningPath: "devops", icon: "Cog" },
+
+    // Data Science
+    { name: "Machine Learning", learningPath: "data-science", icon: "Brain" },
+    { name: "Deep Learning", learningPath: "data-science", icon: "Brain" },
+    { name: "Pandas", learningPath: "data-science", icon: "BarChart3" },
+    { name: "NumPy", learningPath: "data-science", icon: "Calculator" },
+    { name: "TensorFlow", learningPath: "data-science", icon: "Brain" },
+    { name: "PyTorch", learningPath: "data-science", icon: "Brain" },
+    { name: "Tableau", learningPath: "data-science", icon: "BarChart3" },
+    { name: "Power BI", learningPath: "data-science", icon: "BarChart3" },
+    {
+      name: "Data Visualization",
+      learningPath: "data-science",
+      icon: "PieChart",
+    },
+    { name: "Statistics", learningPath: "data-science", icon: "TrendingUp" },
+
+    // Testing
+    { name: "Selenium", learningPath: "testing", icon: "Bug" },
+    { name: "Cypress", learningPath: "testing", icon: "Bug" },
+    { name: "Jest", learningPath: "testing", icon: "Bug" },
+    { name: "Postman", learningPath: "testing", icon: "Send" },
+    { name: "JMeter", learningPath: "testing", icon: "Activity" },
+    { name: "Manual Testing", learningPath: "testing", icon: "ClipboardCheck" },
+    { name: "API Testing", learningPath: "testing", icon: "Plug" },
+    { name: "Performance Testing", learningPath: "testing", icon: "Zap" },
+
+    // Design
+    { name: "Figma", learningPath: "design", icon: "Palette" },
+    { name: "Sketch", learningPath: "design", icon: "Palette" },
+    { name: "Adobe XD", learningPath: "design", icon: "Palette" },
+    { name: "Photoshop", learningPath: "design", icon: "Image" },
+    { name: "Illustrator", learningPath: "design", icon: "PenTool" },
+    { name: "UI Design", learningPath: "design", icon: "Layout" },
+    { name: "UX Research", learningPath: "design", icon: "Users" },
+    { name: "Prototyping", learningPath: "design", icon: "Layers" },
+
+    // Cybersecurity
+    { name: "Networking", learningPath: "cybersecurity", icon: "Network" },
+    {
+      name: "Penetration Testing",
+      learningPath: "cybersecurity",
+      icon: "ShieldAlert",
+    },
+    { name: "Cryptography", learningPath: "cybersecurity", icon: "Lock" },
+    { name: "SIEM Tools", learningPath: "cybersecurity", icon: "Shield" },
+    {
+      name: "Vulnerability Assessment",
+      learningPath: "cybersecurity",
+      icon: "Search",
+    },
+    {
+      name: "Firewall Management",
+      learningPath: "cybersecurity",
+      icon: "Shield",
+    },
+    {
+      name: "Incident Response",
+      learningPath: "cybersecurity",
+      icon: "AlertTriangle",
+    },
+  ];
+
+  for (const skill of skills) {
+    await LearningPathSkill.findOneAndUpdate({ name: skill.name }, skill, {
+      upsert: true,
+      new: true,
+    });
+  }
+
+  return { success: true, count: skills.length };
+}
+
+/**
  * Get skills with topic mappings
  */
 async function getSkillsWithTopics(skillNames) {
@@ -799,12 +1116,19 @@ module.exports = {
   saveUserCourse,
   updateUserCourse,
   deleteUserCourse,
+  // Survey System
+  getAcademicSubjects,
+  getLearningPathSkills,
+  seedAcademicSubjects,
+  seedLearningPathSkills,
   // Export models for direct access if needed
   models: {
     Skill,
     Company,
     Domain,
     Role,
+    AcademicSubject,
+    LearningPathSkill,
     UserSurvey,
     UserQuiz,
     UserCourse,

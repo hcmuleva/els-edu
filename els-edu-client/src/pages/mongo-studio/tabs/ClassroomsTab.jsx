@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { CustomSelect } from "../../../components/common/CustomSelect";
+import { CustomAsyncSelect } from "../../../components/common/CustomAsyncSelect";
 import { useGetIdentity, usePermissions, useNotify } from "react-admin";
 import {
   BookOpen,
@@ -117,6 +118,10 @@ const ClassroomsTab = () => {
   const [subjects, setSubjects] = useState([]);
   const [topics, setTopics] = useState([]);
   const [selectedContentDetails, setSelectedContentDetails] = useState([]); // Store details of selected items separately
+
+  // Bulk Selection State
+  const [selectedClassroomIds, setSelectedClassroomIds] = useState([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
 
   const isSuperAdmin = permissions === "SUPERADMIN";
   const userOrgDocumentId = identity?.org?.documentId;
@@ -661,6 +666,44 @@ const ClassroomsTab = () => {
     }
   };
 
+  // Bulk Selection Handlers
+  const toggleSelection = (id) => {
+    setSelectedClassroomIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const selectAll = () => {
+    if (selectedClassroomIds.length === filteredClassrooms.length) {
+      setSelectedClassroomIds([]);
+    } else {
+      setSelectedClassroomIds(filteredClassrooms.map((c) => c._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedClassroomIds.length === 0) return;
+
+    try {
+      setIsDeleting(true);
+      // Execute all deletes concurrently
+      await Promise.all(
+        selectedClassroomIds.map((id) => mongoService.deleteClassroom(id)),
+      );
+      notify(`Successfully deleted ${selectedClassroomIds.length} classrooms`, {
+        type: "success",
+      });
+      fetchClassrooms();
+      setSelectedClassroomIds([]);
+      setBulkDeleteModalOpen(false);
+    } catch (err) {
+      console.error("Error bulk deleting:", err);
+      notify("Failed to delete some classrooms", { type: "error" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Toggle class type selection
   const toggleClassType = (type) => {
     setFormData((prev) => ({
@@ -815,6 +858,40 @@ const ClassroomsTab = () => {
         />
       </div>
 
+      {/* Bulk Actions Header - Sticky when items selected */}
+      {(selectedClassroomIds.length > 0 || classrooms.length > 0) && (
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b pb-4 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={
+                  filteredClassrooms.length > 0 &&
+                  selectedClassroomIds.length === filteredClassrooms.length
+                }
+                onChange={selectAll}
+                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary transition-all"
+              />
+              <span className="font-medium text-gray-700">
+                {selectedClassroomIds.length > 0
+                  ? `${selectedClassroomIds.length} Selected`
+                  : "Select All"}
+              </span>
+            </label>
+          </div>
+
+          {selectedClassroomIds.length > 0 && (
+            <button
+              onClick={() => setBulkDeleteModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors animate-in fade-in slide-in-from-right-4"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Selected ({selectedClassroomIds.length})
+            </button>
+          )}
+        </div>
+      )}
+
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -827,95 +904,120 @@ const ClassroomsTab = () => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredClassrooms.map((classroom) => (
-            <div
-              key={classroom._id}
-              className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all"
-            >
-              {/* Cover Photo */}
-              {classroom.thumbnail && (
-                <div className="aspect-video bg-gray-50 overflow-hidden">
-                  <img
-                    src={classroom.thumbnail}
-                    alt={classroom.title}
-                    className="w-full h-full object-cover"
+          {filteredClassrooms.map((classroom) => {
+            const isSelected = selectedClassroomIds.includes(classroom._id);
+            return (
+              <div
+                key={classroom._id}
+                className={`group relative bg-white border rounded-xl overflow-hidden hover:shadow-md transition-all ${
+                  isSelected
+                    ? "ring-2 ring-primary border-transparent"
+                    : "border-gray-100"
+                }`}
+              >
+                {/* Selection Checkbox */}
+                <div className="absolute top-3 left-3 z-10">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleSelection(classroom._id);
+                    }}
+                    className={`w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary shadow-sm transition-all ${
+                      isSelected
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-100 bg-white"
+                    }`}
                   />
                 </div>
-              )}
 
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  {getStatusBadge(classroom.status)}
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleEdit(classroom)}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <Pencil className="w-4 h-4 text-gray-500" />
-                    </button>
-                    <button
-                      onClick={() => confirmDelete(classroom)}
-                      className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </button>
+                {/* Cover Photo */}
+                {classroom.thumbnail && (
+                  <div className="aspect-video bg-gray-50 overflow-hidden">
+                    <img
+                      src={classroom.thumbnail}
+                      alt={classroom.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                </div>
-                <h3
-                  className="font-bold text-gray-800 mb-1 cursor-pointer hover:text-primary"
-                  onClick={() => handleEdit(classroom)}
-                >
-                  {classroom.title}
-                </h3>
-                <p className="text-sm text-gray-500 truncate mb-3"></p>
-                <div className="flex gap-3 text-xs text-gray-500 mb-2">
-                  <div className="flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    <span>
-                      {classroom.contentDocumentIds?.length || 0} Contents
+                )}
+
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    {getStatusBadge(classroom.status)}
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEdit(classroom)}
+                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <Pencil className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(classroom)}
+                        className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                  <h3
+                    className="font-bold text-gray-800 mb-1 cursor-pointer hover:text-primary"
+                    onClick={() => handleEdit(classroom)}
+                  >
+                    {classroom.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 truncate mb-3"></p>
+                  <div className="flex gap-3 text-xs text-gray-500 mb-2">
+                    <div className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      <span>
+                        {classroom.contentDocumentIds?.length || 0} Contents
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ClipboardList className="w-3 h-3" />
+                      <span>
+                        {classroom.assignmentDocumentIds?.length || 0}{" "}
+                        Assignments
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <HelpCircle className="w-3 h-3" />
+                      <span>{classroom.quizIds?.length || 0} Quizzes</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {classroom.classTypes?.slice(0, 4).map((type) => (
+                      <span
+                        key={type}
+                        className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full"
+                      >
+                        {type}
+                      </span>
+                    ))}
+                    {classroom.classTypes?.length > 4 && (
+                      <span className="text-xs text-gray-400">
+                        +{classroom.classTypes.length - 4} more
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {classroom.endDate
+                        ? new Date(classroom.endDate).toLocaleDateString()
+                        : "No date"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {classroom.contentDocumentIds?.length || 0} lectures
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <ClipboardList className="w-3 h-3" />
-                    <span>
-                      {classroom.assignmentDocumentIds?.length || 0} Assignments
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <HelpCircle className="w-3 h-3" />
-                    <span>{classroom.quizIds?.length || 0} Quizzes</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {classroom.classTypes?.slice(0, 4).map((type) => (
-                    <span
-                      key={type}
-                      className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full"
-                    >
-                      {type}
-                    </span>
-                  ))}
-                  {classroom.classTypes?.length > 4 && (
-                    <span className="text-xs text-gray-400">
-                      +{classroom.classTypes.length - 4} more
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {classroom.endDate
-                      ? new Date(classroom.endDate).toLocaleDateString()
-                      : "No date"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    {classroom.contentDocumentIds?.length || 0} lectures
-                  </span>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1263,7 +1365,9 @@ const ClassroomsTab = () => {
                             {(activeTab === "content" ||
                               activeTab === "quiz") && (
                               <div className="flex gap-2">
-                                <CustomSelect
+                                <CustomAsyncSelect
+                                  label={null}
+                                  resource="subjects"
                                   value={filterSubject}
                                   onChange={(val) => {
                                     setFilterSubject(val);
@@ -1273,14 +1377,16 @@ const ClassroomsTab = () => {
                                       setQuizPage(1);
                                     }
                                   }}
-                                  options={subjects.map((s) => ({
-                                    id: s.documentId,
-                                    name: s.name || s.title,
-                                  }))}
+                                  optionText="name"
                                   placeholder="All Subjects"
                                   className="flex-1"
+                                  initialData={subjects.find(
+                                    (s) => s.documentId === filterSubject,
+                                  )}
                                 />
-                                <CustomSelect
+                                <CustomAsyncSelect
+                                  label={null}
+                                  resource="topics"
                                   value={filterTopic}
                                   onChange={(val) => {
                                     setFilterTopic(val);
@@ -1290,12 +1396,12 @@ const ClassroomsTab = () => {
                                       setQuizPage(1);
                                     }
                                   }}
-                                  options={topics.map((t) => ({
-                                    id: t.documentId,
-                                    name: t.name || t.title,
-                                  }))}
+                                  optionText="name"
                                   placeholder="All Topics"
                                   className="flex-1"
+                                  initialData={topics.find(
+                                    (t) => t.documentId === filterTopic,
+                                  )}
                                 />
                               </div>
                             )}
@@ -1591,6 +1697,15 @@ const ClassroomsTab = () => {
         title="Delete Classroom"
         message="Are you sure you want to delete this classroom? This action cannot be undone."
         itemName={itemToDelete?.title}
+        isDeleting={isDeleting}
+      />
+      {/* Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={() => setBulkDeleteModalOpen(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedClassroomIds.length} Classrooms`}
+        message={`Are you sure you want to delete these ${selectedClassroomIds.length} classrooms? This action cannot be undone.`}
         isDeleting={isDeleting}
       />
     </div>
